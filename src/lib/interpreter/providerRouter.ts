@@ -409,34 +409,29 @@ function buildProviderResolution(): ProviderResolution {
     process.env.TOKENIZIN_MODEL?.trim() ||
     "prestix-web-2.5";
 
-  if (!tokenizinApiKey || !tokenizinBaseUrl) {
-    const missing = [
-      ...(!tokenizinApiKey ? ["TOKENIZIN_API_KEY"] : []),
-      ...(!tokenizinBaseUrl ? ["TOKENIZIN_BASE_URL"] : []),
-    ];
-    fallbackChainTried.push(missingEnvMessage("tokenizin", missing));
-  } else if (!tokenizinKeyIsTranslationScoped(tokenizinApiKey)) {
-    tokenizinSkippedReason = "not_scoped_for_translation";
-    fallbackChainTried.push("provider skipped: tokenizin safety not_scoped_for_translation");
-  } else {
-    const endpoint = asOpenAiCompatibleUrl(tokenizinBaseUrl);
-    const headers = parseOptionalHeaders(process.env.TOKENIZIN_HEADERS);
+  const openAiApiKey = process.env.OPENAI_API_KEY?.trim();
+  if (openAiApiKey) {
+    const model =
+      process.env.PRESTIX_INTERPRETER_MODEL ||
+      process.env.PRESTIX_INTERPRETED_CALL_TRANSLATE_MODEL ||
+      "gpt-4.1";
     providers.push({
-      provider: "tokenizin",
-      model: tokenizinModel,
+      provider: "openai",
+      model,
       fallbackUsed: false,
       translate: (messages, signal) =>
         requestOpenAiCompatible({
-          apiKey: tokenizinApiKey,
-          endpoint,
+          apiKey: openAiApiKey,
+          endpoint: "https://api.openai.com/v1/chat/completions",
           fallbackUsed: false,
-          headers,
           messages,
-          model: tokenizinModel,
-          provider: "tokenizin",
+          model,
+          provider: "openai",
           signal,
         }),
     });
+  } else {
+    fallbackChainTried.push(missingEnvMessage("openai", ["OPENAI_API_KEY"]));
   }
 
   const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
@@ -483,31 +478,6 @@ function buildProviderResolution(): ProviderResolution {
     fallbackChainTried.push(missingEnvMessage("deepseek", ["DEEPSEEK_API_KEY"]));
   }
 
-  const openAiApiKey = process.env.OPENAI_API_KEY?.trim();
-  if (openAiApiKey) {
-    const model =
-      process.env.PRESTIX_INTERPRETER_MODEL ||
-      process.env.PRESTIX_INTERPRETED_CALL_TRANSLATE_MODEL ||
-      "gpt-4.1-mini";
-    providers.push({
-      provider: "openai",
-      model,
-      fallbackUsed: true,
-      translate: (messages, signal) =>
-        requestOpenAiCompatible({
-          apiKey: openAiApiKey,
-          endpoint: "https://api.openai.com/v1/chat/completions",
-          fallbackUsed: true,
-          messages,
-          model,
-          provider: "openai",
-          signal,
-        }),
-    });
-  } else {
-    fallbackChainTried.push(missingEnvMessage("openai", ["OPENAI_API_KEY"]));
-  }
-
   const localProviderRequested =
     process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "ollama" ||
     process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "local" ||
@@ -532,6 +502,36 @@ function buildProviderResolution(): ProviderResolution {
     fallbackChainTried.push(
       "provider skipped: local missing OLLAMA_BASE_URL/PRESTIX_SANDBOX_TEXT_PROVIDER",
     );
+  }
+
+  if (!tokenizinApiKey || !tokenizinBaseUrl) {
+    const missing = [
+      ...(!tokenizinApiKey ? ["TOKENIZIN_API_KEY"] : []),
+      ...(!tokenizinBaseUrl ? ["TOKENIZIN_BASE_URL"] : []),
+    ];
+    fallbackChainTried.push(missingEnvMessage("tokenizin", missing));
+  } else if (!tokenizinKeyIsTranslationScoped(tokenizinApiKey)) {
+    tokenizinSkippedReason = "not_scoped_for_translation";
+    fallbackChainTried.push("provider skipped: tokenizin safety not_scoped_for_translation");
+  } else {
+    const endpoint = asOpenAiCompatibleUrl(tokenizinBaseUrl);
+    const headers = parseOptionalHeaders(process.env.TOKENIZIN_HEADERS);
+    providers.push({
+      provider: "tokenizin",
+      model: tokenizinModel,
+      fallbackUsed: true,
+      translate: (messages, signal) =>
+        requestOpenAiCompatible({
+          apiKey: tokenizinApiKey,
+          endpoint,
+          fallbackUsed: true,
+          headers,
+          messages,
+          model: tokenizinModel,
+          provider: "tokenizin",
+          signal,
+        }),
+    });
   }
 
   return {

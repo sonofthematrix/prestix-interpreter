@@ -99,7 +99,7 @@ describe("interpreter client runtime", () => {
     expect(
       readInterpreterResponseMetadata({
         provider: "openai",
-        model: "gpt-4.1-mini",
+        model: "gpt-4.1",
         fallbackUsed: true,
         learningMatchesCount: 3,
         learningTypesUsed: ["glossary", "style"],
@@ -110,7 +110,7 @@ describe("interpreter client runtime", () => {
       learningContext: "3",
       learningMatchesCount: 3,
       learningTypesUsed: ["glossary", "style"],
-      model: "gpt-4.1-mini",
+      model: "gpt-4.1",
       provider: "openai",
     });
   });
