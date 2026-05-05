@@ -1,0 +1,50 @@
+{
+  "properties": [
+    {
+      "id": "test-property-1",
+      "title": "Luxury Villa in Monaco",
+      "description": "Premium waterfront villa with panoramic sea views, private beach access, and world-class amenities. Perfect for high-net-worth investors seeking luxury real estate opportunities.",
+      "propertyType": "VILLA",
+      "location": "Monaco, Monaco",
+      "price": "1",
+      "tokenPrice": "0.00000002",
+      "totalTokens": "50000000",
+      "owner": "0x8ed7f4fb3aa1a3b346756624b17094dfd6040047"
+    },
+    {
+      "id": "test-property-2",
+      "title": "Commercial Office Building",
+      "description": "Modern office complex in prime business district with high occupancy rates and excellent ROI potential. Ideal for institutional investors.",
+      "propertyType": "COMMERCIAL",
+      "location": "Dubai, UAE",
+      "price": "2",
+      "tokenPrice": "0.00000004",
+      "totalTokens": "50000000",
+      "owner": "0x8ed7f4fb3aa1a3b346756624b17094dfd6040047"
+    },
+    {
+      "id": "test-property-3",
+      "title": "Residential Apartment Complex",
+      "description": "Modern residential complex with excellent amenities and prime location. Great investment opportunity.",
+      "propertyType": "COMMERCIAL",
+      "location": "Singapore",
+      "price": "3",
+      "tokenPrice": "0.00000006",
+      "totalTokens": "50000000",
+      "owner": "0x8ed7f4fb3aa1a3b346756624b17094dfd6040047"
+    },
+    {
+      "id": "test-property-4",
+      "title": "Retail Shopping Center",
+      "description": "Prime retail location with high foot traffic and established tenant base. Excellent cash flow potential.",
+      "propertyType": "COMMERCIAL",
+      "location": "London, UK",
+      "price": "4",
+      "tokenPrice": "0.00000008",
+      "totalTokens": "50000000",
+      "owner": "0x8ed7f4fb3aa1a3b346756624b17094dfd6040047"
+    }
+  ],
+  "investments": []
+}
+

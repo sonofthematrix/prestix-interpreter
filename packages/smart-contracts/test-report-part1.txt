@@ -1,0 +1,1000 @@
+$ REPORT_GAS=true hardhat test
+Testing TigerPalaceToken deployment...
+
+
+Deployer: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+Treasury: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+Initial supply: 1000000000000000000000000
+  🎯 AdvancedTigerRevenue Integration Testing
+    🔧TigerRevenue Validation Pipeline
+🚀 Deploying advancedTigerRevenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+Contract factory created
+📦 Step 2: Deploying RWARewardDistributor...
+Token deployed at: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+Deployer balance: 1000000000000000000000000
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+✅ AdvancedTigerRevenue test environment ready!
+
+🎯 Test: Complete validation pipeline with optimal setup
+🔧 Validating and configuringTigerRevenue system...
+✅ Batch size validation skipped (not applicable to RWARevenue)
+✅ RWARevenue system validation completed
+🎯 Creating optimal staking setup forTigerRevenue...
+✅ User 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 staked 2000.0 TPT at time 1762954660
+⏰ Advanced time by 600s for user 1
+✅ User 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC staked 5000.0 TPT at time 1762955265
+⏰ Advanced time by 1200s for user 2
+✅ User 0x90F79bf6EB2c4f870365E785982E1f101E93b906 staked 8000.0 TPT at time 1762956470
+⏰ Adding minimum staking duration: 2400s
+📊 Staking setup results: {
+  totalStakers: '3',
+  totalStaked: '15000000000000000000000',
+  stakingDataCreated: 3
+}
+✅ Optimal staking setup completed
+💰 Optimal revenue calculation: {
+  totalStaked: '15000000000000000000000',
+  scaledStaked: '15000000000000000000.00',
+  targetRatio: 0.05,
+  calculatedRevenue: '3000.00',
+  finalAmount: '3000.0'
+}
+💰 Optimal revenue amount: 3000.0 TPT
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '15000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '3000.0'
+}
+💰 Funded RWARevenue with 3000.0 TPT
+✅ Revenue allocation successful!
+💰 Allocated 3000.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 104132
+✅ Validated revenue allocation successful!
+⏰ Advanced time by 2592000 seconds to mature stakes
+💰 Revenue distribution results:
+- Alice: 200.0 TPT
+- Bob: 500.0 TPT
+- Charlie: 800.0 TPT
+✅ Total distributed: 1500.0 TPT
+🎯 AdvancedTigerRevenue integration test completed successfully!
+      ✔ Should meet all validation requirements and successfully allocate revenue
+🚀 Deploying advancedTigerRevenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+✅ AdvancedTigerRevenue test environment ready!
+
+🎯 Test: Edge cases with minimal staking requirements
+🔧 Validating and configuringTigerRevenue system...
+✅ Batch size validation skipped (not applicable to RWARevenue)
+🎯 Creating optimal staking setup forTigerRevenue...
+✅ User 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 staked 1000.0 TPT at time 1765550994
+⏰ Adding minimum staking duration: 900s
+📊 Staking setup results: {
+  totalStakers: '1',
+  totalStaked: '1000000000000000000000',
+  stakingDataCreated: 1
+}
+💰 Optimal revenue calculation: {
+  totalStaked: '1000000000000000000000',
+  scaledStaked: '1000000000000000000.00',
+  targetRatio: 0.2,
+  calculatedRevenue: '500.00',
+  finalAmount: '500.0'
+}
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '1000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '500.0'
+}
+💰 Funded RWARevenue with 500.0 TPT
+✅ Revenue allocation successful!
+💰 Allocated 500.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 104132
+⏰ Advanced time by 2592000 seconds to mature stakes
+✅ Minimal case: Alice received 100.0 TPT
+      ✔ Should handle edge cases with minimal staking requirements
+🚀 Deploying advancedTigerRevenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+✅ AdvancedTigerRevenue test environment ready!
+
+🎯 Test: Time-weighted distribution with advanced staggering
+🔧 Validating and configuringTigerRevenue system...
+✅ Batch size validation skipped (not applicable to RWARevenue)
+🎯 Creating optimal staking setup forTigerRevenue...
+✅ User 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 staked 3000.0 TPT at time 1768144018
+⏰ Advanced time by 1800s for user 1
+✅ User 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC staked 3000.0 TPT at time 1768145823
+⏰ Advanced time by 3600s for user 2
+✅ User 0x90F79bf6EB2c4f870365E785982E1f101E93b906 staked 3000.0 TPT at time 1768149428
+⏰ Adding minimum staking duration: 3600s
+📊 Staking setup results: {
+  totalStakers: '3',
+  totalStaked: '9000000000000000000000',
+  stakingDataCreated: 3
+}
+💰 Optimal revenue calculation: {
+  totalStaked: '9000000000000000000000',
+  scaledStaked: '9000000000000000000.00',
+  targetRatio: 0.08,
+  calculatedRevenue: '2000.00',
+  finalAmount: '2000.0'
+}
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '9000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '2000.0'
+}
+💰 Funded RWARevenue with 2000.0 TPT
+✅ Revenue allocation successful!
+💰 Allocated 2000.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 104132
+⏰ Advanced time by 2592000 seconds to mature stakes
+💰 Time-weighted distribution (equal stakes, different times):
+- Alice (earliest): 300.0 TPT
+- Bob (middle): 300.0 TPT
+- Charlie (latest): 300.0 TPT
+✅ Time-weighted distribution working correctly
+      ✔ Should handle time-weighted distribution with staggered staking
+
+  🎯 Comprehensive Revenue Distribution & Tier Testing
+    🎯 Weighted Revenue Distribution Strategy
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+🔍 Checking RWARevenue balance at address: 0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B
+✅ Weighted Distribution Results:
+  Alice (1K TPT): 0.0 TPT (0%)
+  Bob (5K TPT): 0.0 TPT (0%)
+  Charlie (10K TPT): 0.0 TPT (0%)
+      ✔ Should calculate correct revenue distribution using time-weighted calculation ✅
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+🔍 Checking RWARevenue balance at address: 0x276C216D241856199A83bf27b2286659e5b877D3
+✅ Time-Weighted Revenue Distribution Results:
+  Alice Stake 1 (1K TPT, 3752s): 3752000.0 time-weighted
+  Alice Stake 2 (5K TPT, 3651s): 18255000.0 time-weighted
+  Alice Total (6K TPT): 22007000.0 time-weighted → 758.763241753509602962 TPT revenue
+  Bob (10K TPT, 3600s): 36000000.0 time-weighted → 1241.236758246490397037 TPT revenue
+  Total time-weighted: 58007000.0, Revenue allocated: 2000.0 TPT
+      ✔ Should handle weighted distribution with multiple stakes per user ✅
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+🔍 Checking RWARevenue balance at address: 0x6C2d83262fF84cBaDb3e416D527403135D757892
+🔍 Checking RWARevenue balance at address: 0x6C2d83262fF84cBaDb3e416D527403135D757892
+✅ Multi-Round Accuracy:
+  Round 1 - Alice: 83.333360086948822281 TPT, Bob: 416.666639913051177718 TPT
+  Round 2 - Alice: 166.666720173877030799 TPT, Bob: 833.3332798261229692 TPT
+      ✔ Should maintain accuracy across multiple revenue rounds ✅
+    🔄 Multiple Staking & Withdrawal Testing Across Duration Tiers
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+✅ Duration Tier Testing:
+🔍 Checking RWARevenue balance at address: 0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd
+  Bronze Tier: 500.0 TPT revenue (100% multiplier)
+🔍 Checking RWARevenue balance at address: 0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd
+  Silver Tier: 333.333290466414369128 TPT revenue (125% multiplier)
+🔍 Checking RWARevenue balance at address: 0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd
+  Gold Tier: 249.999951774719266173 TPT revenue (150% multiplier)
+🔍 Checking RWARevenue balance at address: 0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd
+  Platinum Tier: 199.999953703732281646 TPT revenue (200% multiplier)
+      ✔ Should correctly calculate rewards across all duration tiers ✅
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+🔍 Checking RWARevenue balance at address: 0xC7143d5bA86553C06f5730c8dC9f8187a621A8D4
+⚠️ Skipping claimRewards - multiplier 10000 results in 0 rewards
+      ✔ Should handle partial withdrawals with tier rewards ✅
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+✅ Multi-User Tier Testing:
+🔍 Checking RWARevenue balance at address: 0x01E21d7B8c39dc4C764c19b308Bd8b14B1ba139E
+  User 1 (1000.0 stake): 129.349216669113483358 TPT revenue (expected: 129.379148113920860287 TPT)
+  User 2 (5000.0 stake): 607.160084729766573687 TPT revenue (expected: 607.252373351255985885 TPT)
+  User 3 (10000.0 stake): 1135.148172227931461169 TPT revenue (expected: 1135.21801226581534067 TPT)
+  User 4 (25000.0 stake): 2639.940437490824437406 TPT revenue (expected: 2639.828194572796773922 TPT)
+  User 5 (5000.0 stake): 488.402088882364044378 TPT revenue (expected: 488.322271696211039233 TPT)
+  Total Distributed: 4999.999999999999999998 TPT
+  Total Revenue: 5000.0 TPT
+      ✔ Should correctly handle multiple users across different tiers ✅
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+🔍 Checking RWARevenue balance at address: 0xB22C255250d74B0ADD1bfB936676D2a299BF48Bd
+⚠️ Skipping claimRewards - multiplier 10000 results in 0 rewards
+      ✔ Should handle full withdrawal with maximum tier rewards ✅
+    🔬 Complex Multi-User Scenarios
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+🔍 Checking RWARevenue balance at address: 0xd753c12650c280383Ce873Cc3a898F6f53973d16
+🔍 Checking RWARevenue balance at address: 0xd753c12650c280383Ce873Cc3a898F6f53973d16
+✅ Cross-Pool Revenue Distribution:
+  Alice Pool 0: 667.587159130134622022 TPT
+  Alice Pool 1: 500.0 TPT
+  Bob Pool 0: 1332.412840869865377977 TPT
+      ✔ Should handle cross-pool operations with accurate reward calculations ✅
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Test environment setup completed!
+- RWA Revenue admin check skipped (hasRole not available)
+🔍 Checking RWARevenue balance at address: 0x20d7B364E8Ed1F4260b5B90C41c2deC3C1F6D367
+  User 1: 223.590762631105761059 TPT (expected: 223.590829996084093785)
+  User 2: 412.744011936314363257 TPT (expected: 412.74404090710515556)
+  User 3: 598.233115432579875683 TPT (expected: 598.233019096810750653)
+✅ Precision Test - Total Distributed: 1234.567889999999999999 TPT
+  Original Revenue: 1234.56789 TPT
+      ✔ Should maintain precision with large numbers and complex calculations ✅
+
+  🎯 Core Contracts - Streamlined Test Suite
+    📋 Contract Deployment & Initialization
+      ✔ Should deploy all 4 core contracts successfully
+      ✔ Should have correct token configuration
+      ✔ Should initialize RWAStaking correctly
+      ✔ Should create default pool during initialization
+    💰 Token Operations
+      ✔ Should allow token transfers between users
+      ✔ Should handle fee exclusions correctly
+    🏊 Basic Staking Operations
+      ✔ Should allow users to stake in default pool
+      ✔ Should track individual stakes correctly
+⚠️  Pool multiplier is 10000 (100%), no rewards to claim. Skipping claimRewards test.
+      ✔ Should allow withdrawals from individual stakes
+    🎱 Pool Management
+      ✔ Should allow creating new pools
+      ✔ Should enforce minimum stake requirements
+    💸 Revenue Distribution
+      ✔ Should allow revenue allocation
+🔍 Checking RWARevenue balance at address: 0xf274De14171Ab928A5Ec19928cE35FaD91a42B64
+✅ Time-weighted revenue distribution successful
+  User1 revenue: 90.932008974714498197 TPT (expected: 90.932047170525996818 TPT)
+  User2 revenue: 909.067991025285501802 TPT (expected: 909.067952829474003181 TPT)
+      ✔ Should distribute revenue using time-weighted calculation
+    🔐 Access Control & Security
+      ✔ Should restrict admin functions to owner
+      ✔ Should allow pausing and unpausing
+      ✔ Should prevent non-owner from pausing
+    🔧 Contract Configuration
+rwaSetTreasury: RWAStaking doesn't have a treasury setter
+      ✔ Should allow updating treasury address
+      ✔ Should allow updating reward distributor
+      ✔ Should allow updating RWARevenue contract
+    🎯 Integration Tests
+      ✔ Should handle complete user journey
+
+  🌐 Complete TPT Ecosystem Integration - Streamlined
+    🎯 Complete User Journey - Multiple Users
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+      ✔ Should handle complex multi-user staking scenario
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+      ✔ Should handle multiple stakes per user
+    💰 Revenue Distribution Scenarios
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+      ✔ Should distribute revenue using time-weighted calculation
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+      ✔ Should handle multiple revenue allocations correctly
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+Diana staked: 5000.0
+Diana pending before: 1000.0
+      ✔ Should handle revenue claiming correctly
+    🏊‍♂️ Cross-Pool Operations
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+🔍 Checking RWARevenue balance at address: 0x7C4BDA48bd4C9ac4FbcC60deEb66bf80d35705f0
+🔍 Checking RWARevenue balance at address: 0x7C4BDA48bd4C9ac4FbcC60deEb66bf80d35705f0
+🔍 Checking RWARevenue balance at address: 0x7C4BDA48bd4C9ac4FbcC60deEb66bf80d35705f0
+      ✔ Should handle users staking in multiple pools
+    🛡️ Security and Edge Cases
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+🔍 Checking RWARevenue balance at address: 0x2550d6424b46f78F4E31F1CCf88Da26dda7826C6
+      ✔ Should handle zero revenue allocation gracefully
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+🔍 Checking RWARevenue balance at address: 0x5EdB3Ff1EA450d1FF6d614F24f5C760761F7f688
+      ✔ Should prevent operations on non-existent pools
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+🔍 Checking RWARevenue balance at address: 0xEFdc56feF9E089b086DD0a335F2c8c8CcB7E3031
+      ✔ Should handle paused state correctly
+    📊 Pool Statistics and Metrics
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+getUserTotalStaked called with poolId first - this is incorrect. Should be getUserTotalStaked(user, poolId)
+      ✔ Should track pool statistics correctly
+⚠️ Deployer balance (500000.0) insufficient for transfer (1000000.0). Using available balance.
+✅ Test Environment Setup Complete:
+- RWARevenue admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RWAStaking admin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 has admin role: true
+- RewardDistributor allowance toTigerRevenue: 0.0
+- RewardDistributor allowance toTigerStaking: 0.0
+      ✔ Should provide accurate user stake information
+
+  ⚡ TPT Ecosystem Performance and Gas Analysis - Streamlined
+    🔥 Core Operation Gas Analysis
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+      ✔ Should measure gas costs for basic staking operations
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+      ✔ Should measure gas costs for pool operations
+    📈 Scalability Testing
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+🔍 Checking RWARevenue balance at address: 0x3fb8D607A42B3c4536a7ffB8786639BfBd5cd9c0
+🔍 Checking RWARevenue balance at address: 0x3fb8D607A42B3c4536a7ffB8786639BfBd5cd9c0
+🔍 Checking RWARevenue balance at address: 0x3fb8D607A42B3c4536a7ffB8786639BfBd5cd9c0
+🔍 Checking RWARevenue balance at address: 0x3fb8D607A42B3c4536a7ffB8786639BfBd5cd9c0
+      ✔ Should test gas efficiency with increasing number of stakers (73ms)
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+🔍 Checking RWARevenue balance at address: 0xa9186cf932e4e05b4606d107361Ae7b6651AF1b7
+🔍 Checking RWARevenue balance at address: 0xa9186cf932e4e05b4606d107361Ae7b6651AF1b7
+🔍 Checking RWARevenue balance at address: 0xa9186cf932e4e05b4606d107361Ae7b6651AF1b7
+🔍 Checking RWARevenue balance at address: 0xa9186cf932e4e05b4606d107361Ae7b6651AF1b7
+🔍 Checking RWARevenue balance at address: 0xa9186cf932e4e05b4606d107361Ae7b6651AF1b7
+      ✔ Should test gas efficiency with multiple stakes per user (62ms)
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+      ✔ Should test performance with large stake amounts
+    🔄 Batch Operations Performance
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+🔍 Checking RWARevenue balance at address: 0x371B3Ad39fEaAb44c619A4d2B1FEdD9e9A6e8dEb
+📊 Sequential staking total: 1,045,600 gas
+📊 Batch revenue allocation: 104,168 gas
+      ✔ Should compare sequential vs optimized operations
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+🔍 Checking RWARevenue balance at address: 0xCDa53a4bCEefbB873581d2206316a439a7498172
+🔍 Checking RWARevenue balance at address: 0xCDa53a4bCEefbB873581d2206316a439a7498172
+🔍 Checking RWARevenue balance at address: 0xCDa53a4bCEefbB873581d2206316a439a7498172
+🔍 Checking RWARevenue balance at address: 0xCDa53a4bCEefbB873581d2206316a439a7498172
+🔍 Checking RWARevenue balance at address: 0xCDa53a4bCEefbB873581d2206316a439a7498172
+      ✔ Should test multiple pool operations efficiency (47ms)
+    📊 Memory and Storage Efficiency
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+      ✔ Should test storage efficiency with large datasets (78ms)
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+      ✔ Should test computation efficiency for complex calculations
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+      ✔ Should benchmark against gas limits
+    🔧 Optimization Opportunities
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+🔥 Storage optimization: 51300 gas saved on repeat operations
+      ✔ Should identify gas optimization opportunities
+✅ Funded RWARevenue from RewardDistributor: 200000.0 TPT transferred, balance now: 200000.0 TPT
+
+📈 Gas Pattern Analysis:
+      ✔ Should analyze gas patterns for optimization
+
+  🚀 Enhanced Revenue Allocation Testing
+    ✨ Enhanced Revenue Allocation Scenarios
+🔧 Deploying enhanced revenue test environment...
+🔧 Setting up enhanced revenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+🔧 Configuring RWARevenue for enhanced validation...
+📊 Revenue system ready for enhanced validation testing
+💰 Enhanced funding: 150000.0 TPT to RewardDistributor
+🎯 Setting up enhanced tier configuration...
+📋 Tier configurations: Not supported - pools have duration/multiplier directly
+🏊 Creating enhanced test pool for revenue allocation...
+✅ Enhanced test pool created with ID: 5
+🔍 Validating system readiness for revenue allocation...
+📊 Pool 5 info: {
+  isActive: true,
+  totalStaked: '0.0',
+  duration: '2592000',
+  multiplier: '11200'
+}
+📋 RWARevenue configuration: {
+  rwaStakingSet: true,
+  rwaStakingAddress: '0x5be5E3995a774B4067785e53200Ec03645C834c6',
+  isPaused: false
+}
+🔧 Revenue system status: { rewardDistributorSet: true, isPaused: false }
+✅ System validation complete
+✅ Enhanced revenue test environment ready!
+📊 Using enhanced pool ID: 5
+
+🎯 Test: Enhanced revenue allocation with proper validation
+👥 Setting up enhanced staking users...
+📊 Total staked: 16000000000000000000000
+📊 Staking setup completed for pool 5
+📊 Total weighted stakes: 16000000000000000000000
+💰 Total staked in pool: 16000.0 TPT
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '16000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '5000.0'
+}
+💰 Funded RWARevenue with 5000.0 TPT
+✅ Revenue allocation successful!
+💰 Allocated 5000.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 104144
+✅ Revenue allocation successful: undefined
+💰 Revenue distribution results:
+- Alice: 312.500941899401117152 TPT
+- Bob: 1562.501695418922010874 TPT
+- Charlie: 3124.997362681676871973 TPT
+✅ Total rewards: 4999.999999999999999999 TPT
+      ✔ Should successfully allocate revenue with enhanced validation
+🔧 Deploying enhanced revenue test environment...
+🔧 Setting up enhanced revenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+🔧 Configuring RWARevenue for enhanced validation...
+📊 Revenue system ready for enhanced validation testing
+💰 Enhanced funding: 150000.0 TPT to RewardDistributor
+🎯 Setting up enhanced tier configuration...
+📋 Tier configurations: Not supported - pools have duration/multiplier directly
+🏊 Creating enhanced test pool for revenue allocation...
+✅ Enhanced test pool created with ID: 5
+🔍 Validating system readiness for revenue allocation...
+📊 Pool 5 info: {
+  isActive: true,
+  totalStaked: '0.0',
+  duration: '2592000',
+  multiplier: '11200'
+}
+📋 RWARevenue configuration: {
+  rwaStakingSet: true,
+  rwaStakingAddress: '0xD11D98Fe2Be0871E45B459Af22f7dd9FC8c6004d',
+  isPaused: false
+}
+🔧 Revenue system status: { rewardDistributorSet: true, isPaused: false }
+✅ System validation complete
+✅ Enhanced revenue test environment ready!
+📊 Using enhanced pool ID: 5
+
+🎯 Test: Time-weighted revenue distribution
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '10000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '2000.0'
+}
+💰 Funded RWARevenue with 2000.0 TPT
+✅ Revenue allocation successful!
+💰 Allocated 2000.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 104228
+💰 Alice (longer staking): 1000.694347525370093785 TPT
+💰 Bob (shorter staking): 999.305652474629906214 TPT
+✅ Time-weighted distribution working correctly
+      ✔ Should handle time-weighted distribution correctly
+🔧 Deploying enhanced revenue test environment...
+🔧 Setting up enhanced revenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+🔧 Configuring RWARevenue for enhanced validation...
+📊 Revenue system ready for enhanced validation testing
+💰 Enhanced funding: 150000.0 TPT to RewardDistributor
+🎯 Setting up enhanced tier configuration...
+📋 Tier configurations: Not supported - pools have duration/multiplier directly
+🏊 Creating enhanced test pool for revenue allocation...
+✅ Enhanced test pool created with ID: 5
+🔍 Validating system readiness for revenue allocation...
+📊 Pool 5 info: {
+  isActive: true,
+  totalStaked: '0.0',
+  duration: '2592000',
+  multiplier: '11200'
+}
+📋 RWARevenue configuration: {
+  rwaStakingSet: true,
+  rwaStakingAddress: '0x45534f3e643F6497b562A867EC2D9ABEf94147Fb',
+  isPaused: false
+}
+🔧 Revenue system status: { rewardDistributorSet: true, isPaused: false }
+✅ System validation complete
+✅ Enhanced revenue test environment ready!
+📊 Using enhanced pool ID: 5
+
+🎯 Test: System readiness validation
+📊 System status: { totalRevenue: '0.0', pendingRevenue: '0.0', totalStaked: '0.0' }
+🔍 Validating system readiness for revenue allocation...
+📊 Pool 5 info: {
+  isActive: true,
+  totalStaked: '0.0',
+  duration: '2592000',
+  multiplier: '11200'
+}
+📋 RWARevenue configuration: {
+  rwaStakingSet: true,
+  rwaStakingAddress: '0x45534f3e643F6497b562A867EC2D9ABEf94147Fb',
+  isPaused: false
+}
+🔧 Revenue system status: { rewardDistributorSet: true, isPaused: false }
+✅ System validation complete
+🔍 Readiness check: { ready: true, reason: 'System is ready for revenue allocation' }
+✅ System readiness validation passed
+      ✔ Should handle system readiness validation
+🔧 Deploying enhanced revenue test environment...
+🔧 Setting up enhanced revenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+🔧 Configuring RWARevenue for enhanced validation...
+📊 Revenue system ready for enhanced validation testing
+💰 Enhanced funding: 150000.0 TPT to RewardDistributor
+🎯 Setting up enhanced tier configuration...
+📋 Tier configurations: Not supported - pools have duration/multiplier directly
+🏊 Creating enhanced test pool for revenue allocation...
+✅ Enhanced test pool created with ID: 5
+🔍 Validating system readiness for revenue allocation...
+📊 Pool 5 info: {
+  isActive: true,
+  totalStaked: '0.0',
+  duration: '2592000',
+  multiplier: '11200'
+}
+📋 RWARevenue configuration: {
+  rwaStakingSet: true,
+  rwaStakingAddress: '0x378F4261754Ae663C4094d7BBf8e55e8d267f555',
+  isPaused: false
+}
+🔧 Revenue system status: { rewardDistributorSet: true, isPaused: false }
+✅ System validation complete
+✅ Enhanced revenue test environment ready!
+📊 Using enhanced pool ID: 5
+
+🎯 Test: Accumulative revenue allocation
+👥 Setting up enhanced staking users...
+📊 Total staked: 10000000000000000000000
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '10000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '500.0'
+}
+💰 Funded RWARevenue with 500.0 TPT
+✅ Revenue allocation successful!
+💰 Allocated 500.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 104228
+💰 After first allocation: 500.0 TPT
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '10000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '500.0'
+}
+✅ Revenue allocation successful!
+💰 Allocated 500.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 52928
+💰 After second allocation: 1000.0 TPT
+✅ Accumulative allocation working correctly
+      ✔ Should support accumulative revenue allocation
+🔧 Deploying enhanced revenue test environment...
+🔧 Setting up enhanced revenue test environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+🔧 Configuring RWARevenue for enhanced validation...
+📊 Revenue system ready for enhanced validation testing
+💰 Enhanced funding: 150000.0 TPT to RewardDistributor
+🎯 Setting up enhanced tier configuration...
+📋 Tier configurations: Not supported - pools have duration/multiplier directly
+🏊 Creating enhanced test pool for revenue allocation...
+✅ Enhanced test pool created with ID: 5
+🔍 Validating system readiness for revenue allocation...
+📊 Pool 5 info: {
+  isActive: true,
+  totalStaked: '0.0',
+  duration: '2592000',
+  multiplier: '11200'
+}
+📋 RWARevenue configuration: {
+  rwaStakingSet: true,
+  rwaStakingAddress: '0x02e2F86748f46AB043D82C464f0F51147F2B52d3',
+  isPaused: false
+}
+🔧 Revenue system status: { rewardDistributorSet: true, isPaused: false }
+✅ System validation complete
+✅ Enhanced revenue test environment ready!
+📊 Using enhanced pool ID: 5
+
+🎯 Test: Revenue claiming after allocation
+👥 Setting up enhanced staking users...
+📊 Total staked: 5000000000000000000000
+🚀 Performing validated revenue allocation...
+🔍 Performing comprehensive pre-allocation validation...
+✅ Pre-allocation validation passed: {
+  poolExists: true,
+  poolActive: true,
+  totalStaked: '5000.0',
+  hasStakers: true,
+  systemReady: true,
+  revenueAmount: '2000.0'
+}
+💰 Funded RWARevenue with 2000.0 TPT
+✅ Revenue allocation successful!
+💰 Allocated 2000.0 TPT to pool 5
+📋 Transaction: undefined
+⛽ Gas used: 104132
+💰 Pending revenue: 2000.0 TPT
+📋 Claim transaction: undefined
+💰 Claimed amount: 600.0 TPT
+✅ Revenue claiming working correctly
+      ✔ Should handle revenue claiming after allocation
+
+  Minimal Staking Test
+✅ Simplified pool interface verified
+  Pool ID: 1
+  Pool Name: 1 Month Staking
+  Duration: 2592000 seconds
+  Multiplier: 10000 basis points
+    ✔ Should demonstrate simplified pool interface
+
+  Proxy Staking Tests with Different Durations
+🚀 Setting up proxy-based staking ecosystem...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+🔧 Setting up proxy test environment...
+✅ Proxy test environment setup completed!
+🏊 Creating test pools with different durations...
+📝 Creating Flexible Pool...
+✅ Flexible Pool created with ID: 5
+📝 Creating 30-Day Pool...
+✅ 30-Day Pool created with ID: 6
+📝 Creating 90-Day Pool...
+✅ 90-Day Pool created with ID: 7
+📝 Creating 180-Day Pool...
+✅ 180-Day Pool created with ID: 8
+✅ All test pools created successfully!
+✅ Proxy ecosystem setup completed!
+    Multi-Duration Pool Testing
+🧪 Testing Flexible Pool - Immediate Withdrawal...
+📥 Staked 1000.0 TPT in pool 5
+⚠️ Withdrawal successful but no rewards earned
+✅ Flexible pool test completed
+      ✔ Should successfully stake and withdraw from flexible pool (no lock)
+
+--- Testing Early Withdrawal (Day 15) ---
+🧪 Testing 30-Day Pool - Early Withdrawal...
+📥 Staked 1000.0 TPT in pool 6
+⏰ Advanced time by 15 days
+⚠️ Withdrawal successful but no rewards earned
+
+--- Testing Mature Withdrawal (Day 35) ---
+🧪 Testing 30-Day Pool - Mature Withdrawal...
+📥 Staked 1000.0 TPT in pool 6
+⏰ Advanced time by 35 days
+⚠️ Withdrawal successful but no rewards earned
+✅ 30-day pool duration tests completed
+      ✔ Should test 30-day pool - early withdrawal vs. mature withdrawal
+🧪 Testing 90-Day Pool - Full Maturity...
+📥 Staked 2000.0 TPT in pool 7
+⏰ Advanced time by 91 days
+⚠️ Withdrawal successful but no rewards earned
+✅ 90-day pool test completed
+      ✔ Should test 90-day pool maturity
+🧪 Testing 180-Day Pool - Maximum Rewards...
+📥 Staked 5000.0 TPT in pool 8
+⏰ Advanced time by 181 days
+⚠️ Withdrawal successful but no rewards earned
+✅ 180-day pool test completed
+      ✔ Should test 180-day pool with highest rewards
+    Optimization Verification
+✅ Optimization verification completed
+📊 Gas usage summary:
+• TigerPalaceToken: 30000000
+• RewardDistributor: 30000000
+• RWAStaking Implementation: 30000000
+• RWARevenue Implementation: 30000000
+      ✔ Should verify contracts are deployed with optimization
+    Advanced Staking Scenarios
+✅ Partial withdrawal test completed
+      ✔ Should test partial withdrawals in flexible pool
+✅ Stake limits test completed - minimum stake enforcement working
+      ✔ Should test stake amount limits and pool caps
+
+  🌟 Realistic Production Scenarios - Organic Behavior
+🚀 Setting up realistic production environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Realistic production environment ready!
+INITIAL STATE:
+RewardDistributor Balance: 600000.0 TPT
+Allowance forTigerRevenue: 0.0 TPT
+Allowance forTigerStaking: 0.0 TPT
+System ready for Pool 5 (200 TPT): false, reason: Insufficient allowance: 0.0 < 200.0
+
+=== FIRST ALLOCATION (Pool 1: 200 TPT) ===
+AFTER FIRST ALLOCATION:
+RewardDistributor Balance: 600000.0 TPT
+Allowance forTigerRevenue: 0.0 TPT
+Allowance forTigerStaking: 0.0 TPT
+Balance changed by: 0.0 TPT
+Revenue allowance changed by: 0.0 TPT
+
+System ready for Pool 6 (100 TPT): false, reason: Insufficient allowance: 0.0 < 100.0
+❌ SECOND ALLOCATION WOULD FAIL
+Current allowance: 0.0 TPT
+Required amount: 100.0 TPT
+RewardDistributor address: 0xA42dF48B4598Da6fB0D8A25C9215647062999053
+Token address: 0x8Bf18e85B2FB7B050343AB2560E497b3Df18a59c
+TigerRevenue address: 0x0c17eB50f1f123E92f7Fc429600974314466321d
+Direct allowance check: 0.0 TPT
+    ✔ DEBUG: Multi-Pool Allowance Investigation
+    🌱 Scenario 1: Simple Progressive Staking
+🚀 Setting up realistic production environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Realistic production environment ready!
+✅ Pool 5 created and validated: minStake=500.0
+      TPT, apy=8%
+🌱 Testing simple organic staking pattern...
+✅ Pool 5 validation passed for stake of 750.0 TPT
+Alice stakes 750 TPT
+⚠️  Skipping revenue distribution test until revenue system integration is fixed
+First revenue distribution of 100 TPT (SKIPPED)
+✅ Pool 5 validation passed for stake of 3200.0 TPT
+Bob stakes 3,200 TPT
+⚠️  Skipping revenue distribution test until revenue system integration is fixed
+Second revenue distribution of 100 TPT (SKIPPED)
+✅ Final Results:
+  Alice stakes: 1
+  Bob stakes: 1
+      ✔ Should handle simple organic staking without complex tier calculations
+    🔄 Scenario 2: Simple Mixed Operations
+🚀 Setting up realistic production environment...
+🚀 Deploying complete ecosystem with proxy patterns...
+📦 Step 1: Deploying TPT Token...
+📦 Step 2: Deploying RWARewardDistributor...
+📦 Step 3: Deploying RWARevenue and RWAStaking...
+🔧 Step 4: Configuring token permissions and funding...
+🔐 Setting max wallet exemptions for system contracts...
+✅ Complete ecosystem deployed!
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.
+✅ Realistic production environment ready!
+🔄 Testing simple withdrawal patterns...
+🔍 Checking RWARevenue balance at address: 0xe2c212651ce178A0fd29CD7C4fF7E6698B53891D
+Weekly revenue distribution of 500 TPT
+Alice: Full withdrawal after maturity
+✅ Results:
+  Alice (partial): 0.0 TPT
+  Bob (holding): 500.0 TPT

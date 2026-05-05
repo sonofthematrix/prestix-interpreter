@@ -1,0 +1,346 @@
+{
+  "name": "prestix-code-generator",
+  "version": "1.2.0",
+  "displayName": "Prestix Code Generator",
+  "description": "AI-powered code generation for ZenStack entities, APIs, components, and infrastructure. Generate complete CRUD interfaces, React components, hooks, types, and deployment configs from your schema.",
+  "author": "Tokenizin",
+  "email": "support@tokenizin.com",
+  "license": "MIT",
+  "repository": "https://github.com/your-org/prestix-app",
+  "homepage": "https://github.com/your-org/prestix-app",
+  "capabilities": {
+    "skills": true,
+    "mcp": true,
+    "hooks": true,
+    "agents": false,
+    "management": true,
+    "settings": true,
+    "status": true,
+    "diagnostics": true
+  },
+  "skills": [
+    {
+      "name": "generate",
+      "description": "Generate API endpoints, components, and hooks for ZenStack entities",
+      "file": "skills/generate/SKILL.md",
+      "enabled": true,
+      "shortcut": "/generate",
+      "category": "generation"
+    },
+    {
+      "name": "analyze-schema",
+      "description": "Analyze ZenStack schema and provide generation recommendations",
+      "file": "skills/analyze-schema/SKILL.md",
+      "enabled": true,
+      "shortcut": "/analyze-schema",
+      "category": "analysis"
+    },
+    {
+      "name": "sync-state",
+      "description": "Synchronize app state with generation templates and update patterns",
+      "file": "skills/sync-state/SKILL.md",
+      "enabled": true,
+      "shortcut": "/sync-state",
+      "category": "synchronization"
+    },
+    {
+      "name": "generate-navigation",
+      "description": "Generate navigation configuration and route files",
+      "file": "skills/generate-navigation/SKILL.md",
+      "enabled": true,
+      "shortcut": "/generate-navigation",
+      "category": "generation"
+    },
+    {
+      "name": "validate-schema",
+      "description": "Validate ZenStack schema syntax and structure",
+      "file": "skills/validate-schema/SKILL.md",
+      "enabled": true,
+      "shortcut": "/validate-schema",
+      "category": "validation"
+    }
+  ],
+  "mcp": {
+    "servers": [
+      {
+        "name": "zenstack-generator",
+        "description": "MCP server for ZenStack code generation — schema analysis, entity generation, validation, navigation, and plugin management",
+        "type": "stdio",
+        "command": "node",
+        "args": ["mcp/zenstack-generator/dist/index.js"],
+        "env": {},
+        "enabled": true
+      }
+    ]
+  },
+  "hooks": {
+    "onInit": "hooks/on-init.ts",
+    "onChatMessage": "hooks/on-chat-message.ts",
+    "onSettingsChange": "hooks/on-chat-message.ts",
+    "onUninstall": "hooks/on-chat-message.ts"
+  },
+  "management": {
+    "enabled": true,
+    "commands": {
+      "status": {
+        "description": "View current plugin status and activity",
+        "icon": "📊"
+      },
+      "settings": {
+        "description": "Manage plugin configuration and preferences",
+        "icon": "⚙️"
+      },
+      "health": {
+        "description": "Run diagnostics and check plugin health",
+        "icon": "🏥"
+      },
+      "help": {
+        "description": "View help and documentation",
+        "icon": "❓"
+      }
+    }
+  },
+  "settings": {
+    "configurable": true,
+    "categories": [
+      {
+        "name": "Output Configuration",
+        "description": "Configure where generated files and schema are located",
+        "settings": [
+          {
+            "key": "outputDir",
+            "label": "Output Directory",
+            "type": "string",
+            "default": "src/generated",
+            "editable": true,
+            "description": "Directory for generated files"
+          },
+          {
+            "key": "schemaPath",
+            "label": "Schema File Path",
+            "type": "string",
+            "default": "zenstack/schema.zmodel",
+            "editable": true,
+            "description": "Path to ZenStack schema (zenstack.zmodel, zenstack/schema.zmodel, schema.zmodel, prisma/schema.zmodel)"
+          },
+          {
+            "key": "templateDir",
+            "label": "Templates Directory",
+            "type": "string",
+            "default": "plugins/templates",
+            "editable": true,
+            "description": "Location of code generation templates"
+          },
+          {
+            "key": "configDir",
+            "label": "Config Directory",
+            "type": "string",
+            "default": "plugins/config",
+            "editable": true,
+            "description": "Location of entity and template configuration"
+          }
+        ]
+      },
+      {
+        "name": "Generation Defaults",
+        "description": "Choose what to generate by default",
+        "settings": [
+          {
+            "key": "generateUI",
+            "label": "Generate UI Components",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "generateAPI",
+            "label": "Generate API Endpoints",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "generateHooks",
+            "label": "Generate React Hooks",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "generateTypes",
+            "label": "Generate TypeScript Types",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "generateNavigation",
+            "label": "Generate Navigation Config",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          }
+        ]
+      },
+      {
+        "name": "Entity Operations",
+        "description": "Default CRUD operations for generated entities",
+        "settings": [
+          {
+            "key": "defaultEntityOperations",
+            "label": "Entity Operations",
+            "type": "array",
+            "default": ["create", "read", "update", "delete", "list"],
+            "editable": true,
+            "description": "Operations to generate: create, read, update, delete, list"
+          }
+        ]
+      },
+      {
+        "name": "Skills Management",
+        "description": "Enable or disable specific commands",
+        "settings": [
+          {
+            "key": "skill.generate",
+            "label": "/generate Command",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "skill.analyze",
+            "label": "/analyze-schema Command",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "skill.sync",
+            "label": "/sync-state Command",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "skill.validate",
+            "label": "/validate-schema Command",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          },
+          {
+            "key": "skill.navigation",
+            "label": "/generate-navigation Command",
+            "type": "boolean",
+            "default": true,
+            "editable": true
+          }
+        ]
+      },
+      {
+        "name": "MCP Server",
+        "description": "Model Context Protocol server configuration",
+        "settings": [
+          {
+            "key": "mcp.enabled",
+            "label": "MCP Server Enabled",
+            "type": "boolean",
+            "default": true,
+            "editable": true,
+            "description": "Enable ZenStack Generator MCP server"
+          },
+          {
+            "key": "mcp.command",
+            "label": "MCP Runtime",
+            "type": "string",
+            "default": "node",
+            "editable": true,
+            "description": "Runtime for MCP server (node, bun, etc.)"
+          }
+        ]
+      },
+      {
+        "name": "Advanced Options",
+        "description": "Fine-tune plugin behavior",
+        "settings": [
+          {
+            "key": "overwriteExisting",
+            "label": "Overwrite Existing Files",
+            "type": "boolean",
+            "default": false,
+            "editable": true,
+            "description": "Auto-overwrite when regenerating"
+          },
+          {
+            "key": "backupOnGenerate",
+            "label": "Backup Before Generation",
+            "type": "boolean",
+            "default": true,
+            "editable": true,
+            "description": "Create backups of generated files"
+          },
+          {
+            "key": "verboseLogging",
+            "label": "Verbose Logging",
+            "type": "boolean",
+            "default": false,
+            "editable": true,
+            "description": "Show detailed generation logs"
+          }
+        ]
+      }
+    ]
+  },
+  "status": {
+    "enabled": true,
+    "indicators": [
+      {
+        "key": "schemaValid",
+        "label": "Schema Status",
+        "type": "health"
+      },
+      {
+        "key": "templatesLoaded",
+        "label": "Templates",
+        "type": "health"
+      },
+      {
+        "key": "configLoaded",
+        "label": "Configuration",
+        "type": "health"
+      },
+      {
+        "key": "mcpConnected",
+        "label": "MCP Server",
+        "type": "health"
+      },
+      {
+        "key": "lastGeneration",
+        "label": "Last Activity",
+        "type": "timestamp"
+      }
+    ]
+  },
+  "config": {
+    "outputDir": "src/generated",
+    "templateDir": "plugins/templates",
+    "configDir": "plugins/config",
+    "schemaPath": "zenstack/schema.zmodel",
+    "defaultEntityOperations": ["create", "read", "update", "delete", "list"],
+    "generationDefaults": {
+      "generateUI": true,
+      "generateAPI": true,
+      "generateHooks": true,
+      "generateTypes": true,
+      "generateNavigation": true
+    }
+  },
+  "keywords": ["zenstack", "code-generation", "crud", "api", "react", "components", "automation", "nextjs"],
+  "metadata": {
+    "category": "productivity",
+    "difficulty": "intermediate",
+    "tags": ["ZenStack", "Code Generation", "API Development", "React"],
+    "support": "support@tokenizin.com",
+    "documentation": "https://github.com/your-org/prestix-app/wiki"
+  }
+}

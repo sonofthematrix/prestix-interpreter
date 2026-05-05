@@ -1,0 +1,11 @@
+[
+  {"id":"mission","titleKey":"section.mission","subtitleKey":"section.mission_sub"},
+  {"id":"platform","titleKey":"section.marketplace","subtitleKey":"section.platform_sub"},
+  {"id":"unique-value","titleKey":"section.account_management","subtitleKey":"section.account_management_sub"},
+  {"id":"venues","titleKey":"section.venues","subtitleKey":"section.venues_sub"},
+  {"id":"event-organizers","titleKey":"section.event_organizers","subtitleKey":"section.event_organizers_sub"},
+  {"id":"promoters","titleKey":"section.promoters","subtitleKey":"section.promoters_sub"},
+  {"id":"influencers","titleKey":"section.influencers","subtitleKey":"section.influencers_sub"},
+  {"id":"roadmap","titleKey":"section.roadmap","subtitleKey":"section.roadmap_sub"},
+  {"id":"vip-experience","titleKey":"section.vip_experience","subtitleKey":"section.vip_experience_sub"}
+]

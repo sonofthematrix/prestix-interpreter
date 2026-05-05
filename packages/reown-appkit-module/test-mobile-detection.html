@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Detection Test - AppKit Reown</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0f0f0f;
+      color: #ffffff;
+    }
+    .result-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .success {
+      border-left: 4px solid #10b981;
+    }
+    .warning {
+      border-left: 4px solid #f59e0b;
+    }
+    .info {
+      border-left: 4px solid #3b82f6;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 4px;
+    }
+    .badge-mobile {
+      background: #ef4444;
+      color: white;
+    }
+    .badge-desktop {
+      background: #10b981;
+      color: white;
+    }
+    .badge-true {
+      background: #3b82f6;
+      color: white;
+    }
+    .badge-false {
+      background: #6b7280;
+      color: white;
+    }
+    h1 {
+      color: #f97316;
+    }
+    h2 {
+      color: #fb923c;
+      margin-top: 30px;
+    }
+    code {
+      background: #262626;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+    }
+    .connector-order {
+      background: #262626;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+    .connector-order ol {
+      margin: 5px 0;
+      padding-left: 20px;
+    }
+    .recommendation {
+      background: #1e3a5f;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      border-left: 4px solid #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 AppKit Mobile Detection Test</h1>
+  <p>This page tests the enhanced mobile detection logic used by AppKit Reown configuration.</p>
+
+  <div id="results"></div>
+
+  <script>
+    // Replicate the enhanced mobile detection logic from config/index.ts
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+    const isMobileChrome = /Android.*Chrome/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+    const isMobileEdge = /Android.*Edg/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+
+    // Enhanced mobile detection
+    const hasTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    const hasSmallScreen = window.innerWidth < 768;
+    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // TRUE mobile: Mobile user agent + (small screen OR touch support on small device)
+    const isMobile = isMobileUserAgent && (hasSmallScreen || (hasTouch && window.innerWidth < 1024));
+
+    // Connector order (same logic as config/index.ts)
+    const connectorTypeOrder = isMobile
+      ? ['walletConnect', 'injected', 'eip6963']
+      : ['injected', 'walletConnect', 'eip6963'];
+
+    // Check for MetaMask
+    const hasMetaMask = typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
+
+    // Generate results HTML
+    const deviceType = isMobile ? '📱 MOBILE DEVICE' : '🖥️ DESKTOP BROWSER';
+    const deviceClass = isMobile ? 'warning' : 'success';
+
+    const resultsHTML = `
+      <div class="result-card ${deviceClass}">
+        <h2>Device Detection Result</h2>
+        <div>
+          <span class="badge badge-${isMobile ? 'mobile' : 'desktop'}">${deviceType}</span>
+        </div>
+      </div>
+
+      <div class="result-card info">
+        <h2>Detection Criteria</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Screen Width</td>
+            <td style="padding: 8px;"><code>${window.innerWidth}px</code></td>
+            <td style="padding: 8px;"><span class="badge badge-${hasSmallScreen ? 'true' : 'false'}">${hasSmallScreen ? '< 768px (Small)' : '>= 768px (Large)'}</span></td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Screen Height</td>
+            <td style="padding: 8px;"><code>${window.innerHeight}px</code></td>
+            <td style="padding: 8px;">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Touch Support</td>
+            <td style="padding: 8px;"><code>${navigator.maxTouchPoints} touch points</code></td>
+            <td style="padding: 8px;"><span class="badge badge-${hasTouch ? 'true' : 'false'}">${hasTouch ? 'Has Touch' : 'No Touch'}</span></td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Mobile User Agent</td>
+            <td style="padding: 8px;"><code style="font-size: 11px;">${navigator.userAgent.substring(0, 50)}...</code></td>
+            <td style="padding: 8px;"><span class="badge badge-${isMobileUserAgent ? 'true' : 'false'}">${isMobileUserAgent ? 'Mobile UA' : 'Desktop UA'}</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="result-card info">
+        <h2>Platform Detection</h2>
+        <div>
+          <span class="badge badge-${isIOS ? 'true' : 'false'}">iOS: ${isIOS}</span>
+          <span class="badge badge-${isAndroid ? 'true' : 'false'}">Android: ${isAndroid}</span>
+          <span class="badge badge-${isMobileChrome ? 'true' : 'false'}">Mobile Chrome: ${isMobileChrome}</span>
+          <span class="badge badge-${isMobileEdge ? 'true' : 'false'}">Mobile Edge: ${isMobileEdge}</span>
+        </div>
+      </div>
+
+      <div class="result-card ${isMobile ? 'warning' : 'success'}">
+        <h2>Connector Priority Order</h2>
+        <div class="connector-order">
+          <strong>${isMobile ? '📱 Mobile Priority' : '🖥️ Desktop Priority'}</strong>
+          <ol>
+            ${connectorTypeOrder.map((c, i) => {
+              const name = c === 'walletConnect' ? 'WalletConnect' : c === 'injected' ? 'Injected (MetaMask)' : 'EIP6963';
+              const priority = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+              return `<li>${priority} ${name}</li>`;
+            }).join('\n            ')}
+          </ol>
+        </div>
+        ${isMobile ? 
+          '<p>✅ WalletConnect shown first - optimized for mobile wallet apps</p>' :
+          '<p>✅ Injected provider shown first - optimized for browser extensions (MetaMask)</p>'
+        }
+      </div>
+
+      ${hasMetaMask ? `
+        <div class="result-card success">
+          <h2>✅ MetaMask Detected</h2>
+          <p>MetaMask browser extension is installed and available.</p>
+          <p>Provider: <code>window.ethereum.isMetaMask = ${hasMetaMask}</code></p>
+          ${!isMobile ? 
+            '<p><strong>Expected behavior:</strong> MetaMask will appear as the FIRST wallet option when you click "Connect Wallet".</p>' :
+            '<p><strong>Note:</strong> On mobile, WalletConnect is prioritized. MetaMask mobile app can be accessed via WalletConnect.</p>'
+          }
+        </div>
+      ` : `
+        <div class="result-card warning">
+          <h2>⚠️ No MetaMask Detected</h2>
+          <p>MetaMask browser extension is not installed or not available.</p>
+          <p>Provider: <code>window.ethereum = ${typeof window.ethereum}</code></p>
+          ${!isMobile ?
+            '<p><strong>Recommendation:</strong> Install MetaMask browser extension to use injected provider.</p>' :
+            '<p><strong>Note:</strong> Mobile browsers don\'t support browser extensions. Use WalletConnect to connect mobile wallet apps.</p>'
+          }
+        </div>
+      `}
+
+      <div class="recommendation">
+        <h2>📋 Expected AppKit Behavior</h2>
+        ${isMobile ? `
+          <p><strong>Mobile Device Detected</strong></p>
+          <ul>
+            <li>WalletConnect will be the PRIMARY connection method</li>
+            <li>You'll see a QR code or deep link to mobile wallet apps</li>
+            <li>MetaMask mobile app can be connected via WalletConnect</li>
+            <li>Browser extension support is limited on mobile browsers</li>
+          </ul>
+        ` : `
+          <p><strong>Desktop Browser Detected</strong></p>
+          <ul>
+            <li>Injected provider (MetaMask extension) will be the PRIMARY connection method</li>
+            <li>${hasMetaMask ? 'MetaMask extension will appear as the FIRST option' : 'Install MetaMask extension to see it as the first option'}</li>
+            <li>WalletConnect is available as an ALTERNATIVE method</li>
+            <li>No QR code required for MetaMask extension connection</li>
+          </ul>
+        `}
+      </div>
+
+      <div class="result-card info">
+        <h2>📖 Full User Agent</h2>
+        <code style="font-size: 11px; word-break: break-all; display: block; padding: 10px;">${navigator.userAgent}</code>
+      </div>
+    `;
+
+    document.getElementById('results').innerHTML = resultsHTML;
+
+    // Log to console for debugging
+    console.log('📱 AppKit Mobile Detection Test Results:', {
+      deviceType,
+      isMobile,
+      isIOS,
+      isAndroid,
+      isMobileChrome,
+      isMobileEdge,
+      hasTouch,
+      hasSmallScreen,
+      screenWidth: window.innerWidth,
+      screenHeight: window.innerHeight,
+      isMobileUserAgent,
+      connectorTypeOrder,
+      hasMetaMask,
+      userAgent: navigator.userAgent
+    });
+  </script>
+</body>
+</html>

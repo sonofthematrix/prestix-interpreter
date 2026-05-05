@@ -1,0 +1,55 @@
+/* ✅ Tailwind v3 imports - ensure proper CSS loading order */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ✅ CSS Custom Properties - defined early for proper cascade */
+
+:root,
+html.dark {
+/* --footer-height: set in JS by SiteFooter when footer height changes (base + optional scroll/close row). Default below. */
+  --footer-height: 40px;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --border: rgba(241, 79, 73, 0.59);
+  --muted-bg: rgba(255, 255, 255, 0);
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --accent: #dc2626;
+  --accent-foreground: #ffffff;
+}
+
+html.light {
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --border: rgba(241, 79, 73, 0.59);
+  --muted-bg: rgba(0, 0, 0, 0);
+  --input-bg: rgba(0, 0, 0, 0.17);
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --accent: #b91c1c;
+  --accent-foreground: #ffffff;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* All page titles use Playfair Display (same as pitch) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+/* Hero headline (explicit for legacy class) */
+.hero-headline {
+  font-family: var(--font-serif);
+}
+
+/* Breakout section (header): Playfair Display */
+.breakout-section {
+  font-family: var(--font-playfair), "Playfair Display", "Playfair Display Fallback", Georgia, serif;
+}
+.border {
+  border-style: var(--tw-border-style);
+  border-width: 0px;
+}

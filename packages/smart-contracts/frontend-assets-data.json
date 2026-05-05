@@ -1,0 +1,114 @@
+[
+  {
+    "assetId": "7",
+    "propertyId": "test-property-1",
+    "title": "Luxury Villa in Monaco",
+    "description": "Premium waterfront villa with panoramic sea views, private beach access, and world-class amenities. Perfect for high-net-worth investors seeking luxury real estate opportunities.",
+    "assetType": "VILLA",
+    "location": "Monaco, Monaco",
+    "status": "ACTIVE",
+    "price": {
+      "eth": "1.0",
+      "usd": "2843.82"
+    },
+    "tokenPrice": {
+      "eth": "0.00000002",
+      "usd": "0.000057"
+    },
+    "tokens": {
+      "total": "50000000",
+      "available": "49999999",
+      "sold": "1"
+    },
+    "purchaseCost": {
+      "eth": "0.0000000205",
+      "usdc": "0.000058"
+    },
+    "tokenAddress": "0x6596788C0d2F7F051eE7f566482641Cde1E8210c",
+    "owner": "0x8eD7F4FB3Aa1a3B346756624B17094dfd6040047"
+  },
+  {
+    "assetId": "8",
+    "propertyId": "test-property-2",
+    "title": "Commercial Office Building",
+    "description": "Modern office complex in prime business district with high occupancy rates and excellent ROI potential. Ideal for institutional investors.",
+    "assetType": "COMMERCIAL",
+    "location": "Dubai, UAE",
+    "status": "ACTIVE",
+    "price": {
+      "eth": "2.0",
+      "usd": "5687.64"
+    },
+    "tokenPrice": {
+      "eth": "0.00000004",
+      "usd": "0.000114"
+    },
+    "tokens": {
+      "total": "50000000",
+      "available": "49999998",
+      "sold": "2"
+    },
+    "purchaseCost": {
+      "eth": "0.000000041",
+      "usdc": "0.000116"
+    },
+    "tokenAddress": "0xAc6096c49Bdbb3705cE9ec82B6988652Af45B378",
+    "owner": "0x8eD7F4FB3Aa1a3B346756624B17094dfd6040047"
+  },
+  {
+    "assetId": "9",
+    "propertyId": "test-property-3",
+    "title": "Residential Apartment Complex",
+    "description": "Modern residential complex with excellent amenities and prime location. Great investment opportunity.",
+    "assetType": "RESIDENTIAL",
+    "location": "Singapore",
+    "status": "ACTIVE",
+    "price": {
+      "eth": "3.0",
+      "usd": "8531.46"
+    },
+    "tokenPrice": {
+      "eth": "0.00000006",
+      "usd": "0.000171"
+    },
+    "tokens": {
+      "total": "50000000",
+      "available": "50000000",
+      "sold": "0"
+    },
+    "purchaseCost": {
+      "eth": "0.0000000615",
+      "usdc": "0.000174"
+    },
+    "tokenAddress": "0x4503072291f085CE833847E8906BC2BdF8c5a072",
+    "owner": "0x8eD7F4FB3Aa1a3B346756624B17094dfd6040047"
+  },
+  {
+    "assetId": "10",
+    "propertyId": "test-property-4",
+    "title": "Retail Shopping Center",
+    "description": "Prime retail location with high foot traffic and established tenant base. Excellent cash flow potential.",
+    "assetType": "COMMERCIAL",
+    "location": "London, UK",
+    "status": "ACTIVE",
+    "price": {
+      "eth": "4.0",
+      "usd": "11375.28"
+    },
+    "tokenPrice": {
+      "eth": "0.00000008",
+      "usd": "0.000228"
+    },
+    "tokens": {
+      "total": "50000000",
+      "available": "50000000",
+      "sold": "0"
+    },
+    "purchaseCost": {
+      "eth": "0.000000082",
+      "usdc": "0.000232"
+    },
+    "tokenAddress": "0xdb195245dAde4273fcC268098cF07c47Ad938D25",
+    "owner": "0x8eD7F4FB3Aa1a3B346756624B17094dfd6040047"
+  }
+]

@@ -1,0 +1,36 @@
+/* PRESTIX.VIP Brand Theme - Base variables for AppKit/Reown
+ * Dark-mode first: Black, Gold, White per official brand guide
+ * Overridden by src/styles/prestix-brand.css for full control
+ */
+
+:root {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 100%;
+  --primary: 45 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 220 60% 16%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 45 100% 50%;
+  --accent-foreground: 0 0% 0%;
+  --border: 0 0% 18%;
+  --input: 0 0% 18%;
+  --ring: 45 100% 50%;
+  --gradient-primary: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
+  --gradient-accent: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
+  --shadow-luxury: 0 20px 40px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.15);
+  --shadow-glow: 0 0 30px rgba(255, 215, 0, 0.35);
+}
+
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 4%;
+  --primary: 45 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --gradient-primary: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
+  --shadow-luxury: 0 20px 40px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.15);
+}

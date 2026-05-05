@@ -1,0 +1,39 @@
+{
+  "network": "sepolia",
+  "timestamp": "2025-12-01T11:41:17.223Z",
+  "results": [
+    {
+      "propertyId": "test-property-1",
+      "assetId": 7,
+      "tokenAddress": "0x6596788C0d2F7F051eE7f566482641Cde1E8210c",
+      "success": true,
+      "txHash": "0xf1c4369a940fa0b64b3ecb8a0edc23fd9cae41eecf6b866551f0d228b2b89fbd"
+    },
+    {
+      "propertyId": "test-property-2",
+      "assetId": 8,
+      "tokenAddress": "0xAc6096c49Bdbb3705cE9ec82B6988652Af45B378",
+      "success": true,
+      "txHash": "0xa2a3dae313029914f0aed596a1b3ae55e6135f75f17d4aea8d833572d2316648"
+    },
+    {
+      "propertyId": "test-property-3",
+      "assetId": 9,
+      "tokenAddress": "0x4503072291f085CE833847E8906BC2BdF8c5a072",
+      "success": true,
+      "txHash": "0xdbc15d14026cffaf101eff34cb16f768ddb5d5136020719907a9ca300a82a91b"
+    },
+    {
+      "propertyId": "test-property-4",
+      "assetId": 10,
+      "tokenAddress": "0xdb195245dAde4273fcC268098cF07c47Ad938D25",
+      "success": true,
+      "txHash": "0xcb9110c9202ebd9926ac9cfddac72209b988c8348853d7d710d9facc0d54e4c5"
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "successful": 4,
+    "failed": 0
+  }
+}

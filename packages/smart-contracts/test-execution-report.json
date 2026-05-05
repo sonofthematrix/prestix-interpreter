@@ -1,0 +1,144 @@
+{
+  "execution": {
+    "mode": "comprehensive",
+    "startTime": "2026-01-14T18:05:58.253Z",
+    "endTime": "2026-01-14T18:06:47.768Z",
+    "totalDuration": 49515
+  },
+  "summary": {
+    "totalSuites": 14,
+    "passedSuites": 1,
+    "failedSuites": 13,
+    "totalDuration": 79274,
+    "averageDuration": 5662,
+    "successRate": 7
+  },
+  "results": [
+    {
+      "suite": "integration-staking",
+      "command": "bun run hardhat test test/integration/end-to-end-security-fixes.spec.ts test/integration/dividend-staking-integration.spec.ts",
+      "success": false,
+      "duration": 9560,
+      "output": "\n\n  🔗 End-to-End Integration - Security Fixes\n    1. End-to-End Asset Purchase Flow\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n      1) \"before each\" hook for \"Should complete full purchase flow: Register → Purchase → Verify Ownership\"\n\n  🔗 Dividend-Staking Integration\n    1. RWA Token Staking\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0x610178dA211FEF7D417bC0e6FeD39F05609AD788\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n      ✔ Should allow users to stake RWA tokens\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n      ✔ Should prevent staking un...",
+      "errorOutput": "error: \"hardhat\" exited with code 1\n",
+      "exitCode": 1
+    },
+    {
+      "suite": "production-scenarios",
+      "command": "bun run hardhat test test/realistic-production-scenarios.spec.ts test/core-contracts-focused.spec.ts",
+      "success": false,
+      "duration": 8675,
+      "output": "\n\n  🌟 Realistic Production Scenarios - Organic Behavior\n🚀 Setting up realistic production environment...\n🚀 Deploying complete ecosystem with proxy patterns...\n📦 Step 1: Deploying TPT Token...\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n📦 Step 2: Deploying RWARewardDistributor...\n📦 Step 3: Deploying RWARevenue and RWAStaking...\n🔧 Step 4: Configuring token permissions and funding...\n🔐 Token permissions configured (no exemptions needed for upgradeable token)\n✅ Complete ecosystem deployed!\n✅ Realistic production environment ready!\nINITIAL STATE:\nRewardDistributor Balance: 600000.0 TPT\nAllowance forTigerRevenue: 0.0 TPT\nAllowance forTigerStaking: 0.0 TPT\nSystem ready for Pool 5 (200 TPT): false, reason: Insufficient allowance: 0.0 < 200.0\n✅ Funded TigerRevenue with 1000 TPT\n\n=== FIRST ALLOCATION (Pool 1: 200...",
+      "errorOutput": "addTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with duration/multiplier instead.\naddTierConfig: RWAStaking doesn't support tier configs. Create pools with...",
+      "exitCode": 1
+    },
+    {
+      "suite": "e2e-marketplace",
+      "command": "bun run hardhat test test/e2e/tiger-palace-marketplace-comprehensive.spec.ts",
+      "success": false,
+      "duration": 7529,
+      "output": "\n\n  🏛️ Tiger Palace Marketplace - Comprehensive E2E\n    1. 🏠 Asset Registration\n\n================================================================================\n🚀 Setting up comprehensive test environment...\n================================================================================\n\n📦 Deploying TigerPalaceToken...\n✅ Hardhat network reset - nonce: 0\n⚠️ Skipping past first 200 addresses to avoid Hardhat cache...\n✅ Skipped to nonce 200 (past cached addresses)\n      1) \"before each\" hook for \"Should register a real estate asset successfully\"\n\n\n  0 passing (507ms)\n  1 failing\n\n  1) 🏛️ Tiger Palace Marketplace - Comprehensive E2E\n       \"before each\" hook for \"Should register a real estate asset successfully\":\n     Error: Cannot deploy TokenizinToken: Exhausted 10 deployment attempts. All addresses are already initialized by different deployers. Solution: Restart Hardhat node or manually reset the network state.\n      at deployTokenizinToken (test/utils/token-deployment.ts:252:9)...",
+      "errorOutput": "⚠️ Contract at 0x5FbDB2315678afecb367f032d93F642f64180aa3 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0x0165878A594ca255338adfa4d48449f69242Eb8F initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0x610178dA211FEF7D417bC0e6FeD39F05609AD788 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0x9A676e781A523b5d0C0e43731313A708CB607508 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1 initialized but deployer lacks admin. Skipping...\n⚠️ Contract at 0x68B1D87F958...",
+      "exitCode": 1
+    },
+    {
+      "suite": "integration-ecosystem",
+      "command": "bun run hardhat test test/ecosystem-integration.spec.ts test/ecosystem-performance.spec.ts",
+      "success": false,
+      "duration": 7089,
+      "output": "\n\n  🌐 Complete TPT Ecosystem Integration - Streamlined\n    🎯 Complete User Journey - Multiple Users\n      1) \"before each\" hook for \"Should handle complex multi-user staking scenario\"\n\n  ⚡ TPT Ecosystem Performance and Gas Analysis - Streamlined\n    🔥 Core Operation Gas Analysis\n      2) \"before each\" hook for \"Should measure gas costs for basic staking operations\"\n\n\n  0 passing (287ms)\n  2 failing\n\n  1) 🌐 Complete TPT Ecosystem Integration - Streamlined\n       \"before each\" hook for \"Should handle complex multi-user staking scenario\":\n     TypeError: (0 , token_deployment_1.deployTigerPalaceTokenUpgradeable) is not a function\n      at deployCompleteEcosystem (test/ecosystem-integration.spec.ts:70:62)\n      at Context.<anonymous> (test/ecosystem-integration.spec.ts:56:11)\n\n  2) ⚡ TPT Ecosystem Performance and Gas Analysis - Streamlined\n       \"before each\" hook for \"Should measure gas costs for basic staking operations\":\n     TypeError: deployTigerPalaceTokenUpgradeable is not a fu...",
+      "errorOutput": "error: \"hardhat\" exited with code 2\n",
+      "exitCode": 2
+    },
+    {
+      "suite": "e2e-token-lifecycle",
+      "command": "bun run hardhat test test/e2e/rwa-marketplace-token-lifecycle.spec.ts",
+      "success": false,
+      "duration": 6889,
+      "output": "\n\n  🏠 RWA Marketplace Token Lifecycle - End-to-End\n    1. 🏠 Asset Registration\n      1) \"before each\" hook for \"Should register a real estate asset\"\n\n\n  0 passing (299ms)\n  1 failing\n\n  1) 🏠 RWA Marketplace Token Lifecycle - End-to-End\n       \"before each\" hook for \"Should register a real estate asset\":\n     TypeError: deployTigerPalaceTokenUpgradeable is not a function\n      at Context.<anonymous> (test/e2e/rwa-marketplace-token-lifecycle.spec.ts:44:29)\n\n\n\n",
+      "errorOutput": "error: \"hardhat\" exited with code 1\n",
+      "exitCode": 1
+    },
+    {
+      "suite": "unit-token-factory",
+      "command": "bun run hardhat test test/rwa-token-factory-404.spec.ts test/rwa-token-factory-404-fixed.spec.ts",
+      "success": false,
+      "duration": 5239,
+      "output": "\n\n  RWATokenFactory404\n    Token Creation\n      ✔ Should create ERC-404 token successfully\n      ✔ Should revert if tokenURI is empty\n      ✔ Should revert if asset already has token\n    Token Management\n      1) Should mint tokens via factory\n      2) Should burn tokens via factory\n      ✔ Should update asset value via factory\n      - Should distribute dividends via factory\n    View Functions\n      ✔ Should return token address for asset\n      ✔ Should return asset ID for token\n      ✔ Should return all tokens\n      ✔ Should verify token validity\n\n  RWATokenFactory404Fixed\n    mintTokens() - Fixed Implementation\n      ✔ Should transfer tokens from owner to buyer (not mint)\n      ✔ Should revert if allowance is insufficient\n      ✔ Should revert if owner balance is insufficient\n      ✔ Should revert if allowance is less than requested amount\n      ✔ Should maintain total supply integrity\n    Token Creation\n      ✔ Should create ERC-404 token successfully\n    createToken404WithMarketpla...",
+      "errorOutput": "error: \"hardhat\" exited with code 3\n",
+      "exitCode": 3
+    },
+    {
+      "suite": "unit-marketplace",
+      "command": "bun run hardhat test test/marketplace-token-custody.spec.ts test/usdc-integration.spec.ts",
+      "success": false,
+      "duration": 5076,
+      "output": "\n\n  Marketplace Token Custody\n    createToken404WithMarketplace\n      ✔ Should mint tokens to marketplace when marketplace address provided\n      ✔ Should mint tokens to owner when marketplace is zero address\n      ✔ Should not approve factory when tokens minted to marketplace\n    Marketplace Purchase Flow\n      ✔ Should transfer tokens from marketplace balance to buyer\n      ✔ Should revert if marketplace has insufficient balance\n      ✔ Should handle multiple purchases correctly\n      ✔ Should send payment to asset owner, not marketplace\n    Marketplace Token Creation via _createToken\n      ✔ Should create ERC404 token minted to marketplace when factory available\n    Backward Compatibility\n      ✔ Should support createToken404 (calls createToken404WithMarketplace with zero address)\n\n  USDC Integration\n    USDC Payment Configuration\n      1) \"before each\" hook for \"Should set payment token correctly\"\n\n\n  9 passing (597ms)\n  1 failing\n\n  1) USDC Integration\n       \"before each\" hook fo...",
+      "errorOutput": "error: \"hardhat\" exited with code 1\n",
+      "exitCode": 1
+    },
+    {
+      "suite": "staking-advanced",
+      "command": "bun run hardhat test test/tiger-unified-staking-enhanced.spec.ts test/tiger-staking-refactored.spec.ts",
+      "success": false,
+      "duration": 5015,
+      "output": "\n\n  🏗️TigerStaking - Enhanced Coverage - Streamlined\n    💰 Weighted Revenue Distribution Strategy\n      1) \"before each\" hook for \"Should calculate correct revenue distribution based on stake proportions\"\n\n  🏗️ RWAStaking - Refactored Test Suite\n    Pool Management\n🚀 Deploying rwaStaking ecosystem for testing...\n📦 Step 1: Deploying TokenizinToken...\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n✅ TPT Token deployed: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n📦 Step 2: Deploying RWARewardDistributor...\n✅ RewardDistributor deployed: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0\n📦 Step 3: Deploying RWARevenue...\n✅ rwaRevenue deployed: 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9\n📦 Step 4: Deploying RWAStaking...\n✅ RWAStaking deployed: 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9\n🔧 Step 5: Initializing contracts......",
+      "errorOutput": "error: \"hardhat\" exited with code 1\n",
+      "exitCode": 1
+    },
+    {
+      "suite": "unit-security",
+      "command": "bun run hardhat test test/security-audit-fixes.spec.ts",
+      "success": false,
+      "duration": 4651,
+      "output": "\n\n  🔒 Security Audit Fixes\n    1. RWAAssetRegistry Owner Assignment Fix\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n      1) \"before each\" hook for \"Should assign asset to the correct owner, not the caller\"\n\n\n  0 passing (415ms)\n  1 failing\n\n  1) 🔒 Security Audit Fixes\n       \"before each\" hook for \"Should assign asset to the correct owner, not the caller\":\n     Error: incorrect number of arguments to constructor\n      at ContractFactory.getDeployTransaction (node_modules/ethers/src.ts/contract/factory.ts:87:19)\n      at ContractFactory.deploy (node_modules/ethers/src.ts/contract/factory.ts:105:31)\n      at Context.<anonymous> (test/security-audit-fixes.spec.ts:105:40)\n\n\n\n",
+      "errorOutput": "error: \"hardhat\" exited with code 1\n",
+      "exitCode": 1
+    },
+    {
+      "suite": "staking-rewards",
+      "command": "bun run hardhat test test/reward-distributor-contract.spec.ts test/reward-distributor-error-emergency-tests.spec.ts",
+      "success": false,
+      "duration": 4529,
+      "output": "\n\n  RewardDistributor Contract\n    Access Control\n      1) \"before each\" hook for \"should only allow admin to pause/unpause\"\n\n  🚨 RewardDistributor - Error Handling & Emergency Functions\n    🔐 Access Control Error Handling\n🚀 Deploying complete ecosystem with proxy patterns...\n📦 Step 1: Deploying TPT Token...\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n📦 Step 2: Deploying RWARewardDistributor...\n📦 Step 3: Deploying RWARevenue and RWAStaking...\n🔧 Step 4: Configuring token permissions and funding...\n🔐 Token permissions configured (no exemptions needed for upgradeable token)\n✅ Complete ecosystem deployed!\n🔧 Setting up proxy test environment...\n✅ Proxy test environment setup completed!\n      ✔ Should revert when non-owner tries to pause\n      ✔ Should revert when non-owner tries to unpause\n      ✔ Should re...",
+      "errorOutput": "error: \"hardhat\" exited with code 1\n",
+      "exitCode": 1
+    },
+    {
+      "suite": "staking-emergency",
+      "command": "bun run hardhat test test/tiger-staking-error-emergency-tests.spec.ts test/simple-error-emergency-tests.spec.ts",
+      "success": false,
+      "duration": 4402,
+      "output": "\n\n  🚨TigerStaking - Error Handling & Emergency Functions\n    🔐 Access Control Error Handling\n🚀 Deploying complete ecosystem with proxy patterns...\n📦 Step 1: Deploying TPT Token...\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n📦 Step 2: Deploying RWARewardDistributor...\n📦 Step 3: Deploying RWARevenue and RWAStaking...\n🔧 Step 4: Configuring token permissions and funding...\n🔐 Token permissions configured (no exemptions needed for upgradeable token)\n✅ Complete ecosystem deployed!\n🔧 Setting up proxy test environment...\n✅ Proxy test environment setup completed!\n      ✔ Should revert when non-owner tries to create pool\n      ✔ Should revert when non-owner tries to create another pool\n      ✔ Should revert when non-owner tries to update addresses\n      ✔ Should revert when non-owner tries to pause\n      ✔ Should...",
+      "errorOutput": "error: \"hardhat\" exited with code 1\n",
+      "exitCode": 1
+    },
+    {
+      "suite": "staking-revenue",
+      "command": "bun run hardhat test test/tiger-revenue-enhanced-coverage.spec.ts test/revenue-distribution-tier-testing.spec.ts",
+      "success": false,
+      "duration": 4321,
+      "output": "\n\n  🚀 RWARevenue - Enhanced Coverage Test Suite\n    💰 Revenue Allocation - Error Conditions\n      1) \"before each\" hook for \"Should reject zero amount allocation\"\n\n  💰 Revenue Distribution & Duration Tier Testing - Comprehensive\n    💰 Weighted Revenue Distribution Strategy\n      2) \"before each\" hook for \"Should calculate correct revenue distribution based on stake proportions\"\n\n\n  0 passing (300ms)\n  2 failing\n\n  1) 🚀 RWARevenue - Enhanced Coverage Test Suite\n       \"before each\" hook for \"Should reject zero amount allocation\":\n     TypeError: (0 , token_deployment_1.deployTigerPalaceTokenUpgradeable) is not a function\n      at deployMockContracts (test/tiger-revenue-enhanced-coverage.spec.ts:62:62)\n      at Context.<anonymous> (test/tiger-revenue-enhanced-coverage.spec.ts:56:11)\n\n  2) 💰 Revenue Distribution & Duration Tier Testing - Comprehensive\n       \"before each\" hook for \"Should calculate correct revenue distribution based on stake proportions\":\n     TypeError: deployTiger...",
+      "errorOutput": "error: \"hardhat\" exited with code 2\n",
+      "exitCode": 2
+    },
+    {
+      "suite": "staking-core",
+      "command": "bun run hardhat test test/rwa-staking-integration.spec.ts test/minimal-staking-test.spec.ts",
+      "success": false,
+      "duration": 4270,
+      "output": "\n\n  RWA Staking Ecosystem Integration\n    Complete Staking Workflow\n🚀 Deploying RWA Staking Ecosystem...\n      1) \"before each\" hook for \"Should allow users to stake tokens and earn rewards\"\n\n  Minimal Staking Test\n    2) \"before each\" hook for \"Should demonstrate simplified pool interface\"\n\n\n  0 passing (327ms)\n  2 failing\n\n  1) RWA Staking Ecosystem Integration\n       \"before each\" hook for \"Should allow users to stake tokens and earn rewards\":\n     TypeError: deployTigerPalaceTokenUpgradeable is not a function\n      at deployCompleteEcosystem (test/rwa-staking-integration.spec.ts:46:29)\n      at Context.<anonymous> (test/rwa-staking-integration.spec.ts:35:11)\n\n  2) Minimal Staking Test\n       \"before each\" hook for \"Should demonstrate simplified pool interface\":\n     TypeError: deployTigerPalaceTokenUpgradeable is not a function\n      at Context.<anonymous> (test/minimal-staking-test.spec.ts:31:29)\n\n\n\n",
+      "errorOutput": "error: \"hardhat\" exited with code 2\n",
+      "exitCode": 2
+    },
+    {
+      "suite": "revenue-allocation",
+      "command": "bun run hardhat test test/advanced-revenue-allocation.spec.ts test/enhanced-revenue-allocation.spec.ts test/comprehensive-revenue-tier-testing.spec.ts",
+      "success": true,
+      "duration": 2029,
+      "output": "\n\n  🎯 AdvancedTigerRevenue Integration Testing\n    🔧TigerRevenue Validation Pipeline\n🚀 Deploying advancedTigerRevenue test environment...\n🚀 Deploying complete ecosystem with proxy patterns...\n📦 Step 1: Deploying TPT Token...\n📦 Deploying TokenizinToken as upgradeable contract (UUPS proxy)...\n✅ TokenizinToken upgradeable deployed:\n   Proxy: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\n   Implementation: 0x5FbDB2315678afecb367f032d93F642f64180aa3\n📦 Step 2: Deploying RWARewardDistributor...\n📦 Step 3: Deploying RWARevenue and RWAStaking...\n🔧 Step 4: Configuring token permissions and funding...\n🔐 Token permissions configured (no exemptions needed for upgradeable token)\n✅ Complete ecosystem deployed!\n✅ AdvancedTigerRevenue test environment ready!\n\n🎯 Test: Complete validation pipeline with optimal setup\n🔧 Validating and configuringTigerPalaceRevenue system...\n✅ Batch size validation skipped (not applicable to TigerRevenue)\n✅ RWARevenue system validation completed\n🎯 Creating optimal ...",
+      "errorOutput": "",
+      "exitCode": 0
+    }
+  ]
+}

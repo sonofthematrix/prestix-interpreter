@@ -1,0 +1,192 @@
+Thought for 15sComplete Roadmap — Prestix Interpreter / RAKUS
+0. Definitieve Scope
+Werkmap:
+C:\Users\sonof\Downloads\rakus\prestix.app-main
+Productdoel:
+Een simpele maar uitbreidbare EN/ID live vertolkpagina die:
+spraak of tekst opvangt→ gesprek segmenteert/logt→ juiste vertaalroute kiest→ natuurlijk vertaalt→ output toont→ output uitspreekt→ leert van correcties
+Niet bouwen in deze fase:
+- geen full Prestix clone- geen admin/support/booking/payments- geen volledige Assistant Runtime port- geen user-facing model picker- geen dashboards from scratch- geen secrets tonen
+De Prestix SSoT beschrijft een grotere architectuur met één Assistant Runtime, modes, prompt-layers, memory, tool registry en role-gated tool execution. Voor deze interpreter gebruiken we die principes, maar porten we niet de volledige Prestix-runtime. 
+
+Fase 1 — Werkende Basis Vastzetten
+Doel
+De huidige werkende staat bevriezen zodat Codex niet opnieuw alles omgooit.
+Huidige basis
+- pagina laadt- typed input werkt- speech input werkt- /api/interpreter werkt- learning module bestaat- feedback route bestaat- provider fallback werkt- LIVE/STORY mode bestaat- segmenter/logger worker bestaat- translator queue worker bestaat- conversation log bestaat- flow log bestaat- speaker tagging bestaat of wordt toegevoegd
+Actie
+Maak of update:
+docs/current-working-state.md
+Inhoud
+- root path- werkende features- bekende blockers- welke files niet zomaar aangepast mogen worden- welke features alleen via aparte prompt aangepast mogen worden
+Acceptatie
+- docs/current-working-state.md bestaat- geen codewijziging behalve docs- geen secrets opgenomen
+
+Fase 2 — Runtime Flow Stabiliseren
+Doel
+Alles wat mensen zeggen moet worden vastgelegd. Vertaling mag achterlopen, maar input mag nooit verloren gaan.
+Definitieve flow
+SpeechRecognition / typed input→ transcript buffer→ segmenter/logger→ conversation entry: pending→ translator queue→ status: translating→ output invullen→ status: translated/error→ speechSynthesis output
+Belangrijke regel
+Capture mag nooit wachten op translation.Translation mag achterlopen.
+LIVE mode
+Voor korte gesprekken.
+- buffer 1000–1500 ms- snelle flush- snelle vertaling- korte zin per log-entry
+STORY mode
+Voor langere verhalen of monologen.
+- langere buffer / delayed segmentation- alles blijven verzamelen- segment pas maken na langere pauze- vertaler mag achterlopen- geen input overslaan
+Actie
+In:
+src/app/page.tsx
+Zorgen dat:
+- transcript buffer nooit wordt gewist bij recognition restart- queue niet blokkeert op speechSynthesis- speechSynthesis heeft timeout fallback- no-speech is non-fatal- second/third sentence wordt opgepakt
+Acceptatietests
+1. LIVE:   "Mereka tidak mengerti"   → snelle vertaling2. STORY:   "Saya mau pesan kamar untuk malam ini karena saya datang terlambat dan teman saya belum sampai"   → één compleet segment3. Doorpraten terwijl vorige vertaling loopt:   nieuwe zin moet pending entry worden4. no-speech:   geen rode fatal error
+
+Fase 3 — Conversation Log Als Hoofdscherm
+Doel
+Je moet het gesprek kunnen volgen terwijl mensen praten.
+Layout
+Hoofdgebied:- CONVERSATION LOG groot/fullscreenRechts:- FLOW LOG technisch, smal maar full-heightOnder:- input / controls compact
+Conversation log entry
+Elke entry moet tonen:
+timestampspeaker badgesource: speech/typedmode: id-en/en-idstatus: pending/translating/translated/errorIN: originele tekstOUT: vertaling of waiting/errorprovider/debug-info compactspeaker buttons: A / B / Unknown
+Flow log
+Technisch, laatste 40 regels:
+- recognition start- interim- final buffered- segment created- queued- translating- provider result- speaking- recognition restart- no-speech ignored- error
+Acceptatie
+- conversation log is primaire weergave- flow log blijft rechts- speaker tagging blijft werken- geen retranslation bij speaker label wijziging
+
+Fase 4 — Speaker Labeling
+Probleem
+Beide sprekers kunnen Indonesisch spreken. Taalherkenning kan dus niet bepalen wie wie is.
+Oplossing
+Geen automatische diarization in deze fase. Gebruik manual speaker labeling.
+Features
+- elke entry start als Unknown of actieve speaker- per entry buttons: Speaker A / Speaker B / Unknown- active speaker selector: Unknown / A / B- shortcuts:  Alt+1 = Speaker A  Alt+2 = Speaker B  Alt+0 = Unknown
+Persistence
+localStorage key:prestix-interpreter-conversation-log
+Later
+Echte automatische speaker diarization kan later, maar vereist audio-opname + diarization/transcription model. Niet betrouwbaar via browser SpeechRecognition alleen.
+Acceptatie
+- Speaker A/B label wijzigt zonder nieuwe vertaling- labels blijven na refresh- typed en speech entries worden gelogd
+
+Fase 5 — Vertaalstijl: Natural Interpreter
+Doel
+De vertaling moet klinken als een menselijke live-tolk, niet als letterlijke woordenboekvertaling.
+Promptregels
+Voor id-en:
+- output English only- interpreteer betekenis- vertaal slang natuurlijk- geen Indonesische normalisatie- geen uitleg- geen markdown
+Voor en-id:
+- output Indonesian only- natuurlijke gesproken Indonesische taal- niet te formeel tenzij input formeel is- geen uitleg
+Slangregels
+gua/gue/gw = I/melu/lo = younih = emphasis / vaak weglatendong = nadruk / soft insistenceaja = just/simply/only afhankelijk contextmampus = we're screwed / damn / dead afhankelijk contextajak = invite / bring along
+Guards
+- id-en output lijkt Indonesisch → retry stricter- en-id output lijkt Engels → retry stricter- output bijna gelijk aan input → retry natural interpreter
+Tests
+Jadi kalau gua ajak Wali mampus nih→ So if I invite Wali, we're screwed.Gua mau pesan kamar buat malam ini→ I want to book a room for tonight.Mereka tidak mengerti→ They don't understand.I want to book a room for tonight→ Saya mau pesan kamar untuk malam ini.
+
+Fase 6 — Provider / Model Router
+Correct principe
+Gebruikers kiezen geen modellen. De app kiest intern het juiste model/provider.
+Waarom
+Je research-document bevestigt dat er geen universele beste vertaler is. De beste keuze hangt af van kwaliteit, latency, kosten, privacy, taalpaar en content-type. 
+Interne rollen
+LIVE_SHORT- korte live zinnen- lage latencySTORY_CONTEXT- langere context- natuurlijk interpreterenSLANG_CONTEXT- Indonesische straattaal- betekenis boven literalnessQUALITY_RETRY- als output te letterlijk/verkeerde taal isLOCAL_FALLBACK- als externe providers falen
+Provider chain
+Tokenizin alleen gebruiken als veilig gescopeerd.
+Als Tokenizin translation-safe:1. Tokenizin2. Gemini3. DeepSeek4. OpenAI text5. local/OllamaAls Tokenizin niet safe/scoped:1. Gemini2. DeepSeek3. OpenAI text4. local/Ollama
+De oude CODEXTRANSL-server had al multi-provider logica met OpenAI, DeepSeek en Gemini als concrete providers. 
+Concrete modelrollen
+LIVE_SHORT:- Gemini Flash / GEMINI_MODEL_FAST / gemini-2.0-flash- DeepSeek Chat- GPT-4.1 mini- localSTORY_CONTEXT:- Gemini 2.5 Pro / GEMINI_MODEL_PRO / GEMINI_MODEL_STORY- GPT-4.1- Gemini Flash- DeepSeek- localSLANG_CONTEXT:- Gemini 2.5 Pro- GPT-4.1- Gemini Flash- DeepSeekQUALITY_RETRY:- GPT-4.1- Gemini 2.5 Pro- GPT-4o / GPT-4 Turbo only if configuredLOCAL_FALLBACK:- Ollama/local configured model- later NLLB-200-style local model if added
+Non-secret telemetry
+Response mag tonen:
+providermodelmodelRoletaskTypefallbackUsedfallbackChainTriedlearningMatchesCounttokenizinSkippedReason
+Nooit tonen:
+API keysheadersenv valuesauthorization
+Acceptatie
+- user-facing model picker absent- model routing internal- provider telemetry debug-only- Tokenizin skipped if not scoped
+
+Fase 7 — Learning Module Uitbouwen
+Huidige situatie
+De learning module is geen echte modeltraining. Het is een correction / glossary / style memory. Dat is goed voor deze fase.
+Opslag
+data/interpreter-learning.json
+Code
+src/lib/interpreterLearning.tssrc/app/api/interpreter/feedback/route.tssrc/app/api/interpreter/route.ts
+Uitbreiden naar drie memory-types
+1. Correction memory
+Voor volledige zinnen.
+{  "type": "correction",  "sourceText": "...",  "wrongOutput": "...",  "correctedOutput": "...",  "mode": "id-en",  "note": "...",  "createdAt": "..."}
+2. Glossary memory
+Voor woorden/slang.
+{  "type": "glossary",  "term": "gua",  "meaning": "I/me, informal Indonesian slang",  "mode": "id-en",  "examples": [],  "createdAt": "..."}
+3. Style memory
+Voor voorkeuren.
+{  "type": "style",  "rule": "Translate naturally like a live interpreter, not literally.",  "mode": "id-en",  "createdAt": "..."}
+Prompt-order
+base interpreter rule→ mode rule→ learning correction/glossary/style context→ current input
+De Prestix SSoT noemt prompt-composition order als belangrijk architectuurprincipe: base policy → mode instructions → persona/stage/KB/memory/checkpoint layers. Voor jouw app gebruiken we hetzelfde principe in mini-vorm. 
+Acceptatie
+- feedback route werkt- old correction-only data blijft compatibel- learningMatchesCount komt terug- slang test gebruikt glossary/correction
+
+Fase 8 — Uitbreidbare Codebasis Zonder Nu ZenStack Te Activeren
+Doel
+Een basis bouwen die later kan groeien, zonder nu de zware Prestix runtime te importeren.
+Niet nu
+- geen ZenStack installeren- geen DB-schema toevoegen- geen full AssistantSessionConfig porten- geen tool registry porten
+Wel nu
+Structuur voorbereiden:
+src/lib/interpreter/types.tssrc/lib/interpreter/learningStore.tssrc/lib/interpreter/conversationStore.tssrc/lib/interpreter/promptComposer.tssrc/lib/interpreter/providerRouter.ts
+Interfaces
+LearningStore- listRelevant(input, mode)- addCorrection(entry)- addGlossary(entry)- addStyleRule(entry)ConversationStore- appendSegment(segment)- listRecent(limit)
+Huidige adapters
+JsonLearningStoreLocalStorageConversationLog
+Later
+ZenStackLearningStoreZenStackConversationStore
+De full Prestix-architectuur gebruikt ZenStack v3 voor onder andere Conversation, AIChatThread, VoiceLiveSession, AgentToolCall, AgentTaskContext en AgentSkill, met runtime reads/writes via createClient(authUser). Dat is later relevant, maar niet nodig voor de simpele interpreter-port nu. 
+
+Fase 9 — Provider Benchmark Harness
+Doel
+Zelf meten welke provider/modelrol het beste werkt voor jouw EN/ID tolk.
+Testset
+Mereka tidak mengertiI want to book a room for tonightGua mau pesan kamar buat malam iniJadi kalau gua ajak Wali mampus nihSaya datang terlambat dan teman saya belum sampaiKalau dia ikut, nanti ribet bangetCan you ask him if the room is ready?
+Metingen
+- provider- model- taskType- latencyMs- output- literalness score- wrong-language detected yes/no- fallbackUsed- learningMatchesCount- cost estimate if available
+Output
+docs/provider-evaluation.md
+Gebruik
+- modelrouter verbeteren- fallback-volgorde aanpassen- learning rules uitbreiden
+
+Fase 10 — UI Polish / Observability
+Pas doen als flow stabiel blijft.
+UI-doel
+Conversation log = hoofdschermFlow log = rechter technische monitorBuffer/queue/provider/speaker = zichtbaar maar compact
+Goede polish
+- grotere conversation entries- betere speaker badges- pending/translating/translated states- active speaker selector- compact buffer preview- queue length- provider/fallback badge- learning matches badge
+Niet doen
+- geen nieuw dashboard from scratch- geen avatars/toy heads- geen provider picker voor gebruiker- geen UI die de flow verstopt
+Optioneel asset
+hiphop_head.png
+Alleen als klein logo/agent asset, niet als basis voor volledige redesign.
+
+Fase 11 — Productieharding
+Runtime hardening
+- provider timeouts- AbortController per external call- fallback reason logging- no-speech non-fatal- queue finally guards- speechSynthesis timeout- localStorage corruption guard- max log entries
+Privacy/security
+- geen secrets in logs- API keys server-side only- provider telemetry non-secret- clear conversation log- clear learning memory apart- export/delete controls
+Later met accounts
+- user auth- per-user memory- ZenStack adapter- Conversation records- AgentSkill/AgentTaskContext later- audit/checkpoint trail
+De SSoT waarschuwt ook dat muterende tools role-gated moeten zijn en dat clients nooit zelfstandig privileged tool/mode keuzes mogen bepalen. Dat principe moet later in de productieversie terugkomen. 
+
+Prioriteit Vanaf Nu
+Nu eerst
+1. Conversation log full screen2. Flow log rechts3. STORY/LIVE segmenter stabiel maken4. Provider router concreet maken met Gemini/modelrollen5. Natural interpreter prompt + literalness guards6. Learning uitbreiden naar correction/glossary/style
+Daarna
+7. Interpreter interfaces/adapters8. Provider benchmark harness9. UI polish10. ZenStack-ready adapter skeleton
+Later
+11. echte diarization12. DB/auth/admin config13. export/reporting14. production deployment
+
+Codex Master Prompt Voor De Volgende Sessie
+Werk in:C:\Users\sonof\Downloads\rakus\prestix.app-mainGebruik deze roadmap als leidraad.Belangrijk:De app werkt. Niet opnieuw bouwen.Geen full Prestix clone.Geen UI redesign tenzij expliciet gevraagd.Geen secrets printen.Geen env values tonen.Huidige architectuur:- Prestix Interpreter one-page app- speech/text input- LIVE/STORY capture modes- segmenter/logger worker- translator queue worker- conversation log- flow log- speaker tagging- learning memory- internal provider/model routerTaken mogen alleen gericht zijn op één fase tegelijk.Bij elke wijziging:- behoud typed input- behoud speech input- behoud output visibility- behoud queue- behoud learning- behoud provider chain- run type-check of targeted check- rapporteer alleen changed files + testresultaat
+Dit is de complete roadmap. De sleutel is: niet meer herstarten. Vanaf nu alleen fase voor fase verbeteren.

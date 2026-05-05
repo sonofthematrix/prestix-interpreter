@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-03-05T00:00:00Z",
+  "summary": {
+    "totalViolations": 4,
+    "critical": 2,
+    "moderate": 2,
+    "compliantPatterns": 1,
+    "resolved": true,
+    "fixesApplied": [
+      "Created hubListStore (Zustand) with page-keyed state",
+      "Created useHubListSlice hook for hub pages",
+      "Migrated bookings, promoters, venues, marketplace, purchases, events, venuePromoters",
+      "Removed page reset useEffect from all affected pages",
+      "Store actions reset page to 1 when filters/search/groupBy change"
+    ]
+  },
+  "violations": [
+    {
+      "id": "V1",
+      "severity": "critical",
+      "type": "useEffect-state-sync",
+      "description": "useEffect with dependency array for page reset when filtered data shrinks",
+      "rule": "Forbidden: Using useEffect with dependency arrays for state synchronization",
+      "files": [
+        "src/app/hub/bookings/page.tsx:276-279",
+        "src/app/hub/purchases/page.tsx:187-190",
+        "src/app/hub/marketplace/page.tsx:128-131",
+        "src/app/hub/events/page.tsx:193-196"
+      ],
+      "fix": "Store actions (setFilters, setSearch, setGroupBy) should reset page to 1 when filters change. Eliminates need for useEffect."
+    },
+    {
+      "id": "V2",
+      "severity": "moderate",
+      "type": "duplicated-state",
+      "description": "Same filter/search/pagination state duplicated across 7+ hub list pages",
+      "rule": "ONE SOURCE OF TRUTH - never duplicate state across components",
+      "files": [
+        "src/app/hub/bookings/page.tsx",
+        "src/app/hub/promoters/page.tsx",
+        "src/app/hub/venues/page.tsx",
+        "src/app/hub/marketplace/page.tsx",
+        "src/app/hub/purchases/page.tsx",
+        "src/app/hub/events/page.tsx",
+        "src/app/hub/venues/[id]/page.tsx",
+        "src/app/hub/venues/[id]/promoters/page.tsx"
+      ],
+      "fix": "Create hubListStore with per-pageKey slices for search, filters, groupBy, page, pageSize, datePreset."
+    },
+    {
+      "id": "V3",
+      "severity": "low",
+      "type": "useEffect-pathname-sync",
+      "description": "useHubViewPreference syncs pathname to Redux via useEffect with [pathname, dispatch]",
+      "rule": "useEffect with deps for state sync",
+      "files": ["src/hooks/useHubViewPreference.ts:18-21"],
+      "fix": "Acceptable as single 'route sync bridge' - pathname is external source. No change required."
+    },
+    {
+      "id": "V4",
+      "severity": "low",
+      "type": "data-fetch-useEffect",
+      "description": "Data fetch in useEffect with empty deps",
+      "rule": "Mount-time initialization is ALLOWED",
+      "files": ["All hub list and detail pages"],
+      "fix": "Compliant - empty [] is mount-time init. Optional: move to store thunk for consistency."
+    }
+  ],
+  "compliantPatterns": [
+    {
+      "pattern": "Mount-time data fetch",
+      "description": "useEffect with [] for initial fetch is allowed per redux-one-source-of-truth.mdc"
+    }
+  ],
+  "recommendations": [
+    "Create hubListStore (Zustand) with page-keyed state",
+    "Reset page to 1 in store actions when filters/search/groupBy change",
+    "Migrate all hub list pages to use hubListStore",
+    "Remove page reset useEffect from bookings, purchases, marketplace, events"
+  ]
+}

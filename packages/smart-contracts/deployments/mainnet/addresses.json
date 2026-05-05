@@ -1,0 +1,44 @@
+{
+  "network": "mainnet",
+  "timestamp": "",
+  "deploymentType": "proxy",
+  "nodeVersion": "v22.14.0",
+  "solidityVersion": "^0.8.27",
+  "addresses": {
+    "TPT": "0x64945165255bcb83f2Ef9f31a575975832CA4dB4",
+    "Treasury": "0xF35dB46c803B8AB1A8F2CAaE93f068434df6de52",
+    "ProxyAdmin": "0x5eF6cC12028EB39AC92646EA45993e1F3F6e9856",
+    "RewardDistributor_Implementation": "",
+    "TigerRevenue_Implementation": "",
+    "TigerStaking_Implementation": "",
+    "RewardDistributor_Proxy": "",
+    "RWARewardDistributor": "",
+    "TigerRevenue_Proxy": "",
+    "TigerRevenue": "",
+    "TigerStaking_Proxy": "",
+    "TigerStaking": ""
+  },
+  "gasUsage": {
+    "totalGasUsed": "",
+    "totalGasCostETH": "",
+    "breakdown": []
+  },
+  "verification": {
+    "status": "pending",
+    "etherscanUrls": {
+      "RewardDistributor_Implementation": "",
+      "TigerRevenue_Implementation": "",
+      "TigerStaking_Implementation": "",
+      "RewardDistributor_Proxy": "",
+      "TigerRevenue_Proxy": "",
+      "TigerStaking_Proxy": ""
+    }
+  },
+  "deploymentStatus": {
+    "completed": false,
+    "currentStep": "",
+    "lastCompletedStep": "",
+    "paused": false,
+    "pausedReason": ""
+  }
+}

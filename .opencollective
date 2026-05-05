@@ -1,0 +1,2 @@
+# Disable OpenCollective postinstall prompts
+OPENCOLLECTIVE_HIDE=1

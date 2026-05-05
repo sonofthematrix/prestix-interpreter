@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/zenstack/*": ["./zenstack/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/server/*": ["./src/server/*"],
+      "@/api/*": ["./src/app/api/*"],
+      "@/types/*": ["./src/types/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../src/**/*.ts",
+    "../src/**/*.tsx"
+  ]
+}

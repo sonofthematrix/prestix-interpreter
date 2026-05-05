@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MetaMask Browser Extension Diagnostic</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0f0f0f;
+      color: #ffffff;
+    }
+    h1 { color: #f97316; }
+    h2 { color: #fb923c; margin-top: 30px; }
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .success { border-left: 4px solid #10b981; }
+    .error { border-left: 4px solid #ef4444; }
+    .warning { border-left: 4px solid #f59e0b; }
+    .info { border-left: 4px solid #3b82f6; }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 4px;
+    }
+    .badge-yes { background: #10b981; color: white; }
+    .badge-no { background: #ef4444; color: white; }
+    .badge-partial { background: #f59e0b; color: white; }
+    code {
+      background: #262626;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+    pre {
+      background: #262626;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    button {
+      background: #f97316;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover {
+      background: #ea580c;
+    }
+    button:disabled {
+      background: #6b7280;
+      cursor: not-allowed;
+    }
+    .test-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>🦊 MetaMask Browser Extension Diagnostic</h1>
+  <p>This page diagnoses MetaMask browser extension detection issues with AppKit Reown configuration.</p>
+
+  <div id="results"></div>
+
+  <div class="test-section">
+    <h2>🧪 Connection Tests</h2>
+    <button id="testWindowEthereum">Test window.ethereum</button>
+    <button id="testRequestAccounts">Test eth_requestAccounts</button>
+    <button id="testGetAccounts">Test eth_accounts</button>
+    <button id="testChainId">Test eth_chainId</button>
+    <div id="testResults" class="card info" style="margin-top: 20px; display: none;"></div>
+  </div>
+
+  <script>
+    // Replicate the enhanced mobile detection from appkit.ts
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
+    const isAndroid = /Android/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+    const isMobileChrome = /Android.*Chrome/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+    const isMobileEdge = /Android.*Edg/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+
+    const hasTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    const hasSmallScreen = window.innerWidth < 768;
+    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isMobile = isMobileUserAgent && (hasSmallScreen || (hasTouch && window.innerWidth < 1024));
+
+    // Check for MetaMask
+    const ethereum = window.ethereum;
+    const hasEthereum = !!ethereum;
+    const hasMetaMask = ethereum?.isMetaMask === true;
+    const providers = ethereum?.providers || [];
+    const hasMetaMaskProvider = providers.some(p => p?.isMetaMask === true);
+    const isMetaMaskDetected = hasMetaMask || hasMetaMaskProvider;
+
+    // Expected connector order
+    const expectedConnectorOrder = isMobile
+      ? ['walletConnect', 'injected', 'eip6963']
+      : ['injected', 'walletConnect', 'eip6963'];
+
+    // Generate diagnostic results
+    const deviceType = isMobile ? '📱 MOBILE DEVICE' : '🖥️ DESKTOP BROWSER';
+    const deviceClass = isMobile ? 'warning' : 'success';
+
+    let resultsHTML = `
+      <div class="card ${deviceClass}">
+        <h2>Device Type</h2>
+        <div><strong>${deviceType}</strong></div>
+        <p style="margin-top: 10px; color: #9ca3af;">
+          ${isMobile 
+            ? 'Mobile devices should see WalletConnect FIRST for mobile wallet apps'
+            : 'Desktop browsers should see MetaMask extension (Injected) FIRST'
+          }
+        </p>
+      </div>
+
+      <div class="card info">
+        <h2>Detection Criteria</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px; width: 40%;">Screen Size</td>
+            <td style="padding: 8px;"><code>${window.innerWidth}px × ${window.innerHeight}px</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${hasSmallScreen ? 'partial' : 'yes'}">${hasSmallScreen ? 'Small (<768px)' : 'Large (>=768px)'}</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Touch Support</td>
+            <td style="padding: 8px;"><code>${navigator.maxTouchPoints} touch points</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${hasTouch ? 'yes' : 'no'}">${hasTouch ? 'Has Touch' : 'No Touch'}</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Mobile User Agent</td>
+            <td style="padding: 8px;"><code style="font-size: 10px;">${navigator.userAgent.substring(0, 40)}...</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${isMobileUserAgent ? 'yes' : 'no'}">${isMobileUserAgent ? 'Mobile UA' : 'Desktop UA'}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px;">Final Classification</td>
+            <td style="padding: 8px;"><code>${isMobile ? 'isMobile = true' : 'isMobile = false'}</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${isMobile ? 'partial' : 'yes'}">${deviceType}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card ${isMetaMaskDetected ? 'success' : 'error'}">
+        <h2>${isMetaMaskDetected ? '✅' : '❌'} MetaMask Browser Extension</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px; width: 40%;">window.ethereum</td>
+            <td style="padding: 8px;"><code>${typeof ethereum}</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${hasEthereum ? 'yes' : 'no'}">${hasEthereum ? 'Present' : 'Missing'}</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">ethereum.isMetaMask</td>
+            <td style="padding: 8px;"><code>${hasMetaMask}</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${hasMetaMask ? 'yes' : 'no'}">${hasMetaMask ? 'True' : 'False'}</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Provider Type</td>
+            <td style="padding: 8px;"><code>${ethereum?.constructor?.name || 'unknown'}</code></td>
+            <td style="padding: 8px;">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Selected Address</td>
+            <td style="padding: 8px;"><code>${ethereum?.selectedAddress || 'none'}</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${ethereum?.selectedAddress ? 'yes' : 'no'}">${ethereum?.selectedAddress ? 'Connected' : 'Not Connected'}</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 8px;">Multiple Providers</td>
+            <td style="padding: 8px;"><code>${providers.length} providers</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-${providers.length > 0 ? 'yes' : 'no'}">${providers.length > 0 ? 'Multiple' : 'Single'}</span>
+            </td>
+          </tr>
+          ${hasMetaMaskProvider ? `
+          <tr>
+            <td style="padding: 8px;">MetaMask in Providers[]</td>
+            <td style="padding: 8px;"><code>Found</code></td>
+            <td style="padding: 8px;">
+              <span class="badge badge-yes">Yes</span>
+            </td>
+          </tr>
+          ` : ''}
+        </table>
+        ${isMetaMaskDetected ? `
+          <p style="margin-top: 15px; color: #10b981;">
+            ✅ MetaMask browser extension is installed and detected
+          </p>
+        ` : `
+          <p style="margin-top: 15px; color: #ef4444;">
+            ❌ MetaMask browser extension not detected or not installed
+          </p>
+          <p style="color: #9ca3af; margin-top: 5px;">
+            Please install MetaMask extension from <a href="https://metamask.io" target="_blank" style="color: #3b82f6;">metamask.io</a>
+          </p>
+        `}
+      </div>
+
+      <div class="card info">
+        <h2>🔌 Expected AppKit Connector Order</h2>
+        <ol style="font-size: 14px; line-height: 1.8;">
+          ${expectedConnectorOrder.map((c, i) => {
+            const emoji = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+            const name = c === 'walletConnect' ? 'WalletConnect' 
+                       : c === 'injected' ? 'Injected (MetaMask Extension)' 
+                       : 'EIP6963 (Modern Wallets)';
+            return `<li>${emoji} <strong>${name}</strong></li>`;
+          }).join('\n          ')}
+        </ol>
+        ${isMobile ? `
+          <div style="background: #374151; padding: 12px; border-radius: 6px; margin-top: 15px;">
+            <p style="margin: 0; color: #fbbf24;">⚠️ Mobile Device Detected</p>
+            <p style="margin: 5px 0 0 0; color: #d1d5db; font-size: 13px;">
+              Mobile browsers don't support browser extensions. WalletConnect is prioritized for mobile wallet apps (MetaMask mobile, Trust Wallet, etc.).
+            </p>
+          </div>
+        ` : `
+          <div style="background: #064e3b; padding: 12px; border-radius: 6px; margin-top: 15px;">
+            <p style="margin: 0; color: #10b981;">✅ Desktop Browser Detected</p>
+            <p style="margin: 5px 0 0 0; color: #d1d5db; font-size: 13px;">
+              ${isMetaMaskDetected 
+                ? 'MetaMask extension will appear as the FIRST option when you click "Connect Wallet"'
+                : 'Install MetaMask extension to see it as the first option. WalletConnect is available as fallback.'
+              }
+            </p>
+          </div>
+        `}
+      </div>
+
+      ${!isMobile && isMetaMaskDetected ? `
+        <div class="card success">
+          <h2>✅ Configuration is Correct</h2>
+          <ul style="line-height: 1.8;">
+            <li>Desktop browser detected correctly</li>
+            <li>MetaMask browser extension is installed</li>
+            <li>Injected connector will be prioritized</li>
+            <li>MetaMask should appear as FIRST wallet option</li>
+          </ul>
+          <p style="margin-top: 15px; color: #10b981;">
+            🎉 Your setup is correct! When you click "Connect Wallet" in the application, MetaMask extension should appear first.
+          </p>
+        </div>
+      ` : !isMobile && !isMetaMaskDetected ? `
+        <div class="card error">
+          <h2>⚠️ Action Required</h2>
+          <p style="color: #fbbf24; margin-bottom: 10px;">MetaMask browser extension is not detected</p>
+          <ol style="line-height: 1.8;">
+            <li>Install MetaMask from <a href="https://metamask.io" target="_blank" style="color: #3b82f6;">metamask.io</a></li>
+            <li>Enable the extension in your browser</li>
+            <li>Refresh this page to verify installation</li>
+            <li>Restart your browser if MetaMask still doesn't appear</li>
+          </ol>
+          <p style="margin-top: 15px; color: #9ca3af; font-size: 13px;">
+            Note: WalletConnect will still work as a fallback, but MetaMask extension provides the best desktop experience.
+          </p>
+        </div>
+      ` : isMobile ? `
+        <div class="card warning">
+          <h2>📱 Mobile Browser</h2>
+          <p>Mobile browsers don't support browser extensions. This is expected behavior.</p>
+          <p style="margin-top: 10px; color: #d1d5db;">
+            To use MetaMask on mobile:
+          </p>
+          <ol style="line-height: 1.8; color: #d1d5db;">
+            <li>Install MetaMask mobile app from App Store or Google Play</li>
+            <li>Click "Connect Wallet" in the application</li>
+            <li>Select "MetaMask" from WalletConnect options</li>
+            <li>Scan QR code or use deep link to open MetaMask mobile app</li>
+          </ol>
+        </div>
+      ` : ''}
+
+      <div class="card info">
+        <h2>🔧 WagmiAdapter Configuration Check</h2>
+        <p>When AppKit initializes, WagmiAdapter should automatically create:</p>
+        <ul style="line-height: 1.8;">
+          <li><strong>Injected Connector</strong>: Detects window.ethereum (MetaMask extension)</li>
+          <li><strong>WalletConnect Connector</strong>: For QR code and mobile wallets</li>
+          <li><strong>EIP6963 Connector</strong>: For modern wallet detection</li>
+        </ul>
+        <p style="margin-top: 15px; color: #9ca3af; font-size: 13px;">
+          Check browser console when opening the application for connector logs:<br>
+          <code style="color: #10b981;">✅ [appkit.ts] Injected connector registered - MetaMask extension support enabled</code>
+        </p>
+      </div>
+
+      <div class="card info">
+        <h2>📖 Full User Agent</h2>
+        <pre>${navigator.userAgent}</pre>
+      </div>
+    `;
+
+    document.getElementById('results').innerHTML = resultsHTML;
+
+    // Test button handlers
+    const testResults = document.getElementById('testResults');
+
+    document.getElementById('testWindowEthereum').addEventListener('click', async () => {
+      testResults.style.display = 'block';
+      testResults.innerHTML = '<p>Testing window.ethereum...</p>';
+      
+      if (!ethereum) {
+        testResults.className = 'card error';
+        testResults.innerHTML = `
+          <h3>❌ window.ethereum Not Available</h3>
+          <p>MetaMask extension is not installed or not enabled.</p>
+          <p style="margin-top: 10px;">Install MetaMask from <a href="https://metamask.io" target="_blank" style="color: #3b82f6;">metamask.io</a></p>
+        `;
+        return;
+      }
+
+      testResults.className = 'card success';
+      testResults.innerHTML = `
+        <h3>✅ window.ethereum Available</h3>
+        <pre>${JSON.stringify({
+          isMetaMask: ethereum.isMetaMask,
+          chainId: ethereum.chainId,
+          selectedAddress: ethereum.selectedAddress,
+          networkVersion: ethereum.networkVersion,
+          constructor: ethereum.constructor.name,
+        }, null, 2)}</pre>
+      `;
+    });
+
+    document.getElementById('testRequestAccounts').addEventListener('click', async () => {
+      testResults.style.display = 'block';
+      testResults.innerHTML = '<p>Requesting accounts from MetaMask...</p>';
+      
+      if (!ethereum) {
+        testResults.className = 'card error';
+        testResults.innerHTML = '<h3>❌ window.ethereum not available</h3>';
+        return;
+      }
+
+      try {
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        testResults.className = 'card success';
+        testResults.innerHTML = `
+          <h3>✅ eth_requestAccounts Success</h3>
+          <p>Connected accounts:</p>
+          <pre>${JSON.stringify(accounts, null, 2)}</pre>
+          <p style="margin-top: 10px; color: #10b981;">
+            MetaMask connection works! AppKit should be able to use this connection.
+          </p>
+        `;
+      } catch (error) {
+        testResults.className = 'card error';
+        testResults.innerHTML = `
+          <h3>❌ eth_requestAccounts Failed</h3>
+          <p>${error.message}</p>
+          ${error.code === 4001 ? '<p style="color: #fbbf24;">User rejected the connection request</p>' : ''}
+        `;
+      }
+    });
+
+    document.getElementById('testGetAccounts').addEventListener('click', async () => {
+      testResults.style.display = 'block';
+      testResults.innerHTML = '<p>Getting connected accounts...</p>';
+      
+      if (!ethereum) {
+        testResults.className = 'card error';
+        testResults.innerHTML = '<h3>❌ window.ethereum not available</h3>';
+        return;
+      }
+
+      try {
+        const accounts = await ethereum.request({ method: 'eth_accounts' });
+        testResults.className = 'card success';
+        testResults.innerHTML = `
+          <h3>${accounts.length > 0 ? '✅' : '⚠️'} eth_accounts Result</h3>
+          <p>${accounts.length > 0 ? 'Connected accounts:' : 'No accounts connected yet (call eth_requestAccounts first)'}</p>
+          <pre>${JSON.stringify(accounts, null, 2)}</pre>
+        `;
+      } catch (error) {
+        testResults.className = 'card error';
+        testResults.innerHTML = `
+          <h3>❌ eth_accounts Failed</h3>
+          <p>${error.message}</p>
+        `;
+      }
+    });
+
+    document.getElementById('testChainId').addEventListener('click', async () => {
+      testResults.style.display = 'block';
+      testResults.innerHTML = '<p>Getting chain ID...</p>';
+      
+      if (!ethereum) {
+        testResults.className = 'card error';
+        testResults.innerHTML = '<h3>❌ window.ethereum not available</h3>';
+        return;
+      }
+
+      try {
+        const chainId = await ethereum.request({ method: 'eth_chainId' });
+        const chainIdDecimal = parseInt(chainId, 16);
+        const networkName = chainIdDecimal === 1 ? 'Ethereum Mainnet' 
+                          : chainIdDecimal === 11155111 ? 'Sepolia Testnet'
+                          : 'Unknown Network';
+        
+        testResults.className = 'card success';
+        testResults.innerHTML = `
+          <h3>✅ eth_chainId Result</h3>
+          <p>Chain ID: <code>${chainId}</code> (${chainIdDecimal})</p>
+          <p>Network: <strong>${networkName}</strong></p>
+          <p style="margin-top: 10px; color: #9ca3af; font-size: 13px;">
+            AppKit supports: Ethereum Mainnet (1) and Sepolia Testnet (11155111)
+          </p>
+        `;
+      } catch (error) {
+        testResults.className = 'card error';
+        testResults.innerHTML = `
+          <h3>❌ eth_chainId Failed</h3>
+          <p>${error.message}</p>
+        `;
+      }
+    });
+
+    // Log to console
+    console.log('🦊 MetaMask Diagnostic Results:', {
+      deviceType,
+      isMobile,
+      isIOS,
+      isAndroid,
+      hasTouch,
+      hasSmallScreen,
+      screenSize: `${window.innerWidth}x${window.innerHeight}`,
+      hasEthereum,
+      hasMetaMask,
+      isMetaMaskDetected,
+      expectedConnectorOrder,
+      recommendation: isMobile 
+        ? 'Mobile: Use WalletConnect for mobile wallet apps'
+        : isMetaMaskDetected
+          ? 'Desktop: MetaMask extension detected - should appear first'
+          : 'Desktop: Install MetaMask extension for best experience',
+    });
+  </script>
+</body>
+</html>

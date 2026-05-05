@@ -1,0 +1,25 @@
+diff --git a/dist/esm/src/components/wui-icon/index.js b/dist/esm/src/components/wui-icon/index.js
+index 0000000..1111111 100644
+--- a/dist/esm/src/components/wui-icon/index.js
++++ b/dist/esm/src/components/wui-icon/index.js
+@@ -7,6 +7,7 @@
+ import { LitElement } from 'lit';
+ import { property } from 'lit/decorators.js';
+ import { html, unsafeStatic } from 'lit/static-html.js';
++import { ifDefined } from 'lit/directives/if-defined.js';
+ import { appStoreSvg } from '../../assets/svg/app-store.js';
+ import { appleSvg } from '../../assets/svg/apple.js';
+ import { bitcoinSvg } from '../../assets/svg/bitcoin.js';
+@@ -240,9 +241,10 @@
+                 mdl: '1.25em',
+                 lg: '1.25em',
+                 xl: '1.5em',
+-                xxl: '1.75em'
++                xxl: '1.75em',
++                inherit: undefined
+             };
+-            return html `<${tag} size=${getPhosphorSize[this.size]} weight="${this.weight}"></${tag}>`;
++            return html `<${tag} size=${ifDefined(getPhosphorSize[this.size])} weight="${this.weight}"></${tag}>`;
+         }
+         return svgOptions[this.name] || html ``;
+     }

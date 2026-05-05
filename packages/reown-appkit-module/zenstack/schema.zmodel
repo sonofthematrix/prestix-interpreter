@@ -1,0 +1,4439 @@
+// Tokenizin - Consolidated ZModel Schema
+// Premium marketplace for luxury goods and services with AI-powered assistance
+// This schema serves as the single source of truth for the entire application
+// Auto-generates: UI components, API endpoints, forms, tables, themes, and more
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Prisma Client Generator - REQUIRED for database operations
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ZenStack v3 Generator - REQUIRED for ZenStack functionality
+generator zenstack {
+  provider = "@zenstackhq/orm"
+  output = "./zenstack"
+}
+
+// ZenStack v3 Beta Configuration
+// The policy plugin enables access control attributes
+
+// Optional: React hooks for frontend data fetching
+// plugin hooks {
+//   provider = '@zenstackhq/tanstack-query'
+//   target = 'react'
+//   version = 'v5'
+//   output = './lib/hooks'
+//   suspense = false
+// }
+
+
+// ENUMS
+
+
+enum UserRole {
+  CUSTOMER
+  VENDOR
+  ADMIN
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+enum ThemeMode {
+  LIGHT
+  DARK
+  SYSTEM
+  CUSTOM
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  SOLD_OUT
+  DISCONTINUED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  STRIPE
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+  CRYPTO
+}
+
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  REVIEW_REQUEST
+  PROMOTION
+  SYSTEM
+  ANNOUNCEMENT
+  TASK
+  INFO
+  ROLE_REQUEST
+  CONFIRMATION
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  SMS
+  IN_APP
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+  DELETED
+}
+
+enum AIProfileType {
+  ARCHITECT
+  DEVELOPER
+  TESTER
+  DEVOPS
+  WRITER
+}
+
+enum ThemeType {
+  LIGHT
+  DARK
+  SYSTEM
+  CUSTOM
+  MERCHANT
+}
+
+enum ComponentType {
+  FORM
+  TABLE
+  CARD
+  NAVIGATION
+  LAYOUT
+  WIDGET
+  AUTH
+}
+
+enum FieldType {
+  TEXT
+  EMAIL
+  PASSWORD
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+  MULTISELECT
+  TEXTAREA
+  FILE
+  IMAGE
+}
+
+enum NavigationCategory {
+  MAIN
+  DOCS
+  ADMIN
+  AUTH
+  TOOLS
+}
+
+enum ValidationType {
+  REQUIRED
+  EMAIL
+  MIN_LENGTH
+  MAX_LENGTH
+  PATTERN
+  CUSTOM
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  SCHEDULED
+}
+
+enum PropertyCategory {
+  HOUSE
+  APARTMENT
+  COMMERCIAL
+  CONDO
+  VILLA
+  ESTATE
+  LAND
+  YACHT
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  SOLD
+}
+
+enum DocumentVerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentCategory {
+  LEGAL
+  FINANCIAL
+  TECHNICAL
+  COMPLIANCE
+}
+
+enum DocumentType {
+  CONTRACT
+  DEED
+  APPRAISAL
+  INSURANCE
+  PERMIT
+  TAX_DOCUMENT
+  OTHER
+}
+
+enum SubscriptionTier {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum DeliveryMethod {
+  MINT_AND_TRANSFER  // Mint new tokens and transfer to buyer
+  TRANSFER           // Transfer existing tokens from owner's wallet
+}
+
+enum DepositStatus {
+  VERIFIED
+  COMPLETED
+  PENDING
+  FAILED
+}
+
+enum CollectionType {
+  ERC721
+  ERC1155
+}
+
+enum CollectionStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum ExpenseCategory {
+  MAINTENANCE
+  UTILITIES
+  INSURANCE
+  TAXES
+  MANAGEMENT
+  REPAIRS
+  LANDSCAPING
+  ADVERTISING
+  LEGAL
+  ACCOUNTING
+  OTHER
+}
+
+enum ExpenseType {
+  FIXED
+  VARIABLE
+  CAPITAL
+}
+
+enum PaymentStatusType {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum FrequencyType {
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+  WEEKLY
+  BIWEEKLY
+}
+
+enum MonetaryConfigCategory {
+  REVENUE_DISTRIBUTION
+  EXPENSE_ALLOCATION
+  VENDOR_COMMISSION
+  MARKETPLACE_FEE
+  TIER_ROI_MULTIPLIER
+  ENGAGEMENT_BONUS
+  OPERATING_EXPENSE_RATE
+}
+
+enum MonetaryScope {
+  GLOBAL
+  PROPERTY
+  VENDOR
+  TIER
+  INVESTMENT
+}
+
+enum ScheduleType {
+  RECURRING
+  ONE_TIME
+}
+
+enum ScheduleFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum AllocationType {
+  REVENUE_DISTRIBUTION
+  EXPENSE_ALLOCATION
+  VENDOR_COMMISSION
+  WALLET_REWARDS
+  TIER_BONUSES
+}
+
+enum InvoiceStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum LeaseType {
+  FIXED
+  VARIABLE
+  SHORT_TERM
+  VACATION
+}
+
+enum RentalStatus {
+  ACTIVE
+  TERMINATED
+  PENDING
+  EXPIRED
+}
+
+enum PetPolicy {
+  ALLOWED
+  NOT_ALLOWED
+  DEPOSIT_REQUIRED
+}
+
+enum TransferType {
+  RETURN
+  PRINCIPAL
+  BOTH
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum FaucetRequestStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model NavigationItem {
+  id            String @id @default(cuid())
+  title         String
+  href          String
+  icon          String
+  authRequired  Boolean @default(false)
+  description   String?
+  badge         String?
+  category      NavigationCategory?
+  parentId      String?
+  parent        NavigationItem? @relation("NavigationHierarchy", fields: [parentId], references: [id])
+  children      NavigationItem[] @relation("NavigationHierarchy")
+  sortOrder     Int @default(0)
+  isActive      Boolean @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Access control - implement at application level
+  // @@allow('read', true) // Temporarily disabled - not supported in current ZenStack version
+}
+
+
+// USER MANAGEMENT
+
+
+model User {
+  id                String      @id @default(cuid())
+  email             String?     @unique  // Optional to support wallet-only authentication
+  name              String?
+  profileImageUrl   String?
+  phone             String?
+  dateOfBirth       DateTime?
+  bio               String?
+  website           String?
+  location          String?
+  timezone          String      @default("UTC")
+  
+  // Authentication
+  emailVerified     DateTime?  
+  password          String?
+  role              UserRole    @default(ADMIN)
+  status            UserStatus  @default(ACTIVE)
+  
+  // Wallet Authentication (Web3)
+  walletAddress     String?     @unique // EVM wallet address (0x...)
+  walletType        String?     // Wallet provider type (MetaMask, WalletConnect, etc.)
+  chainId           Int?        // Ethereum chain ID
+  networkName       String?     // Network name (mainnet, sepolia, polygon, etc.)
+  walletNonce       String?     // Nonce for SIWE message verification
+  walletNonceExpiry DateTime?   // Expiry for wallet nonce
+  authMethod        String      @default("email") // "email", "wallet", "both"
+  lastWalletSignIn  DateTime?   // Track last wallet sign-in
+  
+  // Premium Features
+  isPremium         Boolean     @default(false)
+  premiumExpiresAt  DateTime?
+  loyaltyPoints     Int         @default(0)
+  totalSpent        Float       @default(0)
+
+  // Token Balances (USDC and EURC in wei)
+  usdcBalance       Decimal     @default(0)
+  eurcBalance       Decimal     @default(0)
+  
+  // Timestamps
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt @default(now())
+  lastLoginAt       DateTime?
+  
+  // UI Generation Metadata (stored as JSON for plugin processing)
+  uiConfig Json? // UI generation configuration
+  
+  // Relations
+  preferences       UserPreferences?
+  addressBooks      AddressBook[]
+  orders            Order[]
+  reviews           Review[]
+  wishlistItems     WishlistItem[]
+  carts            Cart[]
+  chatSessions      ChatSession[]
+  aiInteractions    AIInteraction[]
+  vendorProfile     VendorProfile?
+  blogPosts         BlogPost[]
+  comments          Comment[]
+  savedPosts        SavedPost[]
+  blogPostLikes     BlogPostLike[]
+  notifications     Notification[]  // Legacy notification relation
+  sentNotifications Notification[] @relation("NotificationSender")
+  receivedNotifications Notification[] @relation("NotificationRecipient")
+  auditLogs         AuditLog[]
+  uiGenerationRequests UIGenerationRequest[]
+  documentationVersions DocumentationVersion[] @relation("DocumentationVersionAuthor")
+  
+  // Wallet Relations
+  walletSessions    WalletSession[]
+  walletConnections WalletConnection[]
+  walletTransactions WalletTransaction[]
+  
+// Stripe Payment Integration Fields
+  billingAddress      Json?     @map("billing_address")
+  paymentMethod       Json?     @map("payment_method")
+  
+  accounts            Account[]
+  sessions            Session[]
+  addresses           Address[]
+  settings            Settings?
+  documentationConfig DocumentationConfig?
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  investment          Investment[]
+  deposit             Deposit[]
+  portfolio           Portfolio[]
+  realEstateAssets    RealEstateAsset[]
+  tokenHoldings       TokenHolder[]
+  
+  // Stripe Payment Relations
+  customer            Customer?
+  subscriptions       Subscription[]
+  
+	collection Collection[]
+
+	
+	imageUploads ImageUpload[]
+	
+	// Stripe Payment Relations
+	stripePayments StripePayment[]
+	
+  // Property onboarding sessions (conversational)
+  propertyOnboardings PropertyOnboarding[]
+  
+  // User Activity Relations
+  userActivity UserActivity[]
+  
+  // Marketplace Favorites
+  favorites UserFavorite[]
+  
+  // Documentation System Relations
+  documents           Documentation[] @relation("DocumentationAuthor")
+  
+  // Engagement Metrics Relation
+  engagementMetrics   UserEngagementMetrics?
+  
+  // Access Control Policies
+  
+  // Performance Indexes
+  @@index([email])
+  @@index([walletAddress])
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
+  @@index([isPremium])
+  @@index([authMethod])
+  @@index([lastLoginAt])
+  
+  @@map("users")
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// User Engagement Metrics Model
+// Tracks user activity scores for tier-based subscription benefits
+// ════════════════════════════════════════════════════════════════════════════
+model UserEngagementMetrics {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // Marketplace Activity Metrics (60% weight in scoring)
+  // ──────────────────────────────────────────────────────────────────────────
+  totalInvested         Decimal  @db.Decimal(18, 2) @default(0)
+  activeInvestments     Int      @default(0)
+  totalReturns          Decimal  @db.Decimal(18, 2) @default(0)
+  propertyViews         Int      @default(0)
+  totalOrders           Int      @default(0)
+  totalOrderValue       Decimal  @db.Decimal(18, 2) @default(0)
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // Platform Activity Metrics (10% weight in scoring)
+  // ──────────────────────────────────────────────────────────────────────────
+  totalLogins           Int      @default(0)
+  blogPostsCreated      Int      @default(0)
+  blogPostsPublished    Int      @default(0)
+  commentsPosted        Int      @default(0)
+  postsLiked            Int      @default(0)
+  postsSaved            Int      @default(0)
+  reviewsWritten        Int      @default(0)
+  documentsUploaded     Int      @default(0)
+  chatSessions          Int      @default(0)
+  aiInteractions        Int      @default(0)
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // Calculated Engagement Scores (0-100 each)
+  // ──────────────────────────────────────────────────────────────────────────
+  marketplaceScore      Decimal  @db.Decimal(5, 2) @default(0)    // 0-100
+  activityScore         Decimal  @db.Decimal(5, 2) @default(0)    // 0-100
+  totalEngagementScore  Decimal  @db.Decimal(5, 2) @default(0)    // 0-100 (weighted average)
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // Tier Qualification Status
+  // ──────────────────────────────────────────────────────────────────────────
+  currentTier           SubscriptionTier   @default(BRONZE)
+  qualifiesForSilver    Boolean  @default(false)
+  qualifiesForGold      Boolean  @default(false)
+  tierMultiplier        Decimal  @db.Decimal(3, 2) @default(1.0) // 1.0, 1.2, 1.5
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // ROI & Rewards Tracking
+  // ──────────────────────────────────────────────────────────────────────────
+  baseROI               Decimal  @db.Decimal(5, 2) @default(12)   // Base 12%
+  tierROIBonus          Decimal  @db.Decimal(5, 2) @default(0)    // +0%, +2%, +4%
+  engagementROIBonus    Decimal  @db.Decimal(5, 2) @default(0)    // Up to +2%
+  effectiveROI          Decimal  @db.Decimal(5, 2) @default(12)   // Total ROI
+  
+  cashbackRate          Decimal  @db.Decimal(5, 2) @default(1)    // 1%, 3%, 5%
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // Lifecycle Tracking
+  // ──────────────────────────────────────────────────────────────────────────
+  lastCalculated        DateTime @default(now())
+  lastTierCheck         DateTime @default(now())
+  calculationCount      Int      @default(0)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // Access Control Policies
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  // Performance Indexes
+  @@index([userId])
+  @@index([currentTier])
+  @@index([totalEngagementScore])
+  @@index([lastCalculated])
+    
+  @@map("user_engagement_metrics")
+}
+
+model UserPreferences {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  
+  // Theme Preferences
+  themeMode             ThemeMode @default(DARK)
+  themeType             ThemeType @default(DARK)
+  primaryColor          String    @default("#D2691E") // Tiger Orange
+  secondaryColor        String    @default("#0A3A2A") // Forest Green
+  accentColor           String    @default("#E6B800") // Golden Amber
+  backgroundColor       String    @default("#F8F5F0") // Cream
+  textColor             String    @default("#3D2C20") // Deep Brown
+  
+  // Custom Theme Support
+  customTheme           Json?     // Store custom theme configuration
+  customLogo            String?   // Custom logo URL
+  customTitle           String?   // Custom application title
+  customBackground      String?   // Custom background image URL
+  
+  // Typography
+  primaryFont           String    @default("var(--font-geist-sans)")
+  secondaryFont         String    @default("var(--font-geist-mono)")
+  fontSize              String    @default("16px")
+  lineHeight            String    @default("1.5")
+  
+  // Layout Preferences
+  sidebarCollapsed      Boolean   @default(false)
+  compactMode           Boolean   @default(false)
+  animationsEnabled     Boolean   @default(true)
+  reducedMotion         Boolean   @default(false)
+  
+  // Notification Preferences
+  emailNotifications    Boolean   @default(true)
+  pushNotifications     Boolean   @default(true)
+  smsNotifications      Boolean   @default(false)
+  marketingEmails       Boolean   @default(false)
+  
+  // Privacy Settings
+  profileVisibility     String    @default("public") // public, friends, private
+  showOnlineStatus      Boolean   @default(true)
+  allowDirectMessages   Boolean   @default(true)
+  
+  // Language & Localization
+  language              String    @default("en")
+  currency              String    @default("USD")
+  dateFormat            String    @default("MM/DD/YYYY")
+  timeFormat            String    @default("12h")
+  
+  // AI Preferences
+  aiProfile             AIProfileType @default(DEVELOPER)
+  aiTemperature         Float     @default(0.7)
+  aiMaxTokens           Int       @default(4000)  
+  aiStreaming           Boolean   @default(true)
+  
+  // Timestamps
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customThemes         CustomTheme[]
+  
+  // Access Control Policies
+  
+  @@map("user_preferences")
+}
+
+// DOCUMENTATION SYSTEM
+
+
+model Documentation {
+  id                String    @id @default(cuid())
+  title             String
+  slug              String    @unique
+  description       String?
+  content           String    // Markdown content
+  contentHash       String?   // MD5 hash of normalized content for change detection
+  version           String    @default("1.0.0")
+  
+  // Blob Storage
+  blobUrl           String?   // URL to the blob storage
+  blobPath          String?   // Path in blob storage
+  blobVersion       String?   // Version identifier for blob
+  
+  // Metadata
+  category          String?   // Documentation category
+  tags              Json      @default("[]") // Array of tags
+  isPublic          Boolean   @default(true)
+  isActive          Boolean   @default(true)
+  
+  // Cover Image
+  coverImage        String?   // URL to cover image
+  coverImageAlt     String?   // Alt text for cover image
+  
+  // SEO
+  metaTitle         String?
+  metaDescription   String?
+  
+  // Author and ownership
+  authorId          String
+  author            User      @relation("DocumentationAuthor", fields: [authorId], references: [id])
+  
+  // Version history
+  parentId          String?   // Reference to parent version
+  parent            Documentation? @relation("DocumentationVersions", fields: [parentId], references: [id])
+  versions          Documentation[] @relation("DocumentationVersions")
+  versionHistory    DocumentationVersion[] @relation("DocumentationVersionHistory")
+  
+  // Voice/TLDR Summary
+  tldrSummary       String?   // Pre-generated TLDR summary for voice component
+  tldrAudioChunks   Json?     // Pre-generated audio chunks for TLDR (base64 encoded)
+  tldrGeneratedAt   DateTime? // When TLDR was generated
+  
+  // Analytics
+  viewCount         Int       @default(0)
+  lastViewedAt      DateTime?
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  publishedAt       DateTime?
+  
+  // Access Control Policies
+  
+  @@map("documentation")
+}
+
+model DocumentationVersion {
+  id                String    @id @default(cuid())
+  documentationId   String
+  version           String
+  content           String    // Markdown content
+  blobUrl           String?   // URL to the blob storage
+  blobPath          String?   // Path in blob storage
+  
+  // Change tracking
+  changeLog         String?   // Description of changes
+  changeType        String?   // major, minor, patch
+  
+  // Author
+  authorId          String
+  author            User      @relation("DocumentationVersionAuthor", fields: [authorId], references: [id])
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  
+  // Relations
+  documentation     Documentation @relation("DocumentationVersionHistory", fields: [documentationId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@unique([documentationId, version])
+  @@map("documentation_versions")
+}
+
+model Address {
+  id            String    @id @default(cuid())
+  userId        String?   // Optional: null for property addresses
+  type          String    @default("shipping") // shipping, billing, both, property
+  firstName     String?
+  lastName      String?
+  company       String?
+  address1      String
+  address2      String?
+  city          String
+  state         String?
+  postalCode    String
+  country       String
+  phone         String?
+  isDefault     Boolean   @default(false)
+  
+  // Geocoding coordinates for map display
+  latitude      Float?
+  longitude     Float?
+  placeId       String?   // Google Places ID or other map service ID
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realEstateAssets RealEstateAsset[] // Properties linked to this address
+  
+  // Access Control Policies
+  
+  @@map("addresses")
+}
+
+model AddressBook {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String    // "Home", "Work", "Billing", etc.
+
+  // Address Details (similar to Address model)
+  firstName     String
+  lastName      String
+  company       String?
+  address1      String
+  address2      String?
+  city          String
+  state         String?
+  postalCode    String
+  country       String
+  phone         String?
+
+  // Types
+  isBilling     Boolean   @default(false)
+  isShipping    Boolean   @default(true)
+  isDefault     Boolean   @default(false)
+
+  // Usage tracking
+  usageCount    Int       @default(0)
+  lastUsedAt    DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Access Control Policies
+
+  @@map("address_books")
+}
+
+
+// MARKETPLACE - PRODUCTS & CATEGORIES
+
+
+model Category {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String?
+  image         String?
+  icon          String?
+  parentId      String?
+  sortOrder     Int       @default(0)
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  parent        Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children      Category[] @relation("CategoryHierarchy")
+  products      Product[]
+  
+  // Access Control Policies
+  
+  @@map("categories")
+}
+
+model Product {
+  id              String            @id @default(cuid())
+  name            String
+  slug            String            @unique
+  description     String
+  shortDescription String?
+  sku             String            @unique
+  price           Float
+  comparePrice    Float?
+  costPrice       Float?
+  categoryId      String
+  vendorId        String
+  
+  // Product Details - Using JSON for arrays since SQLite doesn't support them
+  images          Json              @default("[]") // Array of image URLs
+  videos          Json              @default("[]") // Array of video URLs
+  tags            Json              @default("[]") // Array of tags
+  specifications  Json?             // Flexible product specifications
+  dimensions      Json?             // Length, width, height, weight
+  materials       Json              @default("[]") // Array of materials
+  colors          Json              @default("[]") // Array of colors
+  sizes           Json              @default("[]") // Array of sizes
+  
+  // Inventory
+  trackInventory  Boolean           @default(true)
+  inventory       Int               @default(0)
+  lowStockThreshold Int             @default(5)
+  allowBackorder  Boolean           @default(false)
+  
+  // SEO & Marketing
+  metaTitle       String?
+  metaDescription String?
+  featured        Boolean           @default(false)
+  status          ProductStatus     @default(DRAFT)
+  
+  // Premium Features
+  isLuxury        Boolean           @default(false)
+  isExclusive     Boolean           @default(false)
+  requiresApproval Boolean          @default(false)
+  premiumOnly     Boolean           @default(false)
+  
+  // Analytics
+  viewCount       Int               @default(0)
+  purchaseCount   Int               @default(0)
+  wishlistCount   Int               @default(0)
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  publishedAt     DateTime?
+  
+  // UI Generation Metadata (stored as JSON for plugin processing)
+  uiConfig Json? // UI generation configuration
+  
+  // Relations
+  category        Category          @relation(fields: [categoryId], references: [id])
+  vendor          VendorProfile     @relation(fields: [vendorId], references: [id])
+  variants        ProductVariant[]
+  reviews         Review[]
+  orderItems      OrderItem[]
+  wishlistItems   WishlistItem[]
+  cartItems       CartItem[]
+  notifications   Notification[]
+  
+  // Access Control Policies
+  
+  // Performance Indexes
+  @@index([vendorId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([featured])
+  @@index([price])
+  @@index([createdAt])
+  @@index([publishedAt])
+  @@index([slug])
+  @@index([isLuxury])
+  @@index([viewCount])
+  
+  @@map("products")
+}
+
+model ProductVariant {
+  id            String    @id @default(cuid())
+  productId     String
+  name          String
+  sku           String    @unique
+  price         Float?
+  comparePrice  Float?
+  inventory     Int       @default(0)
+  attributes    Json      // Color, size, material, etc.
+  image         String?
+  isDefault     Boolean   @default(false)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+  
+  // Access Control Policies
+  
+  @@map("product_variants")
+}
+
+
+// VENDOR MANAGEMENT
+
+
+model VendorProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  businessName      String
+  businessType      String
+  description       String?
+  logo              String?
+  coverImage        String?
+  website           String?
+  phone             String?
+  email             String?
+  
+  // Business Details
+  taxId             String?
+  businessLicense   String?
+  address           Json?     // Business address
+  bankDetails       Json?     // Bank information (encrypt at application level)
+  
+  // Verification
+  isVerified        Boolean   @default(false)
+  verificationDate  DateTime?
+  verificationNotes String?
+  
+  // Performance Metrics
+  rating            Float     @default(0)
+  totalSales        Float     @default(0)
+  totalOrders       Int       @default(0)
+  responseTime      Int?      // Average response time in hours
+  
+  // Settings
+  autoAcceptOrders  Boolean   @default(false)
+  allowDirectContact Boolean  @default(true)
+  commissionRate    Float     @default(0.05) // 5% default commission
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products          Product[]
+  orders            Order[]
+  reviews           Review[]
+  merchantThemes    MerchantTheme[]
+  invoices          VendorInvoice[]
+  monetaryConfigs   MonetaryConfig[]
+  
+  // Access Control Policies
+  
+  @@map("vendor_profiles")
+}
+
+
+// ORDERS & PAYMENTS
+
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNumber       String        @unique
+  userId            String
+  vendorId          String?
+  
+  // Order Details
+  subtotal          Float
+  taxAmount         Float         @default(0)
+  shippingAmount    Float         @default(0)
+  discountAmount    Float         @default(0)
+  totalAmount       Float
+  
+  // Status
+  status            OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  
+  // Shipping
+  shippingAddress   Json
+  billingAddress    Json
+  trackingNumber    String?
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+  
+  // Notes
+  customerNotes     String?
+  internalNotes     String?
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  vendor            VendorProfile? @relation(fields: [vendorId], references: [id])
+  items             OrderItem[]
+  payment           Payment?
+  notifications     Notification[]
+  
+  // Access Control Policies
+  
+  @@map("orders")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String        @unique
+  amount            Float
+  currency          String        @default("USD")
+  method            PaymentMethod
+  status            PaymentStatus @default(PENDING)
+
+  // Payment Provider Details
+  provider          String?       // stripe, paypal, etc.
+  providerPaymentId String?       @unique
+  providerData      Json?         // Additional provider-specific data
+
+  // Billing Information
+  billingAddress    Json          // Billing address used for payment
+  paymentDetails    Json?         // Masked card info, last 4 digits, etc.
+
+  // Processing
+  processedAt       DateTime?
+  failedAt          DateTime?
+  failureReason     String?
+
+  // Refunds
+  refundedAmount    Float         @default(0)
+  refundReason      String?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  order             Order         @relation(fields: [orderId], references: [id])
+
+  // Access Control Policies
+
+  @@map("payments")
+}
+
+model OrderItem {
+  id              String          @id @default(cuid())
+  orderId         String
+  productId       String
+  variantId       String?
+  quantity        Int
+  price           Float
+  totalPrice      Float
+  
+  // Relations
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id])
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+  
+  // Access Control Policies
+  
+    @@map("order_items")
+}
+
+
+// REVIEWS & RATINGS
+
+
+model Review {
+  id            String    @id @default(cuid())
+  userId        String
+  productId     String
+  vendorId      String?
+  orderId       String?
+  
+  rating        Int       // 1-5 stars
+  title         String?
+  content       String
+  images        Json      @default("[]") // Array of image URLs
+  
+  // Moderation
+  isVerified    Boolean   @default(false)
+  isApproved    Boolean   @default(true)
+  moderatedBy   String?
+  moderatedAt   DateTime?
+  
+  // Helpfulness
+  helpfulCount  Int       @default(0)
+  reportCount   Int       @default(0)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+  product       Product   @relation(fields: [productId], references: [id])
+  vendor        VendorProfile? @relation(fields: [vendorId], references: [id])
+  notifications Notification[]
+  
+  // Access Control Policies
+  
+  @@unique([userId, productId, orderId])
+  @@map("reviews")
+}
+
+
+// WISHLIST
+
+
+model WishlistItem {
+  id            String    @id @default(cuid())
+  userId        String
+  productId     String
+  variantId     String?
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+model Cart {
+  id            String    @id @default(cuid())
+  userId        String?
+  sessionId     String?   // For guest carts
+  isActive      Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user          User?     @relation(fields: [userId], references: [id])
+  items         CartItem[]
+
+  // Access Control Policies
+
+  @@map("carts")
+}
+
+model CartItem {
+  id            String    @id @default(cuid())
+  cartId        String
+  productId     String
+  variantId     String?
+  quantity      Int       @default(1)
+
+  // Customizations (JSON for flexibility)
+  customizations Json?    // Size, color, engraving, etc.
+
+  addedAt       DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  cart          Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product       Product   @relation(fields: [productId], references: [id])
+  variant       ProductVariant? @relation(fields: [variantId], references: [id])
+
+  // Access Control Policies
+
+  @@unique([cartId, productId, variantId])
+  @@map("cart_items")
+}
+
+
+// AI SYSTEM
+
+
+model ChatSession {
+  id            String    @id @default(cuid())
+  userId        String
+  title         String?
+  aiProfile     AIProfileType @default(DEVELOPER)
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      ChatMessage[]
+  interactions  AIInteraction[]
+  
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id            String    @id @default(cuid())
+  sessionId     String
+  role          MessageRole
+  content       String
+  metadata      Json?     // Additional message metadata
+  
+  createdAt     DateTime  @default(now())
+  
+  // Relations
+  session       ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@map("chat_messages")
+}
+
+model AIInteraction {
+  id            String    @id @default(cuid())
+  userId        String
+  sessionId     String?
+  type          String    // code_generation, schema_analysis, documentation, etc.
+  input         String
+  output        String?
+  metadata      Json?     // Tool calls, parameters, etc.
+  tokensUsed    Int?
+  cost          Float?
+  duration      Int?      // Processing time in milliseconds
+  
+  createdAt     DateTime  @default(now())
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session       ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  
+  @@map("ai_interactions")
+}
+
+
+// BLOG SYSTEM
+
+
+model BlogPost {
+  id              String          @id @default(cuid())
+  authorId        String
+  title           String
+  slug            String          @unique
+  excerpt         String?
+  content         String
+  featuredImage   String?
+  images          Json            @default("[]") // Array of image URLs
+  tags            Json            @default("[]") // Array of tags
+  category        String?
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Status
+  status          BlogPostStatus  @default(DRAFT)
+  publishedAt     DateTime?
+  
+  // Analytics
+  viewCount       Int             @default(0)
+  likeCount       Int             @default(0)
+  commentCount    Int             @default(0)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  author          User            @relation(fields: [authorId], references: [id])
+  comments        Comment[]
+  savedPosts      SavedPost[]
+  likes           BlogPostLike[]
+  
+  // Access Control Policies
+  // Customer/Public users: Only PUBLISHED posts are visible
+  // Authors: Can see their own posts (all statuses)
+  // Admins/Moderators: Can see all posts
+  
+  // Performance Indexes
+  @@index([authorId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([category])
+  @@index([createdAt])
+  @@index([slug])
+  @@index([viewCount])
+  @@index([likeCount])
+  
+  @@map("blog_posts")
+}
+
+model Comment {
+  id            String    @id @default(cuid())
+  postId        String?
+  userId        String
+  parentId      String?   // For nested comments
+  content       String
+  
+  // Moderation
+  isApproved    Boolean   @default(true)
+  moderatedBy   String?
+  moderatedAt   DateTime?
+  
+  // Engagement
+  likeCount     Int       @default(0)
+  reportCount   Int       @default(0)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  post          BlogPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id])
+  parent        Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies       Comment[] @relation("CommentReplies")
+  
+  @@map("comments")
+}
+
+model SavedPost {
+  id            String    @id @default(cuid())
+  userId        String
+  postId        String
+  savedAt       DateTime  @default(now())
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post          BlogPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@unique([userId, postId])
+  @@map("saved_posts")
+}
+
+model BlogPostLike {
+  id            String    @id @default(cuid())
+  userId        String
+  postId        String
+  createdAt     DateTime  @default(now())
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post          BlogPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@unique([userId, postId])
+  @@map("blog_post_likes")
+}
+
+model Notification {
+  id                String             @id @default(cuid())
+  title             String
+  message           String
+  type              NotificationType   @default(ANNOUNCEMENT)
+  status            NotificationStatus @default(UNREAD)
+  channel           NotificationChannel @default(IN_APP)
+  
+  // Optional link for navigation
+  link              String?
+  linkText          String?
+  
+  // Broadcast settings
+  isBroadcast       Boolean            @default(false)
+  targetRoles       Json?              // Array of roles to target
+  targetUsers       Json?              // Array of specific user IDs
+  
+  // Sender information
+  senderId          String?
+  sender            User?              @relation("NotificationSender", fields: [senderId], references: [id])
+  
+  // Recipient information
+  recipientId       String?
+  recipient         User?              @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  
+  // Legacy fields for backward compatibility
+  userId            String?            // Legacy field
+  user              User?              @relation(fields: [userId], references: [id])
+  data              Json?              // Additional notification data
+  isRead            Boolean            @default(false)
+  isSent            Boolean            @default(false)
+  sentAt            DateTime?
+  
+  // Template support (optional)
+  templateId        String?
+  template          NotificationTemplate? @relation(fields: [templateId], references: [id])
+  
+  // Related Entities (optional)
+  orderId           String?
+  productId         String?
+  reviewId          String?
+  order             Order?             @relation(fields: [orderId], references: [id])
+  product           Product?           @relation(fields: [productId], references: [id])
+  review            Review?            @relation(fields: [reviewId], references: [id])
+  
+  // Timestamps
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  readAt            DateTime?
+  expiresAt         DateTime?
+  
+  // Access Control Policies
+  
+  @@map("notifications")
+}
+
+
+// SYSTEM CONFIGURATION
+
+
+model SystemConfig {
+  id            String    @id @default(cuid())
+  key           String    @unique
+  value         String
+  type          String    @default("string") // string, number, boolean, json
+  description   String?
+  isPublic      Boolean   @default(false)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Access Control Policies - System config is admin-only
+
+  @@map("system_config")
+}
+
+model GlobalThemeSettings {
+  id            String    @id @default(cuid())
+  
+  // Theme Preferences (Global Defaults)
+  themeMode     ThemeMode @default(SYSTEM)
+  primaryColor  String    @default("#D2691E") // Tiger Orange
+  secondaryColor String   @default("#0A3A2A") // Forest Green
+  accentColor   String    @default("#E6B800") // Golden Amber
+  backgroundColor String  @default("#F8F5F0") // Cream
+  textColor     String    @default("#3D2C20") // Deep Brown
+  
+  // Background Settings
+  backgroundImage String? // Global background image URL
+  
+  // Custom Theme Support
+  customLogo    String?   // Global custom logo URL
+  customTitle   String?   // Global custom application title
+  
+  // Typography
+  primaryFont   String    @default("var(--font-geist-sans)")
+  secondaryFont String    @default("var(--font-geist-mono)")
+  fontSize      String    @default("16px")
+  
+  // Layout Preferences
+  sidebarCollapsed Boolean @default(false)
+  compactMode     Boolean  @default(false)
+  animationsEnabled Boolean @default(true)
+  
+  // Active Status
+  isActive      Boolean   @default(true) // Only one active global theme at a time
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  updatedBy     String?   // Admin user ID who last updated
+  
+  // Access Control Policies - Admin only
+  
+  @@map("global_theme_settings")
+}
+
+model AuditLog {
+  id            String    @id @default(cuid())
+
+  // What happened
+  action        String    // create, update, delete, login, etc.
+  entityType    String    // User, Product, Order, etc.
+  entityId      String    // ID of the affected entity
+
+  // Who did it
+  userId        String?   // User who performed the action (null for system actions)
+  userType      String?   // CUSTOMER, VENDOR, ADMIN, etc.
+
+  // Context
+  ipAddress     String?
+  userAgent     String?
+  sessionId     String?
+
+  // Before/After data (JSON for flexibility)
+  oldData       Json?
+  newData       Json?
+
+  // Metadata
+  metadata      Json?     // Additional context
+  success       Boolean   @default(true)
+  errorMessage  String?
+
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  user          User?     @relation(fields: [userId], references: [id])
+
+  // Access Control Policies
+
+  @@map("audit_logs")
+}
+
+
+// THEME & UI GENERATION SYSTEM
+
+
+model CustomTheme {
+  id                String    @id @default(cuid())
+  userId            String
+  name              String
+  description       String?
+  
+  // Theme Configuration
+  lightMode         Json      // Light mode color scheme
+  darkMode          Json      // Dark mode color scheme
+  
+  // Branding
+  logo              String?   // Custom logo URL
+  backgroundImage   String?   // Custom background image
+  favicon           String?   // Custom favicon
+  
+  // Typography
+  fonts             Json?     // Custom font configuration
+  
+  // Layout
+  layout            Json?     // Custom layout settings
+  
+  // Components
+  components        Json?     // Custom component styles
+  
+  // Status
+  isActive          Boolean   @default(false)
+  isPublic          Boolean   @default(false)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  user              UserPreferences @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  merchantThemes    MerchantTheme[]
+  
+  // Access Control Policies
+  
+  @@map("custom_themes")
+}
+
+model MerchantTheme {
+  id                String    @id @default(cuid())
+  merchantId        String
+  customThemeId     String?
+  name              String
+  description       String?
+  
+  // Merchant Branding
+  businessName      String
+  logo              String?   // Merchant logo
+  brandColors       Json      // Brand color palette
+  typography        Json?     // Brand typography
+  
+  // Theme Configuration
+  lightMode         Json      // Light mode configuration
+  darkMode          Json      // Dark mode configuration
+  
+  // Layout & Components
+  layout            Json?     // Custom layout configuration
+  components        Json?     // Custom component styles
+  navigation        Json?     // Custom navigation configuration
+  
+  // Status
+  isActive          Boolean   @default(false)
+  isDefault         Boolean   @default(false)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  customTheme       CustomTheme? @relation(fields: [customThemeId], references: [id], onDelete: SetNull)
+  merchant          VendorProfile @relation(fields: [merchantId], references: [userId], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@map("merchant_themes")
+}
+
+model UIComponent {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  type              ComponentType
+  description       String?
+  
+  // Component Configuration
+  schema            Json      // Component schema definition
+  props             Json?     // Component props configuration
+  styles            Json?     // Component styles
+  validation        Json?     // Validation rules
+  
+  // UI Generation
+  template          String?   // Component template
+  variants          Json?     // Component variants
+  slots             Json?     // Component slots
+  
+  // Metadata
+  tags              Json      @default("[]") // Component tags
+  category          String?   // Component category
+  version           String    @default("1.0.0")
+  
+  // Status
+  isActive          Boolean   @default(true)
+  isPublic          Boolean   @default(true)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  fields            UIComponentField[]
+  instances         UIComponentInstance[]
+  
+  // Access Control Policies
+  
+  @@map("ui_components")
+}
+
+model UIComponentField {
+  id                String    @id @default(cuid())
+  componentId       String
+  name              String
+  type              FieldType
+  label             String?
+  description       String?
+  
+  // Field Configuration
+  defaultValue      String?
+  placeholder       String?
+  options           Json?     // For select/multiselect fields
+  validation        Json?     // Validation rules
+  
+  // UI Properties
+  required          Boolean   @default(false)
+  readonly          Boolean   @default(false)
+  hidden            Boolean   @default(false)
+  order             Int       @default(0)
+  
+  // Styling
+  className         String?
+  style             Json?
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  component         UIComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@map("ui_component_fields")
+}
+
+model UIComponentInstance {
+  id                String    @id @default(cuid())
+  componentId       String
+  name              String
+  description       String?
+  
+  // Instance Configuration
+  props             Json?     // Instance-specific props
+  data              Json?     // Instance data
+  styles            Json?     // Instance-specific styles
+  
+  // Layout
+  position          Json?     // Position in layout
+  size              Json?     // Size configuration
+  
+  // Status
+  isActive          Boolean   @default(true)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  component         UIComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@map("ui_component_instances")
+}
+
+model UILayout {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  description       String?
+  
+  // Layout Configuration
+  structure         Json      // Layout structure definition
+  components        Json      // Layout components
+  styles            Json?     // Layout styles
+  responsive        Json?     // Responsive configuration
+  
+  // Metadata
+  tags              Json      @default("[]")
+  category          String?
+  version           String    @default("1.0.0")
+  
+  // Status
+  isActive          Boolean   @default(true)
+  isPublic          Boolean   @default(true)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  instances         UILayoutInstance[]
+  
+  // Access Control Policies
+  
+  @@map("ui_layouts")
+}
+
+model UILayoutInstance {
+  id                String    @id @default(cuid())
+  layoutId          String
+  name              String
+  description       String?
+  
+  // Instance Configuration
+  configuration     Json?     // Instance-specific configuration
+  data              Json?     // Instance data
+  styles            Json?     // Instance-specific styles
+  
+  // Status
+  isActive          Boolean   @default(true)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  layout            UILayout @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@map("ui_layout_instances")
+}
+
+
+// AI-POWERED UI GENERATION
+
+
+model UIGenerationRequest {
+  id                String    @id @default(cuid())
+  userId            String
+  prompt            String    // AI generation prompt
+  context           Json?     // Generation context
+  
+  // Generation Configuration
+  componentType     ComponentType?
+  layoutType        String?
+  themeId           String?
+  
+  // Generated Content
+  generatedCode     String?   // Generated component code
+  generatedSchema   Json?     // Generated schema
+  generatedStyles   Json?     // Generated styles
+  
+  // Status
+  status            String    @default("pending") // pending, processing, completed, failed
+  error             String?
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  completedAt       DateTime?
+  
+  // Relations
+  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@map("ui_generation_requests")
+}
+
+
+// WALLET AUTHENTICATION & WEB3 INTEGRATION
+
+
+model WalletSession {
+  id                String    @id @default(cuid())
+  userId            String
+  walletAddress     String    // The connected wallet address
+  sessionId         String    @unique // Unique session identifier
+  nonce             String    // SIWE nonce for this session
+  message           String    // SIWE message that was signed
+  signature         String    // The signature from the wallet
+  expiresAt         DateTime  // When this session expires
+  isActive          Boolean   @default(true)
+  
+  // Session metadata
+  userAgent         String?
+  ipAddress         String?
+  chainId           Int?      // Blockchain chain ID
+  networkName       String?   // Network name (mainnet, polygon, etc.)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  lastUsedAt        DateTime  @default(now())
+  
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@index([isActive])
+  
+  @@map("wallet_sessions")
+}
+
+model WalletConnection {
+  id                String    @id @default(cuid())
+  userId            String
+  walletAddress     String    // The wallet address
+  walletType        String?   // MetaMask, WalletConnect, etc.
+  isPrimary         Boolean   @default(false) // Primary wallet for this user
+  isVerified        Boolean   @default(false) // Whether this wallet is verified
+  verificationDate  DateTime?
+  
+  // Connection metadata
+  firstConnectedAt  DateTime  @default(now())
+  lastConnectedAt   DateTime  @default(now())
+  connectionCount   Int       @default(1)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@unique([userId, walletAddress])
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([isPrimary])
+  @@index([isVerified])
+  
+  @@map("wallet_connections")
+}
+
+model WalletTransaction {
+  id                String    @id @default(cuid())
+  userId            String
+  walletAddress     String
+  transactionHash   String    @unique
+  chainId           Int
+  networkName       String
+  
+  // Transaction details
+  type              String    // "purchase", "investment", "transfer"
+  amount            String?   // Transaction amount (in wei or token amount)
+  tokenAddress      String?   // Token contract address (null for ETH)
+  tokenSymbol       String?   // Token symbol (ETH, USDC, etc.)
+  
+  // Status
+  status            String    @default("pending") // pending, confirmed, failed
+  blockNumber       Int?
+  gasUsed           String?
+  gasPrice          String?
+  
+  // Related entities
+  orderId           String?   // Related order ID
+  productId         String?   // Related product ID
+  investmentId      String?   // Related investment ID
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  confirmedAt       DateTime?
+  
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Access Control Policies
+  
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([transactionHash])
+  @@index([chainId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  
+  @@map("wallet_transactions")
+}
+
+model UserActivity {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String   // e.g., "login", "logout", "create_investment", "play_game"
+  resource   String?  // e.g., "Investment", "Portfolio"
+  resourceId String?  // ID of the specific resource
+  metadata   String?  @db.Text // JSON string for additional data
+  timestamp  DateTime @default(now())
+  
+  @@index([userId])
+  @@index([timestamp])
+  @@index([action])
+  @@index([resource])
+  
+  // Access policy: users can read their own activity, admins can read all
+  @@map("user_activity")
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String    // OAuth, credentials, etc.
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?     @default(1746416031)
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+  
+  // Access policies
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("sessions")
+  
+  // Access policies - updated to allow creation without auth
+}
+
+model Settings {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+  theme              String   @default("light")
+  language           String   @default("en")
+  emailNotifications Json     @default("{\"orders\": true, \"marketing\": false}")
+  currency           String   @default("USD")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("settings")
+  
+  // Access policies
+}
+
+model DocumentationConfig {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // General Settings
+  title              String   @default("Tokenizin Documentation")
+  description        String   @default("Comprehensive documentation for Tokenizin platform")
+  author             String   @default("Admin")
+  version            String   @default("1.0.0")
+  language           String   @default("en")
+  theme              String   @default("auto") // light, dark, auto
+  
+  // Cloud Sync Settings
+  cloudSyncEnabled   Boolean  @default(false)
+  cloudSyncApiKey    String?  @default("")
+  cloudSyncBaseUrl   String   @default("https://api.tiptap.cloud")
+  cloudSyncAutoSync  Boolean  @default(false)
+  cloudSyncInterval  Int      @default(5) // minutes
+  
+  // AI/RAG Settings
+  aiEnabled          Boolean  @default(false)
+  aiApiKey           String?  @default("")
+  aiBaseUrl          String   @default("https://api.openai.com/v1")
+  aiModel            String   @default("gpt-4")
+  aiKnowledgeBaseId  String?  @default("")
+  aiAutoComplete     Boolean  @default(false)
+  aiSuggestions      Boolean  @default(true)
+  
+  // Markdown Settings
+  enableMermaid      Boolean  @default(true)
+  enableMath         Boolean  @default(false)
+  enableCodeHighlight Boolean @default(true)
+  enableTableOfContents Boolean @default(true)
+  enableFootnotes    Boolean  @default(false)
+  customCSS          String?  @default("")
+  
+  // Editor Settings
+  fontSize           Int      @default(14)
+  fontFamily         String   @default("Inter, system-ui, sans-serif")
+  lineHeight         Float    @default(1.6)
+  tabSize            Int      @default(2)
+  wordWrap           Boolean  @default(true)
+  showLineNumbers    Boolean  @default(true)
+  autoSave           Boolean  @default(true)
+  autoSaveInterval   Int      @default(30) // seconds
+  
+  // Display Settings
+  sidebarWidth       Int      @default(320)
+  showSidebar        Boolean  @default(true)
+  showToolbar        Boolean  @default(true)
+  showStatusBar      Boolean  @default(true)
+  defaultViewMode    String   @default("view") // view, edit, split
+  zoomLevel          Float    @default(1.0)
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("documentation_configs")
+  
+  // Access policies
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("verification_tokens")
+  
+  // Access policies
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("password_reset_tokens")
+  
+  // Access policies
+}
+
+model OAuthState {
+  id        String   @id @default(cuid())
+  state     String   @unique
+  provider  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("oauth_states")
+  
+  // Access policies
+}
+
+// JWT Token Management Models - Required for token revocation and security
+
+model RevokedToken {
+  id        String   @id @default(cuid())
+  jti       String   @unique  // JWT ID for token identification
+  expiresAt DateTime           // When the token expires
+  createdAt DateTime @default(now())
+
+  @@map("RevokedToken")
+  
+  // Access policies - only admins can manage revoked tokens
+}
+
+model RevokedTokenFamily {
+  id        String   @id @default(cuid())
+  userId    String?  // Associated user ID (optional for flexibility)
+  expiresAt DateTime // When the token family expires
+  createdAt DateTime @default(now())
+
+  @@map("RevokedTokenFamily")
+  
+  // Access policies - only admins can manage revoked token families
+}
+
+// Real Estate Asset Marketplace Models
+// Using enum types for type safety and validation
+// Asset types: PropertyCategory enum (HOUSE, APARTMENT, COMMERCIAL, VILLA, ESTATE, LAND)
+// Asset status: PropertyStatus enum (DRAFT, PENDING, ACTIVE, SOLD)
+
+model RealEstateAsset {
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  assetType      PropertyCategory
+  location       String? // Deprecated: kept for backward compatibility, use addressId instead
+  addressId     String?  // Link to Address entity for structured address data
+  address       Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  price          Float
+  tokenPrice     Float
+  totalTokens    Int
+  availableTokens Int     // Will be set to totalTokens in the application logic
+  soldTokens     Int      @default(0) // Number of tokens already sold
+  imageUrl       String
+  videoUrl       String?  // Optional video URL for property showcase
+  documents      Document[]
+  ownerId        String
+  status         PropertyStatus @default(DRAFT)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  propertyId      String? @unique
+  tokenContractAddress String? // ERC20 token contract address for this property
+  completionDate  DateTime?
+  bedrooms        Int?
+  bathrooms       Int?
+  buildSize       Int?
+  landSize        Int?
+  leasehold       Int?
+  features        String[]
+
+  // Optional enrichment fields for onboarding (additive)
+  appraisalValue     Float?
+  marketValue        Float?
+  rentalIncome       Float?
+  operatingExpenses  Float?
+  constructionYear   Int?
+  architecturalStyle String?
+  condition          String?
+  gpsLat             Decimal? @db.Decimal(10, 6)
+  gpsLng             Decimal? @db.Decimal(10, 6)
+  complianceRating   Int?
+
+  // ROI and Financial Projections
+  expectedROI        Decimal? @db.Decimal(5, 2) // Expected annual ROI percentage (e.g., 12.5 for 12.5%)
+  expectedMonthlyROI Decimal? @db.Decimal(5, 4) // Expected monthly ROI for calculation (e.g., 1.0417 for 12.5% annual)
+  projectedAnnualReturn Decimal? @db.Decimal(12, 2) // Projected annual return in USD
+  projectedMonthlyReturn Decimal? @db.Decimal(12, 2) // Projected monthly return in USD
+  roiCalculationDate DateTime? // When ROI was last calculated/updated
+  roiMethodology     String?   // Methodology used for ROI calculation (e.g., "rental_income_based", "market_comparison")
+  
+  owner         User             @relation(fields: [ownerId], references: [id])
+  images        Image[]
+  investments   Investment[]
+  portfolios    Portfolio[]
+  deposits      Deposit[]
+  tokenHolders  TokenHolder[]
+  tokenPurchases TokenPurchase[]
+  tokenDeliveries TokenDelivery[]
+  stripePayments StripePayment[]
+  favorites     UserFavorite[]
+  
+  // Comprehensive Investment Analysis Relations
+  cashFlows          PropertyCashFlow[]     @relation("PropertyCashFlows")
+  marketComparables  MarketComparable[]     @relation("MarketComparables") 
+  valuations         PropertyValuation[]    @relation("PropertyValuations")
+  financialMetrics   FinancialMetrics[]     @relation("FinancialMetrics")
+  expenses           PropertyExpense[]      @relation("PropertyExpenses")
+  rentals            PropertyRental[]       @relation("PropertyRentals")
+  risks              InvestmentRisk[]       @relation("InvestmentRisks")
+  projections        CashFlowProjection[]   @relation("CashFlowProjections")
+  monetaryConfigs    MonetaryConfig[]
+  
+  // Property Onboarding Relations
+  propertyOnboardings PropertyOnboarding[]
+
+  // Blockchain linkage
+  assetContractLink AssetContractLink? @relation("RealEstateAssetContractLink")
+
+  // Marketplace listings
+  marketplaceListings MarketplaceListing[]
+
+  // Legacy token contract reference (kept for compatibility; prefer AssetContractLink)
+  // tokenContractAddress String?
+
+  @@map("real_estate_assets")
+}
+
+// One-to-one link between an asset and its deployed contract/ABI
+model AssetContractLink {
+  id                String   @id @default(cuid())
+  realEstateAssetId String   @unique
+  
+  // Asset ID Storage - Source of Truth for all IDs across ecosystem
+  registryAssetId   Int?     // Registry Asset ID (from RealEstateAsset.propertyId) - Used for purchaseTokens()
+  tokenAssetId      Int?     // Token Asset ID (from token contract's assetId()) - For reference only
+  marketplaceAssetId Int?    // Marketplace Asset ID (same as registryAssetId for now) - Used for marketplace lookups
+  
+  contractId        String?  // Optional: TOKEN contracts may not have DeployedContract records due to unique constraint
+  contractAddress   String   @unique
+  networkId         String
+  factoryTx         String?
+  deployedAt        DateTime?
+  lastSyncAt        DateTime?
+  contractAbiId     String? @unique
+
+  realEstateAsset   RealEstateAsset @relation("RealEstateAssetContractLink", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  deployedContract  DeployedContract? @relation("DeployedContractAssetLink", fields: [contractId], references: [id], onDelete: Cascade)
+  contractAbi       ContractABI? @relation("AssetContractAbiLink", fields: [contractAbiId], references: [id])
+
+  @@index([realEstateAssetId])
+  @@index([contractAddress])
+  @@index([networkId, contractAddress])
+  @@index([contractId]) // Index for faster lookups when contractId exists
+  @@index([registryAssetId]) // Index for registry asset ID lookups
+  @@index([tokenAssetId]) // Index for token asset ID lookups
+  @@map("asset_contract_links")
+}
+
+// Marketplace asset listings for property token sales
+model MarketplaceListing {
+  id                String   @id @default(cuid())
+
+  // Asset identification
+  assetId           String   // Registry asset ID (matches RealEstateAsset.propertyId)
+  tokenAddress      String   // ERC404 token contract address
+  seller            String   // Marketplace contract address (always the same)
+
+  // Pricing and supply
+  pricePerToken     Decimal  // Price per token in wei
+  totalTokens       Int      // Total tokens available for sale
+  availableTokens   Int      // Tokens still available (totalTokens - soldTokens)
+  soldTokens        Int      @default(0) // Tokens already sold
+
+  // Status and control
+  isActive          Boolean  @default(true) // Whether listing is active
+  listingType       String   @default("PRIMARY") // "PRIMARY", "SECONDARY"
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastSoldAt        DateTime? // Last time tokens were sold from this listing
+
+  // Relations
+  realEstateAsset   RealEstateAsset @relation(fields: [assetId], references: [propertyId], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([tokenAddress])
+  @@index([seller])
+  @@index([isActive])
+  @@index([assetId, isActive]) // For active listings lookup
+  @@map("marketplace_listings")
+}
+
+model UserFavorite {
+  id                  String          @id @default(cuid())
+  userId              String
+  realEstateAssetId   String
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realEstateAsset     RealEstateAsset @relation(fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  createdAt           DateTime        @default(now())
+  
+  @@unique([userId, realEstateAssetId])
+  @@map("user_favorites")
+}
+
+model Document {
+  id               String          @id @default(cuid())
+  title            String
+  description      String?         // Document description
+  url              String
+  type             DocumentType
+  realEstateAssetId String
+  
+  realEstateAsset  RealEstateAsset @relation(fields: [realEstateAssetId], references: [id])
+  createdAt        DateTime        @default(now())
+  
+  // Add relation to Collection
+  collection       Collection?     @relation(fields: [collectionId], references: [id])
+  collectionId     String?
+
+  // Verification extensions (additive)
+  verificationStatus DocumentVerificationStatus?
+  verifiedBy         String?
+  verifiedAt         DateTime?
+  validatorNotes     String?
+  validityDate       DateTime?
+  category           DocumentCategory?
+
+  @@map("documents")
+}
+
+// Conversational property onboarding session tracking
+model PropertyOnboarding {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status           PropertyOnboardingStatus @default(IN_PROGRESS)
+  currentStepKey   String?
+  requiredCompleted Boolean @default(false)
+  createdPropertyId String?
+  createdProperty  RealEstateAsset? @relation(fields: [createdPropertyId], references: [id])
+
+  collected        Json     // Normalized collected fields snapshot
+  transcript       Json[]   // [{question, answer, ts}]
+  authorizationType AuthorizationType?
+  complianceTarget Int?
+  lastPrompt       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdPropertyId])
+  @@map("property_onboarding")
+}
+
+model Image {
+  id               String          @id @default(cuid())
+  url              String
+  realEstateAsset  RealEstateAsset @relation(fields: [realEstateAssetId], references: [id])
+  realEstateAssetId String
+  createdAt        DateTime        @default(now())
+
+  @@map("images")
+}
+
+model Portfolio {
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id])
+  realEstateAssets RealEstateAsset[]
+  
+  // Portfolio Analysis Relations
+  analyses         PortfolioAnalysis[]
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@map("portfolios")
+}
+
+model InvestmentPerformance {
+  id           String      @id @default(cuid())
+  investmentId String
+  investment   Investment  @relation(fields: [investmentId], references: [id])
+  date         DateTime
+  roi          Float
+  notes        String?
+  createdAt    DateTime    @default(now())
+
+  @@map("investment_performances")
+}
+
+model MonthlyReturn {
+  id           String     @id @default(cuid())
+  investmentId String
+  investment   Investment @relation(fields: [investmentId], references: [id])
+  amount       Float
+  date         DateTime
+  status       String     @default("pending") // pending, processed, failed
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("monthly_returns")
+}
+
+// Deposit model - auto-approved for demonstration purposes
+model Deposit {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  amount           Float
+  status           DepositStatus   @default(VERIFIED)
+  notes            String?         // Admin notes for deposit management
+  realEstateAssetId String
+  realEstateAsset  RealEstateAsset @relation(fields: [realEstateAssetId], references: [id])
+  investments      Investment[]    // Changed from one-to-one to one-to-many
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  
+  @@map("deposits")
+}
+
+// Investment model - auto-activated for demonstration purposes
+model Investment {
+  id                  String                 @id @default(cuid())
+  realEstateAssetId   String
+  investorId          String
+  amount              Float
+  tokenAmount         Int
+  status              InvestmentStatus        @default(ACTIVE)
+  currentROI          Float                  @default(0)
+  realEstateAsset     RealEstateAsset        @relation(fields: [realEstateAssetId], references: [id])
+  investor            User                   @relation(fields: [investorId], references: [id])
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  performance         InvestmentPerformance[]
+  deposit             Deposit?               @relation(fields: [depositId], references: [id])
+  depositId           String?                // Removed unique constraint to allow multiple investments per deposit
+  monthlyReturns      MonthlyReturn[]
+  expectedMonthlyROI  Float
+  startDate           DateTime
+  endDate             DateTime?
+  distributionDay     Int                    // Day of month for ROI distribution
+
+  @@map("investments")
+}
+
+model TokenHolder {
+  id                  String          @id @default(cuid())
+  realEstateAssetId   String
+  userId              String
+  tokenAmount         Int
+  realEstateAsset     RealEstateAsset @relation(fields: [realEstateAssetId], references: [id])
+  user                User            @relation(fields: [userId], references: [id])
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@unique([realEstateAssetId, userId])
+  @@map("token_holders")
+}
+
+model TokenDelivery {
+  id                String         @id @default(cuid())
+  assetId           String         // RealEstateAsset ID
+  buyerAddress      String         // Buyer's wallet address
+  tokenAmount       Int            // Number of tokens delivered
+  paymentToken      String         // Payment token used (ETH, USDC, EURC, TKNZN)
+  totalCost         String         // Total cost in payment token (as string for precision)
+  deliveryTxHash    String?        // Transaction hash for token transfer
+  deliveryStatus    DeliveryStatus @default(PENDING) // Delivery status
+  deliveryMethod    DeliveryMethod // MINT_AND_TRANSFER or TRANSFER
+  errorMessage      String?        // Error message if delivery failed
+  attemptedAt       DateTime?      // When delivery was attempted
+  deliveredAt       DateTime?      // When delivery was successful
+
+  // Relations
+  asset             RealEstateAsset @relation(fields: [assetId], references: [id])
+
+  // Indexes for performance
+  @@index([assetId])
+  @@index([buyerAddress])
+  @@index([deliveryStatus])
+  @@map("token_deliveries")
+
+  // Access control - only admins can manage deliveries
+}
+
+model Collection {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name String
+  symbol String
+  baseUri String
+  type CollectionType
+  status CollectionStatus @default(DRAFT)
+  
+  // Presale configuration
+  presaleStartTime DateTime?
+  presaleEndTime DateTime?
+  presalePrice Decimal?
+  maxPerWallet Int?
+  maxSupply Int?
+  
+  // Relationships
+  owner User @relation(fields: [ownerId], references: [id])
+  ownerId String
+  propertyDocuments Document[]
+  
+  // Permissions
+}
+
+
+// Enhanced Image Upload Management
+model ImageUpload {
+  id            String   @id @default(cuid())
+  category      String   // avatar, coverImage, property, gameIcon, document
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityId      String?  // Related entity ID (property ID, game ID, etc.)
+  
+  originalUrl   String   // Original optimized image URL
+  variants      Json     // JSON object containing variant URLs { thumbnail: "url", small: "url", etc. }
+  metadata      Json     // Image metadata { originalSize, dimensions, format, etc. }
+  
+  status        String   @default("completed") // processing, completed, failed
+  processingLog String?  // Error logs or processing information
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("image_uploads")
+}
+
+// Stripe Payment Integration Models
+
+// Customer model - private table for Stripe customer mapping
+model Customer {
+  id                String @id @default(cuid())
+  userId            String @unique @map("user_id")
+  stripeCustomerId  String @unique @map("stripe_customer_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Access policies - private table, no user access
+  @@map("customers")
+}
+
+// Price model - synced from Stripe
+model Price {
+  id               String            @id
+  productId        String            @map("product_id")
+  active           Boolean
+  description      String?
+  unitAmount       BigInt?           @map("unit_amount")
+  currency         String?           @db.Char(3)
+  type             PricingType
+  interval         PricingPlanInterval?
+  intervalCount    Int?              @map("interval_count")
+  trialPeriodDays  Int?              @map("trial_period_days")
+  metadata         Json?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relationships
+  subscriptions  Subscription[]
+
+  // Access policies - public read-only
+  @@map("prices")
+}
+
+// Subscription model - synced from Stripe
+model Subscription {
+  id                    String              @id
+  userId                String              @map("user_id")
+  status                SubscriptionStatus
+  metadata              Json?
+  priceId               String              @map("price_id")
+  quantity              Int?
+  cancelAtPeriodEnd     Boolean             @map("cancel_at_period_end")
+  created               DateTime            @default(now())
+  currentPeriodStart    DateTime            @map("current_period_start")
+  currentPeriodEnd      DateTime            @map("current_period_end")
+  endedAt               DateTime?           @map("ended_at")
+  cancelAt              DateTime?           @map("cancel_at")
+  canceledAt            DateTime?           @map("canceled_at")
+  trialStart            DateTime?           @map("trial_start")
+  trialEnd              DateTime?           @map("trial_end")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relationships
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  price Price  @relation(fields: [priceId], references: [id])
+
+  // Access policies - users can only view their own subscriptions
+  @@map("subscriptions")
+}
+
+// Stripe Payment Enums
+
+enum PricingType {
+  ONE_TIME
+  RECURRING
+
+  @@map("pricing_type")
+}
+
+enum PricingPlanInterval {
+  DAY
+  WEEK
+  MONTH
+  YEAR
+
+  @@map("pricing_plan_interval")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  PAST_DUE
+  UNPAID
+  PAUSED
+
+  @@map("subscription_status")
+}
+
+// Stripe Product model for token purchases
+model StripeProduct {
+  id          String  @id
+  name        String
+  description String?
+  active      Boolean @default(true)
+  image       String?
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  prices StripePrice[]
+
+  // Access policies - public read-only
+  @@map("stripe_products")
+}
+
+// Stripe Price model for token packages
+model StripePrice {
+  id               String            @id
+  productId        String            @map("product_id")
+  active           Boolean           @default(true)
+  description      String?
+  unitAmount       BigInt?           @map("unit_amount")
+  currency         String?           @db.Char(3)
+  type             PricingType
+  interval         PricingPlanInterval?
+  intervalCount    Int?              @map("interval_count")
+  trialPeriodDays  Int?              @map("trial_period_days")
+  metadata         Json?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relationships
+  product        StripeProduct   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  payments       StripePayment[]
+
+  // Access policies - public read-only
+  @@map("stripe_prices")
+}
+
+// Stripe Payment model for tracking token purchases
+model StripePayment {
+  id                String            @id @default(cuid())
+  userId            String            @map("user_id")
+  priceId           String            @map("price_id")
+  stripePaymentId   String            @unique @map("stripe_payment_id")
+  amount            BigInt
+  currency          String            @db.Char(3)
+  status            PaymentStatus
+  metadata          Json?
+  realEstateAssetId String?           @map("real_estate_asset_id")
+  tokenAmount       Int?              @map("token_amount")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relationships
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  price StripePrice @relation(fields: [priceId], references: [id])
+  realEstateAsset RealEstateAsset? @relation(fields: [realEstateAssetId], references: [id])
+
+  // Access policies - users can view their own payments, admins can view all
+  @@map("stripe_payments")
+}
+
+
+// Notification Template model
+model NotificationTemplate {
+  id          String   @id @default(cuid())
+  type        String   @unique
+  title       String
+  message     String
+  priority    String   @default("MEDIUM")
+  category    String
+  active      Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  notifications Notification[]
+
+  // Access policies - admins only
+  @@map("notification_templates")
+}
+
+// Property Cash Flow Analysis - Monthly operating performance
+model PropertyCashFlow {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("PropertyCashFlows", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Reporting Period
+  reportingMonth       Int             // 1-12
+  reportingYear        Int
+  reportingDate        DateTime        // First day of the reporting month
+  
+  // Income Components
+  grossRentalIncome    Decimal         @db.Decimal(18, 8) @default(0)
+  otherIncome          Decimal         @db.Decimal(18, 8) @default(0) // Parking, amenities, etc.
+  vacancyLoss          Decimal         @db.Decimal(18, 8) @default(0)
+  effectiveGrossIncome Decimal         @db.Decimal(18, 8) @default(0)
+  
+  // Operating Expenses
+  propertyManagement   Decimal         @db.Decimal(18, 8) @default(0)
+  maintenanceRepairs   Decimal         @db.Decimal(18, 8) @default(0)
+  utilities            Decimal         @db.Decimal(18, 8) @default(0)
+  insurance            Decimal         @db.Decimal(18, 8) @default(0)
+  propertyTaxes        Decimal         @db.Decimal(18, 8) @default(0)
+  marketing            Decimal         @db.Decimal(18, 8) @default(0)
+  professionalFees     Decimal         @db.Decimal(18, 8) @default(0)
+  otherExpenses        Decimal         @db.Decimal(18, 8) @default(0)
+  totalOperatingExpenses Decimal       @db.Decimal(18, 8) @default(0)
+  
+  // Key Metrics
+  netOperatingIncome   Decimal         @db.Decimal(18, 8) @default(0) // EGI - Operating Expenses
+  operatingRatio       Decimal?        @db.Decimal(5, 4) // Operating Expenses / EGI
+  occupancyRate        Decimal?        @db.Decimal(5, 4) @default(1.0) // 1.0 = 100%
+  
+  // Capital Expenses
+  capitalExpenditure   Decimal         @db.Decimal(18, 8) @default(0)
+  
+  // Comments
+  notes               String?         @db.Text
+  
+  // Timestamps
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  @@unique([realEstateAssetId, reportingYear, reportingMonth])
+  @@index([realEstateAssetId])
+  @@index([reportingDate])
+  @@index([netOperatingIncome])
+  @@map("property_cash_flows")
+}
+
+// Market Comparable Analysis
+model MarketComparable {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("MarketComparables", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Comparable Property Details
+  comparableAddress    String
+  distance             Decimal?        @db.Decimal(8, 2) // Distance in kilometers
+  saleDate             DateTime
+  salePrice            Decimal         @db.Decimal(18, 8)
+  pricePerSqft         Decimal?        @db.Decimal(10, 2)
+  
+  // Property Characteristics
+  propertyType         String          // VILLA, APARTMENT, COMMERCIAL, etc.
+  bedrooms             Int?
+  bathrooms            Int?
+  buildSize            Int?            // Square feet/meters
+  landSize             Int?
+  yearBuilt            Int?
+  
+  // Adjustments for Comparison
+  locationAdjustment   Decimal?        @db.Decimal(10, 4) @default(0) // Percentage
+  sizeAdjustment       Decimal?        @db.Decimal(10, 4) @default(0)
+  conditionAdjustment  Decimal?        @db.Decimal(10, 4) @default(0)
+  amenityAdjustment    Decimal?        @db.Decimal(10, 4) @default(0)
+  adjustedPrice        Decimal?        @db.Decimal(18, 8)
+  
+  // Analysis
+  variance             Decimal?        @db.Decimal(10, 4) // % variance from subject property
+  reliability          Int             @default(5) // 1-10 scale
+  dataSource           String?         // MLS, broker, public record
+  
+  // Timestamps
+  analysisDate         DateTime        @default(now())
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  @@index([realEstateAssetId])
+  @@index([saleDate])
+  @@index([pricePerSqft])
+  @@map("market_comparables")
+}
+
+// Professional Property Valuations
+model PropertyValuation {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("PropertyValuations", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Valuation Details
+  valuationType        String          // APPRAISAL, BROKER_PRICE_OPINION, AUTOMATED_VALUATION
+  valuationDate        DateTime
+  effectiveDate        DateTime?       // Date valuation is effective from
+  expiryDate           DateTime?       // When valuation expires
+  
+  // Values
+  estimatedValue       Decimal         @db.Decimal(18, 8)
+  lowValue             Decimal?        @db.Decimal(18, 8) // Range low
+  highValue            Decimal?        @db.Decimal(18, 8) // Range high
+  pricePerSqft         Decimal?        @db.Decimal(10, 2)
+  
+  // Valuation Approach
+  salesComparison      Decimal?        @db.Decimal(18, 8) // Comparable sales approach
+  costApproach         Decimal?        @db.Decimal(18, 8) // Replacement cost approach
+  incomeApproach       Decimal?        @db.Decimal(18, 8) // Income capitalization approach
+  
+  // Professional Details
+  appraiserName        String?
+  appraiserLicense     String?
+  appraisalFirm        String?
+  orderingParty        String?
+  
+  // Supporting Data
+  marketConditions     String?         @db.Text // Market analysis summary
+  assumptions          String?         @db.Text // Valuation assumptions
+  limitations          String?         @db.Text // Scope limitations
+  
+  // Quality Indicators
+  confidence           Decimal?        @db.Decimal(3, 2) @default(0.85) // 0.0-1.0
+  reconciliationNotes  String?         @db.Text
+  
+  // Document Reference
+  reportUrl            String?         // Link to full valuation report
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  @@index([realEstateAssetId])
+  @@index([valuationDate])
+  @@index([valuationType])
+  @@map("property_valuations")
+}
+
+// Financial Metrics Calculations
+model FinancialMetrics {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("FinancialMetrics", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Calculation Period
+  calculationDate      DateTime        @default(now())
+  asOfDate             DateTime        // Date metrics are calculated as of
+  
+  // Profitability Metrics
+  irr                  Decimal?        @db.Decimal(8, 4) // Internal Rate of Return
+  npv                  Decimal?        @db.Decimal(18, 8) // Net Present Value
+  roi                  Decimal?        @db.Decimal(8, 4) // Return on Investment
+  equityMultiple       Decimal?        @db.Decimal(8, 4) // Total return multiple
+  
+  // Income Metrics
+  capRate              Decimal?        @db.Decimal(6, 4) // Capitalization Rate
+  cashOnCashReturn     Decimal?        @db.Decimal(8, 4) // Cash-on-cash return
+  grossRentMultiplier  Decimal?        @db.Decimal(8, 2) // GRM
+  debtServiceCoverage  Decimal?        @db.Decimal(6, 4) // DSCR
+  
+  // Risk Metrics
+  volatility           Decimal?        @db.Decimal(6, 4) // Price volatility
+  sharpeRatio          Decimal?        @db.Decimal(6, 4) // Risk-adjusted return
+  maxDrawdown          Decimal?        @db.Decimal(6, 4) // Maximum loss period
+  valueAtRisk          Decimal?        @db.Decimal(18, 8) // 95% VaR
+  
+  // Market Metrics
+  betaToMarket         Decimal?        @db.Decimal(6, 4) // Market correlation
+  alphaGeneration      Decimal?        @db.Decimal(6, 4) // Excess return
+  correlationIndex     Decimal?        @db.Decimal(6, 4) // Portfolio correlation
+  
+  // Liquidity Metrics
+  daysOnMarket         Int?            // Average time to sell
+  liquidityScore       Int?            // 1-10 liquidity rating
+  marketDepth          Decimal?        @db.Decimal(18, 8) // Market size
+  
+  // Calculation Metadata
+  calculationMethod    String          // DCF, COMPARABLE, INCOME, COST
+  discountRate         Decimal?        @db.Decimal(6, 4) // Used for NPV/IRR
+  assumptions          Json?           // Calculation assumptions
+  dataQuality          Int             @default(5) // 1-10 data quality score
+  
+  // Timestamps
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  
+  @@index([realEstateAssetId])
+  @@index([calculationDate])
+  @@index([irr])
+  @@index([capRate])
+  @@map("financial_metrics")
+}
+
+// Property Operating Expenses Detail
+model PropertyExpense {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("PropertyExpenses", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Expense Details
+  expenseCategory      ExpenseCategory
+  expenseType          ExpenseType
+  description          String
+  amount               Decimal         @db.Decimal(18, 8)
+  currency             String          @default("USD")
+  
+  // Timing
+  expenseDate          DateTime
+  invoiceNumber        String?
+  vendorName           String?
+  paymentStatus        PaymentStatusType @default(PAID)
+  
+  // Categorization
+  isRecurring          Boolean         @default(false)
+  frequency            FrequencyType?
+  taxDeductible        Boolean         @default(true)
+  
+  // Approvals
+  approvedBy           String?         // User ID who approved
+  approvedAt           DateTime?
+  
+  // Receipt/Documentation
+  receiptUrl           String?
+  documentCategory     String?         // LEGAL, FINANCIAL, OPERATIONAL
+  
+  // Timestamps
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  
+  @@index([realEstateAssetId])
+  @@index([expenseDate])
+  @@index([expenseCategory])
+  @@index([expenseType])
+  @@map("property_expenses")
+}
+
+// Rental Income and Occupancy Tracking
+model PropertyRental {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("PropertyRentals", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Rental Period
+  startDate            DateTime
+  endDate              DateTime?
+  
+  // Tenant Information
+  tenantName           String?
+  tenantContact        String?
+  leaseType            LeaseType
+  
+  // Rental Terms
+  monthlyRent          Decimal         @db.Decimal(18, 8)
+  securityDeposit      Decimal         @db.Decimal(18, 8) @default(0)
+  utilitiesIncluded    Boolean         @default(false)
+  petPolicy            PetPolicy?
+  
+  // Payment Tracking
+  rentCollected        Decimal         @db.Decimal(18, 8) @default(0)
+  latePayments         Int             @default(0)
+  missedPayments       Int             @default(0)
+  lastPaymentDate      DateTime?
+  
+  // Occupancy
+  occupancyDays        Int             // Days occupied in period
+  totalDays            Int             // Total days in period
+  occupancyRate        Decimal         @db.Decimal(5, 4) // 0.0-1.0
+  
+  // Status
+  status               RentalStatus    @default(ACTIVE)
+  terminationReason    String?
+  
+  // Renewal Tracking
+  renewalDate          DateTime?
+  renewalOffered       Boolean         @default(false)
+  renewalAccepted      Boolean         @default(false)
+  renewalRate          Decimal?        @db.Decimal(18, 8)
+  
+  // Performance
+  yieldGenerated       Decimal?        @db.Decimal(6, 4) // Rental yield for this period
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  @@index([realEstateAssetId])
+  @@index([startDate])
+  @@index([occupancyRate])
+  @@index([status])
+  @@map("property_rentals")
+}
+
+// Investment Benchmarks and Market Performance
+model InvestmentBenchmark {
+  id                   String          @id @default(cuid())
+  
+  // Benchmark Details
+  benchmarkName        String          // REIT_INDEX, REGIONAL_REAL_ESTATE, PEER_GROUP
+  benchmarkType        String          // MARKET, SECTOR, GEOGRAPHIC, PEER
+  geographic           String?         // GLOBAL, US, ASIA_PACIFIC, BALI, etc.
+  assetClass           String?         // RESIDENTIAL, COMMERCIAL, MIXED_USE
+  
+  // Performance Data
+  period               String          // MONTHLY, QUARTERLY, ANNUAL
+  periodDate           DateTime        // Date this benchmark data is for
+  returnRate           Decimal         @db.Decimal(8, 4) // Return for this period
+  volatility           Decimal?        @db.Decimal(6, 4) // Standard deviation
+  sharpeRatio          Decimal?        @db.Decimal(6, 4) // Risk-adjusted return
+  
+  // Market Conditions
+  marketCap            Decimal?        @db.Decimal(18, 8) // Total market size
+  tradingVolume        Decimal?        @db.Decimal(18, 8) // Trading activity
+  priceToRent          Decimal?        @db.Decimal(8, 2) // Price-to-rent ratio
+  yieldSpread          Decimal?        @db.Decimal(6, 4) // Yield spread vs risk-free rate
+  
+  // Source Information
+  dataProvider         String          // BLOOMBERG, REIT_COM, LOCAL_MLS, MANUAL
+  dataQuality          Int             @default(5) // 1-10 reliability score
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  @@unique([benchmarkName, period, periodDate])
+  @@index([benchmarkType])
+  @@index([geographic])
+  @@index([periodDate])
+  @@index([returnRate])
+  @@map("investment_benchmarks")
+}
+
+// Risk Assessment and Analysis
+model InvestmentRisk {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("InvestmentRisks", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Risk Assessment
+  assessmentDate       DateTime        @default(now())
+  assessorName         String?
+  overallRiskScore     Int             // 1-10 (1=low risk, 10=high risk)
+  
+  // Market Risks
+  marketRisk           Int             @default(5) // 1-10 scale
+  liquidityRisk        Int             @default(5)
+  interestRateRisk     Int             @default(5)
+  economicRisk         Int             @default(5)
+  
+  // Property-Specific Risks
+  locationRisk         Int             @default(5) // Neighborhood stability
+  structuralRisk       Int             @default(5) // Building condition
+  tenantRisk           Int             @default(5) // Tenant quality/stability
+  managementRisk       Int             @default(5) // Management quality
+  
+  // Regulatory Risks
+  zoningRisk           Int             @default(3) // Zoning changes
+  taxRisk              Int             @default(3) // Property tax increases
+  regulatoryRisk       Int             @default(3) // Regulatory changes
+  
+  // Environmental Risks
+  naturalDisasterRisk  Int             @default(3) // Flood, earthquake, etc.
+  climateChangeRisk    Int             @default(3) // Long-term climate impact
+  environmentalRisk    Int             @default(3) // Contamination, etc.
+  
+  // Risk Factors (detailed)
+  riskFactors          Json?           // Array of specific risk factors
+  mitigationStrategies Json?           // Risk mitigation plans
+  
+  // Stress Testing
+  stressScenarios      Json?           // Stress test scenarios and results
+  worstCaseROI         Decimal?        @db.Decimal(8, 4)
+  bestCaseROI          Decimal?        @db.Decimal(8, 4)
+  
+  // Review Cycle
+  nextReviewDate       DateTime?
+  reviewFrequency      String          @default("ANNUAL") // QUARTERLY, SEMI_ANNUAL, ANNUAL
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  @@index([realEstateAssetId])
+  @@index([assessmentDate])
+  @@index([overallRiskScore])
+  @@map("investment_risks")
+}
+
+// Cash Flow Projections
+model CashFlowProjection {
+  id                   String          @id @default(cuid())
+  realEstateAssetId    String
+  realEstateAsset      RealEstateAsset @relation("CashFlowProjections", fields: [realEstateAssetId], references: [id], onDelete: Cascade)
+  
+  // Projection Details
+  projectionName       String          // BASE_CASE, OPTIMISTIC, PESSIMISTIC, STRESS_TEST
+  projectionDate       DateTime        @default(now())
+  projectionPeriod     Int             // Projection length in years
+  
+  // Annual Projections (JSON arrays for years 1-N)
+  yearlyGrossIncome    Json            // Array of projected gross income by year
+  yearlyOperatingExp   Json            // Array of operating expenses by year
+  yearlyNOI            Json            // Array of NOI by year
+  yearlyCapEx          Json            // Array of capital expenditures by year
+  yearlyCashFlow       Json            // Array of cash flow by year
+  
+  // Growth Assumptions
+  incomeGrowthRate     Decimal         @db.Decimal(6, 4) @default(0.03) // 3% annual growth
+  expenseGrowthRate    Decimal         @db.Decimal(6, 4) @default(0.025) // 2.5% annual growth
+  occupancyAssumption  Decimal         @db.Decimal(5, 4) @default(0.95) // 95% occupancy
+  
+  // Exit Assumptions
+  exitYear             Int?            // Year of projected exit
+  exitCapRate          Decimal?        @db.Decimal(6, 4) // Cap rate at exit
+  exitValue            Decimal?        @db.Decimal(18, 8) // Projected exit value
+  sellingCosts         Decimal?        @db.Decimal(6, 4) @default(0.06) // 6% selling costs
+  
+  // Model Assumptions
+  discountRate         Decimal         @db.Decimal(6, 4) @default(0.08) // 8% discount rate
+  inflationRate        Decimal         @db.Decimal(6, 4) @default(0.025) // 2.5% inflation
+  
+  // Scenario Variables
+  scenarioDescription  String?         @db.Text
+  keyAssumptions       Json?           // Key assumptions for this scenario
+  sensitivityFactors   Json?           // Sensitivity analysis factors
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  @@index([realEstateAssetId])
+  @@index([projectionDate])
+  @@index([projectionName])
+  @@map("cash_flow_projections")
+}
+
+// Portfolio-Level Analysis
+model PortfolioAnalysis {
+  id                   String          @id @default(cuid())
+  portfolioId          String
+  portfolio            Portfolio       @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  
+  // Analysis Period
+  analysisDate         DateTime        @default(now())
+  periodStart          DateTime
+  periodEnd            DateTime
+  
+  // Portfolio Metrics
+  totalValue           Decimal         @db.Decimal(18, 8)
+  totalCashInvested    Decimal         @db.Decimal(18, 8)
+  totalReturns         Decimal         @db.Decimal(18, 8)
+  portfolioROI         Decimal         @db.Decimal(8, 4)
+  portfolioIRR         Decimal?        @db.Decimal(8, 4)
+  
+  // Diversification Metrics
+  assetCount           Int             // Number of assets in portfolio
+  assetTypesDiversity  Decimal?        @db.Decimal(4, 3) // Herfindahl index
+  geographicDiversity  Decimal?        @db.Decimal(4, 3) // Geographic spread
+  concentrationRisk    Decimal?        @db.Decimal(6, 4) // Largest position %
+  
+  // Risk Metrics
+  portfolioVolatility  Decimal?        @db.Decimal(6, 4) // Portfolio volatility
+  maxDrawdown          Decimal?        @db.Decimal(6, 4) // Maximum drawdown period
+  sharpeRatio          Decimal?        @db.Decimal(6, 4) // Risk-adjusted return
+  
+  // Performance vs Benchmarks
+  benchmarkReturn      Decimal?        @db.Decimal(8, 4) // Benchmark performance
+  alpha                Decimal?        @db.Decimal(8, 4) // Excess return vs benchmark
+  beta                 Decimal?        @db.Decimal(6, 4) // Market sensitivity
+  trackingError        Decimal?        @db.Decimal(6, 4) // Deviation from benchmark
+  
+  // Income Analysis
+  totalIncome          Decimal         @db.Decimal(18, 8)
+  totalExpenses        Decimal         @db.Decimal(18, 8)
+  netIncome            Decimal         @db.Decimal(18, 8)
+  incomeYield          Decimal?        @db.Decimal(6, 4) // Income / Total Value
+  
+  // Cash Flow
+  operatingCashFlow    Decimal         @db.Decimal(18, 8)
+  freeCashFlow         Decimal         @db.Decimal(18, 8)
+  cashFlowYield        Decimal?        @db.Decimal(6, 4)
+  
+  // Valuation Metrics
+  averageCapRate       Decimal?        @db.Decimal(6, 4) // Weighted average cap rate
+  priceToIncome        Decimal?        @db.Decimal(8, 2) // Price to annual income
+  debtToEquity         Decimal?        @db.Decimal(6, 4) // If applicable
+  
+  // Analysis Notes
+  performanceSummary   String?         @db.Text
+  riskAssessment       String?         @db.Text
+  recommendations      String?         @db.Text
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  @@index([portfolioId])
+  @@index([analysisDate])
+  @@index([portfolioROI])
+  @@map("portfolio_analysis")
+}
+
+// Market Research and Intelligence
+model MarketIntelligence {
+  id                   String          @id @default(cuid())
+  
+  // Geographic Scope
+  country              String
+  region               String?         // State, province, city
+  submarket            String?         // Neighborhood, district
+  
+  // Asset Focus
+  assetType            String          // VILLA, APARTMENT, COMMERCIAL, etc.
+  priceRange           Json?           // {min, max} price range
+  
+  // Market Data
+  reportingDate        DateTime
+  averagePrice         Decimal         @db.Decimal(18, 8)
+  medianPrice          Decimal         @db.Decimal(18, 8)
+  pricePerSqft         Decimal?        @db.Decimal(10, 2)
+  averageDaysOnMarket  Int?
+  
+  // Supply & Demand
+  newListings          Int?
+  totalInventory       Int?
+  salesVolume          Int?
+  absorptionRate       Decimal?        @db.Decimal(6, 4) // Units absorbed per month
+  
+  // Yield Metrics
+  averageRentalYield   Decimal?        @db.Decimal(6, 4)
+  averageCapRate       Decimal?        @db.Decimal(6, 4)
+  grossRentMultiplier  Decimal?        @db.Decimal(8, 2)
+  
+  // Economic Indicators
+  unemploymentRate     Decimal?        @db.Decimal(5, 2)
+  populationGrowth     Decimal?        @db.Decimal(5, 2)
+  incomeGrowth         Decimal?        @db.Decimal(5, 2)
+  interestRates        Decimal?        @db.Decimal(6, 4)
+  
+  // Future Projections
+  priceGrowthForecast  Decimal?        @db.Decimal(6, 4) // Annual growth rate
+  demandForecast       String?         // INCREASING, STABLE, DECREASING
+  supplyForecast       String?         // INCREASING, STABLE, DECREASING
+  
+  // Data Source
+  dataProvider         String          // CBRE, JLL, LOCAL_MLS, GOVERNMENT, AI_ANALYSIS
+  dataQuality          Int             @default(5) // 1-10 quality score
+  analystNotes         String?         @db.Text
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  @@unique([country, region, assetType, reportingDate])
+  @@index([country])
+  @@index([reportingDate])
+  @@index([assetType])
+  @@map("market_intelligence")
+}
+
+
+enum MintType {
+  INITIAL_MINT
+  LAZY_MINT
+  ADMIN_MINT
+  BULK_MINT
+}
+
+enum DependencyType {
+  REQUIRED
+  OPTIONAL
+  FALLBACK
+}
+
+enum DependencyStatus {
+  ACTIVE
+  INACTIVE
+  REMOVED
+  FAILED
+}
+
+enum OnboardingStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PropertyOnboardingStatus {
+  IN_PROGRESS
+  READY_TO_CREATE
+  CREATED
+  PAUSED
+  CANCELLED
+}
+
+enum AuthorizationType {
+  OWNER
+  POA
+  CORPORATE
+  TRUST
+  JOINT
+}
+
+enum AdminCapability {
+  CAN_PAUSE
+  CAN_MINT
+  CAN_BURN
+  CAN_UPGRADE
+  CAN_MANAGE_DEPENDENCIES
+  CAN_GRANT_ROLES
+  CAN_REVOKE_ROLES
+}
+
+
+// LAZY MINTING MODELS
+
+
+model TokenMintEvent {
+  id                String    @id @default(cuid())
+  contractAddress   String
+  recipient         String
+  amount            String    // Amount minted (as string to handle BigInt)
+  transactionHash   String    @unique
+  blockNumber       BigInt
+  mintType          MintType
+  
+  // Minter information
+  mintedBy          String    // Address that initiated mint
+  mintedAt          DateTime  @default(now())
+  
+  // Metadata
+  metadata          Json?     // Additional mint details
+  
+  // Access control
+  
+  @@index([contractAddress])
+  @@index([recipient])
+  @@index([mintedAt])
+  @@map("token_mint_events")
+}
+
+model LazyMintConfig {
+  id                String    @id @default(cuid())
+  contractAddress   String    @unique
+  
+  // Supply configuration
+  maxSupply         String    // Maximum token supply (as string for BigInt)
+  initialMint       String    // Initially minted amount
+  totalMinted       String    @default("0") // Total minted so far
+  remainingSupply   String    // Calculated remaining supply
+  
+  // Configuration
+  enabled           Boolean   @default(true)
+  mintersAllowed    Json      @default("[]") // Array of addresses allowed to mint
+  
+  // Limits
+  maxMintPerTx      String?   // Maximum tokens per mint transaction
+  mintCooldown      Int?      // Cooldown between mints (seconds)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  lastMintAt        DateTime?
+  
+  // Access control
+  
+  @@map("lazy_mint_configs")
+}
+
+
+// ADMIN ROLE MANAGEMENT
+
+
+model ContractAdminRole {
+  id                String    @id @default(cuid())
+  contractAddress   String
+  adminAddress      String
+  
+  // Role information
+  roleName          String    @default("ADMIN") // ADMIN, MINTER, PAUSER, etc.
+  roleHash          String?   // Role hash from contract
+  
+  // Capabilities
+  capabilities      Json      @default("[]") // Array of AdminCapability
+  
+  // Status
+  isActive          Boolean   @default(true)
+  
+  // Assignment details
+  grantedBy         String    // Address that granted the role
+  grantedAt         DateTime  @default(now())
+  grantTx           String?   // Transaction hash of grant
+  
+  revokedBy         String?
+  revokedAt         DateTime?
+  revokeTx          String?
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@unique([contractAddress, adminAddress, roleName])
+  @@index([contractAddress])
+  @@index([adminAddress])
+  @@map("contract_admin_roles")
+}
+
+model AdminAction {
+  id                String    @id @default(cuid())
+  contractAddress   String
+  adminAddress      String
+  
+  // Action details
+  actionType        String    // PAUSE, UNPAUSE, MINT, BURN, UPGRADE, etc.
+  actionData        Json?     // Additional action parameters
+  
+  // Transaction
+  transactionHash   String    @unique
+  blockNumber       BigInt
+  gasUsed           String?
+  
+  // Status
+  status            String    @default("COMPLETED") // COMPLETED, FAILED, REVERTED
+  errorMessage      String?
+  
+  // Timestamps
+  executedAt        DateTime  @default(now())
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@index([contractAddress])
+  @@index([adminAddress])
+  @@index([executedAt])
+  @@map("admin_actions")
+}
+
+
+// CONTRACT DEPENDENCIES
+
+
+model ContractDependency {
+  id                String    @id @default(cuid())
+  
+  // Contract relationship
+  contractAddress   String    // Main contract
+  dependencyAddress String    // Dependency contract
+  dependencyType    DependencyType
+  
+  // Status
+  status            DependencyStatus @default(ACTIVE)
+  
+  // Configuration
+  isRequired        Boolean   @default(false)
+  fallbackAddress   String?   // Fallback contract if dependency fails
+  
+  // Health monitoring
+  lastChecked       DateTime?
+  lastCheckStatus   String?   // OK, FAILED, UNAVAILABLE
+  failureCount      Int       @default(0)
+  
+  // Lifecycle
+  addedBy           String
+  addedAt           DateTime  @default(now())
+  addedTx           String?
+  
+  removedBy         String?
+  removedAt         DateTime?
+  removedTx         String?
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@unique([contractAddress, dependencyAddress])
+  @@index([contractAddress])
+  @@index([dependencyAddress])
+  @@index([status])
+  @@map("contract_dependencies")
+}
+
+model DependencyHealthCheck {
+  id                String    @id @default(cuid())
+  dependencyId      String
+  
+  // Check results
+  status            String    // OK, FAILED, TIMEOUT, UNAVAILABLE
+  responseTime      Int?      // Response time in milliseconds
+  errorMessage      String?
+  
+  // Check details
+  checkedAt         DateTime  @default(now())
+  checkType         String    // PING, FUNCTION_CALL, BALANCE_CHECK
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@index([dependencyId])
+  @@index([checkedAt])
+  @@map("dependency_health_checks")
+}
+
+
+// ONBOARDING WORKFLOW
+
+
+model TokenOnboarding {
+  id                String    @id @default(cuid())
+  
+  // Property reference
+  propertyId        String
+  propertyName      String
+  propertySymbol    String
+  
+  // Onboarding details
+  initiatedBy       String    // User who initiated onboarding
+  status            OnboardingStatus @default(PENDING)
+  currentStep       Int       @default(0)
+  totalSteps        Int       @default(8)
+  
+  // Progress tracking
+  overallProgress   Int       @default(0) // 0-100
+  stepData          Json      @default("[]") // Array of step details
+  
+  // Configuration
+  onboardingConfig  Json      // Full onboarding parameters
+  
+  // Results
+  contractAddress   String?
+  assetId           String?
+  deploymentTx      String?
+  
+  // Error handling
+  errorMessage      String?
+  errorDetails      Json?
+  failedAt          DateTime?
+  
+  // Timestamps
+  initiatedAt       DateTime  @default(now())
+  completedAt       DateTime?
+  updatedAt         DateTime  @updatedAt
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@index([propertyId])
+  @@index([status])
+  @@index([initiatedAt])
+  @@map("token_onboardings")
+}
+
+model OnboardingStep {
+  id                String    @id @default(cuid())
+  onboardingId      String
+  
+  // Step details
+  stepIndex         Int
+  stepId            String    // validation, registration, deployment, etc.
+  stepName          String
+  description       String
+  
+  // Status
+  status            String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED, SKIPPED
+  progress          Int       @default(0) // 0-100
+  
+  // Results
+  result            Json?
+  transactionHash   String?
+  errorMessage      String?
+  
+  // Timestamps
+  startedAt         DateTime?
+  completedAt       DateTime?
+  duration          Int?      // Duration in seconds
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@unique([onboardingId, stepIndex])
+  @@index([onboardingId])
+  @@map("onboarding_steps")
+}
+
+
+// CONTRACT STATE & MONITORING
+
+
+model ContractState {
+  id                String    @id @default(cuid())
+  contractAddress   String    @unique
+  
+  // Contract status
+  isPaused          Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  isUpgradeable     Boolean   @default(false)
+  
+  // Supply information
+  totalSupply       String    @default("0")
+  maxSupply         String?
+  circulatingSupply String    @default("0")
+  
+  // Owner information
+  owner             String
+  pendingOwner      String?
+  
+  // Lazy minting
+  lazyMintingEnabled Boolean  @default(false)
+  
+  // Timestamps
+  lastUpdated       DateTime  @default(now())
+  lastSynced        DateTime  @default(now())
+  
+  // Sync status
+  syncStatus        String    @default("SYNCED") // SYNCED, SYNCING, FAILED, OUTDATED
+  lastSyncBlock     BigInt?
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@index([contractAddress])
+  @@index([lastUpdated])
+  @@map("contract_states")
+}
+
+model ContractMetrics {
+  id                String    @id @default(cuid())
+  contractAddress   String
+  
+  // Time period
+  periodStart       DateTime
+  periodEnd         DateTime
+  
+  // Transaction metrics
+  totalTransactions Int       @default(0)
+  totalTransfers    Int       @default(0)
+  totalMints        Int       @default(0)
+  totalBurns        Int       @default(0)
+  
+  // Value metrics
+  totalVolume       String    @default("0") // Total transfer volume
+  uniqueHolders     Int       @default(0)
+  
+  // Gas metrics
+  totalGasUsed      String    @default("0")
+  avgGasPrice       String    @default("0")
+  
+  // Activity metrics
+  dailyActiveUsers  Int       @default(0)
+  
+  // Timestamps
+  calculatedAt      DateTime  @default(now())
+  
+  // Metadata
+  metadata          Json?
+  
+  // Access control
+  
+  @@unique([contractAddress, periodStart, periodEnd])
+  @@index([contractAddress])
+  @@index([periodStart])
+  @@map("contract_metrics")
+}
+
+
+// BLOCKCHAIN ADMINISTRATION MODELS
+
+
+// Blockchain Network Configuration
+model BlockchainNetwork {
+  id                String   @id @default(cuid())
+  chainId           Int      @unique
+  name              String   // "Sepolia", "Mainnet", "Hardhat Local"
+  displayName       String   // "Ethereum Sepolia Testnet"
+  isTestnet         Boolean  @default(true)
+  isActive          Boolean  @default(true)
+  
+  // RPC Configuration
+  primaryRpcUrl     String
+  fallbackRpcUrls   Json     @default("[]") // Array of backup RPCs
+  wssUrl            String?  // WebSocket URL
+  
+  // Explorer Configuration
+  explorerUrl       String   // "https://sepolia.etherscan.io"
+  explorerApiKey    String?  // For verification
+  
+  // Network Details
+  nativeCurrency    Json     // {name, symbol, decimals}
+  blockTime         Int      @default(12) // Average block time in seconds
+  
+  // Gas Configuration
+  maxGasPrice       String?  // Max gas price in gwei
+  priorityFee       String?  // Priority fee in gwei
+  
+  // AppKit/Reown Configuration
+  appkitEnabled     Boolean  @default(true)
+  appkitMetadata    Json?    // Network-specific metadata
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  contracts         DeployedContract[]
+  rpcProviders      RpcProvider[]
+  
+  @@map("blockchain_networks")
+}
+
+// Custom RPC Provider Management
+model RpcProvider {
+  id                String   @id @default(cuid())
+  networkId         String
+  network           BlockchainNetwork @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  
+  name              String   // "Infura", "Alchemy", "Ankr", "Custom"
+  rpcUrl            String
+  wssUrl            String?
+  apiKey            String?  // Encrypted
+  priority          Int      @default(0) // Higher = preferred
+  isActive          Boolean  @default(true)
+  
+  // Health Monitoring
+  lastChecked       DateTime?
+  isHealthy         Boolean  @default(true)
+  responseTimeMs    Int?
+  failureCount      Int      @default(0)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([networkId, name])
+  @@index([networkId, priority])
+  @@map("rpc_providers")
+}
+
+// Deployed Contract Registry
+model DeployedContract {
+  id                String   @id @default(cuid())
+  networkId         String
+  network           BlockchainNetwork @relation(fields: [networkId], references: [id])
+  
+  contractType      String   // "REGISTRY", "FACTORY", "MARKETPLACE", "MEMBERSHIP", "TOKEN"
+  contractName      String   // "RWAAssetRegistry", "RWATokenFactory"
+  contractAddress   String
+  
+  // Proxy Configuration (for upgradeable contracts)
+  isUpgradeable     Boolean  @default(true)
+  proxyType         String?  // "TRANSPARENT", "UUPS"
+  implementationAddress String?
+  proxyAdminAddress String?
+  
+  // Deployment Info
+  deployedBy        String   // Admin wallet address
+  deploymentTx      String
+  deploymentBlock   BigInt
+  deployedAt        DateTime
+  
+  // Contract Metadata
+  abiHash           String   // Hash of ABI for versioning
+  sourceCodeUrl     String?  // URL to flattened contract source code
+  version           String   @default("1.0.0")
+  
+  // Status
+  isActive          Boolean  @default(true)
+  isVerified        Boolean  @default(false)
+  verifiedAt        DateTime?
+  
+  // Roles & Permissions
+  adminAddresses    Json     @default("[]") // Addresses with admin role
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  assetLinks        AssetContractLink[] @relation("DeployedContractAssetLink") // Array: multiple assets can link to same contract type
+  upgrades          ContractUpgrade[]
+  
+  @@unique([networkId, contractType])
+  @@index([contractAddress])
+  @@map("deployed_contracts")
+}
+
+// Contract Upgrade History
+model ContractUpgrade {
+  id                String   @id @default(cuid())
+  contractId        String
+  contract          DeployedContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  
+  fromVersion       String
+  toVersion         String
+  fromImplementation String
+  toImplementation  String
+  
+  upgradeTx         String
+  upgradeBlock      BigInt
+  upgradedBy        String   // Admin wallet
+  upgradedAt        DateTime
+  
+  // Upgrade Details
+  changeLog         String?  @db.Text
+  abiChanged        Boolean  @default(false)
+  storageChanged    Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([contractId])
+  @@map("contract_upgrades")
+}
+
+// ============================================================================
+// CONTRACT ABI & INTERACTION MODELS
+// ============================================================================
+
+// Contract ABI Storage and Parsing
+model ContractABI {
+  id              String   @id @default(cuid())
+  contractAddress String   @unique
+  networkId       String
+
+  // ABI Data
+  abi             Json     // Full ABI array
+  parsedFunctions Json     // Categorized functions {read: [], write: [], all: []}
+  parsedEvents    Json     // Parsed event signatures
+  parsedErrors    Json?    // Parsed custom errors
+
+  // Source Code (if verified)
+  sourceCode      String?  @db.Text
+  compilerVersion String?
+  optimizationUsed Boolean @default(false)
+  runs            Int?
+  evmVersion      String?
+  licenseType     String?
+
+  // Verification Status
+  isVerified      Boolean  @default(false)
+  verifiedAt      DateTime?
+  verificationSource String? // "etherscan", "sourcify", "manual"
+
+  // Sync Status
+  lastSyncedAt    DateTime?
+  lastSyncedBlock BigInt?  // Last block number that was synced (for efficient resume)
+  syncStatus      String   @default("pending") // "pending", "synced", "failed"
+  syncError       String?
+
+  // Metadata
+  contractName    String?
+  totalFunctions  Int      @default(0)
+  totalEvents     Int      @default(0)
+  hasPayable      Boolean  @default(false)
+  hasView         Boolean  @default(false)
+  hasPure         Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  transactions    ContractTransaction[]
+  events          ContractEvent[]
+  assetContractLink AssetContractLink? @relation("AssetContractAbiLink")
+
+  @@index([contractAddress])
+  @@index([networkId])
+  @@index([isVerified])
+  @@map("contract_abis")
+}
+
+// Contract Transaction History
+model ContractTransaction {
+  id              String   @id @default(cuid())
+  contractAddress String
+  contractABI     ContractABI? @relation(fields: [contractAddress], references: [contractAddress], onDelete: Cascade)
+  networkId       String
+
+  // Transaction Data
+  txHash          String   @unique
+  blockNumber     BigInt
+  blockHash       String
+  blockTimestamp  DateTime
+  transactionIndex Int
+
+  // Parties
+  from            String   // Sender address
+  to              String   // Contract address
+
+  // Value & Gas
+  value           String   @default("0") // Wei as string
+  gasLimit        String
+  gasUsed         String
+  gasPrice        String
+  effectiveGasPrice String?
+  maxFeePerGas    String?
+  maxPriorityFeePerGas String?
+
+  // Function Call
+  methodId        String?  // Function selector (0x12345678)
+  methodName      String?  // Decoded function name
+  functionSignature String? // Full signature
+  inputData       String   @db.Text // Raw input data
+  decodedInput    Json?    // Decoded parameters
+
+  // Result
+  status          Boolean  @default(true) // true = success, false = failed
+  outputData      String?  @db.Text // Raw output data
+  decodedOutput   Json?    // Decoded return values
+
+  // Error Handling
+  revertReason    String?
+  errorMessage    String?
+
+  // Metadata
+  nonce           Int
+  type            Int      @default(0) // 0 = legacy, 2 = EIP-1559
+
+  createdAt       DateTime @default(now())
+
+  // Relations
+  events          ContractEvent[]
+
+  @@index([contractAddress, blockNumber])
+  @@index([contractAddress, methodName])
+  @@index([from])
+  @@index([blockTimestamp])
+  @@index([methodId])
+  @@map("contract_transactions")
+}
+
+// Contract Event Logs
+model ContractEvent {
+  id              String   @id @default(cuid())
+  contractAddress String
+  contractABI     ContractABI? @relation(fields: [contractAddress], references: [contractAddress], onDelete: Cascade)
+  networkId       String
+
+  // Event Location
+  txHash          String
+  transaction     ContractTransaction? @relation(fields: [txHash], references: [txHash], onDelete: Cascade)
+  blockNumber     BigInt
+  blockHash       String
+  blockTimestamp  DateTime
+  logIndex        Int
+  transactionIndex Int
+
+  // Event Data
+  eventName       String   // Decoded event name (e.g., "Transfer")
+  eventSignature  String   // Full signature (e.g., "Transfer(address,address,uint256)")
+  topic0          String   // Event signature hash
+  topic1          String?  // First indexed parameter
+  topic2          String?  // Second indexed parameter
+  topic3          String?  // Third indexed parameter
+
+  // Raw Data
+  data            String   @db.Text // Raw data field
+  topics          Json     // Array of all topics
+
+  // Decoded Data
+  decodedData     Json     // Decoded event parameters with names
+  indexedParams   Json?    // Indexed parameters
+  nonIndexedParams Json?   // Non-indexed parameters
+
+  // Metadata
+  removed         Boolean  @default(false) // Chain reorganization flag
+  processed       Boolean  @default(false) // Transfer processing status
+  processedAt     DateTime? // When transfer was processed
+
+  createdAt       DateTime @default(now())
+
+  @@unique([txHash, logIndex])
+  @@index([contractAddress, eventName])
+  @@index([contractAddress, blockNumber])
+  @@index([blockTimestamp])
+  @@index([topic0])
+  @@map("contract_events")
+}
+
+// AppKit/Reown Configuration
+model AppKitConfig {
+  id                String   @id @default(cuid())
+  projectId         String   // WalletConnect Project ID
+  isActive          Boolean  @default(true)
+  
+  // Theme Configuration
+  themeMode         String   @default("dark") // "dark", "light", "auto"
+  themeVariables    Json     // Color customization
+  
+  // Feature Flags
+  features          Json     // {analytics, email, socials, etc}
+  
+  // Network Configuration  
+  enabledNetworks   Json     @default("[]") // Array of chainIds
+  defaultNetwork    Int      @default(11155111) // Sepolia
+  
+  // Metadata
+  appName           String   @default("Tokenizin")
+  appDescription    String   @default("Real Estate Investment Platform")
+  appUrl            String
+  appIcons          Json     @default("[]")
+  
+  // Admin Configuration
+  adminWallets      Json     @default("[]") // Array of admin wallet addresses
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("appkit_config")
+}
+
+
+// Faucet Request Tracking
+model FaucetRequest {
+  id                String   @id @default(cuid())
+  
+  userId            String
+  walletAddress     String
+  
+  requestedAmount   String
+  status            FaucetRequestStatus @default(PENDING)
+  transactionHash   String?
+  
+  errorMessage      String?
+  
+  requestedAt       DateTime @default(now())
+  completedAt       DateTime?
+  
+  @@index([userId, requestedAt])
+  @@index([walletAddress, requestedAt])
+  @@map("faucet_requests")
+}
+
+
+// VOICE & CONVERSATION MODELS
+
+
+// Conversation storage for voice chat history
+model Conversation {
+  id                String   @id @default(cuid())
+  sessionId         String   @unique
+  userId            String?
+  
+  // Conversation metadata
+  title             String
+  summary           String   @db.Text
+  messageCount      Int      @default(0)
+  
+  // Timestamps
+  startTime         DateTime
+  endTime           DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Classification
+  topics            String[] @default([])
+  sentiment         String?  // positive, neutral, negative
+  
+  // Metadata
+  metadata          Json?    @default("{}")
+  
+  // Relations
+  messages          ConversationMessage[]
+  
+  // Access control
+  
+  @@index([userId, startTime])
+  @@index([sessionId])
+  @@map("conversations")
+}
+
+// Individual messages within conversations
+model ConversationMessage {
+  id                String   @id @default(cuid())
+  conversationId    String
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  sessionId         String
+  userId            String?
+  
+  // Message content
+  role              String   // user, assistant, system
+  content           String   @db.Text
+  audioUrl          String?
+  
+  // Timestamps
+  timestamp         DateTime @default(now())
+  
+  // Metadata
+  metadata          Json?    @default("{}")
+  
+  // Access control
+  
+  @@index([conversationId, timestamp])
+  @@index([sessionId])
+  @@map("conversation_messages")
+}
+
+// Voice configuration presets
+model VoicePreset {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  
+  // Voice settings
+  voiceId           String   // LMNT voice ID
+  speed             Float    @default(1.0)
+  volume            Float    @default(1.0)
+  language          String   @default("en")
+  format            String   @default("mp3")
+  sampleRate        Int      @default(24000)
+  
+  // LLM settings
+  llmProvider       String   @default("groq") // groq, ollama, openai
+  llmModel          String   @default("llama-3.3-70b-versatile")
+  temperature       Float    @default(0.7)
+  
+  // Features
+  enableConversation Boolean @default(true)
+  enableContextMemory Boolean @default(true)
+  autoRead          Boolean  @default(false)
+  
+  // Metadata
+  description       String?
+  isDefault         Boolean  @default(false)
+  isPublic          Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Access control
+  
+  @@map("voice_presets")
+}
+
+// Ollama configuration for local LLM
+model OllamaConfig {
+  id                String   @id @default(cuid())
+  
+  // Connection settings
+  baseUrl           String   @default("http://localhost:11434")
+  apiKey            String?
+  
+  // Model settings
+  defaultModel      String   @default("llama3.2")
+  availableModels   String[] @default([])
+  
+  // Performance settings
+  contextWindow     Int      @default(4096)
+  numGpu            Int      @default(1)
+  numThread         Int      @default(8)
+  
+  // Status
+  isEnabled         Boolean  @default(false)
+  isAvailable       Boolean  @default(false)
+  lastChecked       DateTime?
+  
+  // Metadata
+  version           String?
+  metadata          Json?    @default("{}")
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Access control
+  
+  @@map("ollama_configs")
+}
+
+// ENUM MANAGEMENT SYSTEM
+
+model EnumDefinition {
+  id            String   @id @default(cuid())
+  name          String   @unique // e.g., "UserRole", "ProductStatus"
+  description   String?
+  category      String?  // USER_MANAGEMENT, PRODUCT_ORDER, PAYMENT, etc.
+  isSystem      Boolean  @default(false) // System enums can't be deleted
+  
+  // Enum values stored as JSON array
+  values        Json     // Array of { value, label, displayOrder, isActive, metadata }
+  
+  // Usage tracking
+  usageCount    Int      @default(0) // How many times this enum is used
+  lastUsedAt    DateTime?
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Access Control Policies
+  
+  @@index([name])
+  @@index([category])
+  @@index([isSystem])
+  @@map("enum_definitions")
+}
+
+// MONETARY CONFIGURATION SYSTEM
+
+// Monetary Configuration Parameters
+// NOTE: Only parameters explicitly marked as configurable should be stored here
+// All other parameters use hardcoded defaults as specified in lib/config/monetary-defaults.ts
+model MonetaryConfig {
+  id                    String    @id @default(cuid())
+  name                  String    @unique // e.g., "DEFAULT_DISTRIBUTION_RATE"
+  category              MonetaryConfigCategory
+  value                 Decimal   @db.Decimal(18, 8)
+  percentage            Boolean   @default(true) // true = percentage, false = fixed amount
+  description           String?
+  appliesTo             MonetaryScope[] // Property, Marketplace, Vendor, Tier, etc.
+  
+  // Configuration flags
+  isConfigurable        Boolean   @default(true) // Only true for explicitly configurable params
+  defaultValue          Decimal   @db.Decimal(18, 8) // Default value if not configured
+  
+  // Effective dates
+  effectiveFrom         DateTime  @default(now())
+  effectiveTo           DateTime?
+  
+  // Overrides
+  propertyId            String?   // Property-specific override
+  vendorId              String?   // Vendor-specific override
+  tier                  SubscriptionTier? // Tier-specific override
+  
+  // Relations
+  property              RealEstateAsset? @relation(fields: [propertyId], references: [id])
+  vendor                VendorProfile? @relation(fields: [vendorId], references: [id])
+  
+  // Audit
+  createdBy             String
+  updatedBy             String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([category])
+  @@index([propertyId])
+  @@index([vendorId])
+  @@index([tier])
+  @@index([isConfigurable])
+  @@map("monetary_configs")
+}
+
+// Vendor Invoice Model
+model VendorInvoice {
+  id                    String    @id @default(cuid())
+  vendorId              String
+  vendor                VendorProfile @relation(fields: [vendorId], references: [id])
+  
+  // Invoice Details
+  invoiceNumber         String    @unique
+  periodStart           DateTime
+  periodEnd             DateTime
+  totalCommission       Decimal   @db.Decimal(18, 8)
+  totalOrders           Int
+  status                InvoiceStatus @default(PENDING)
+  
+  // Breakdown
+  orderCommissions      Json      // Array of {orderId, amount, commission}
+  marketplaceFees       Decimal   @db.Decimal(18, 8) @default(0)
+  adjustments           Decimal   @db.Decimal(18, 8) @default(0)
+  
+  // Payment
+  paymentMethod         String?   // BANK_TRANSFER, CRYPTO, etc.
+  paymentReference      String?
+  paidAt                DateTime?
+  
+  // Timestamps
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([vendorId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@map("vendor_invoices")
+}
+
+// Allocation Schedule Model
+model AllocationSchedule {
+  id                    String    @id @default(cuid())
+  name                  String
+  description           String?
+  
+  // Schedule Configuration
+  scheduleType          ScheduleType
+  frequency             ScheduleFrequency
+  dayOfMonth           Int?       // For monthly schedules
+  dayOfWeek            Int?       // For weekly schedules
+  timeOfDay             String?   // HH:mm format
+  
+  // Allocation Configuration
+  allocationType        AllocationType
+  targetScope           MonetaryScope[]
+  configOverrides       Json?     // Override monetary configs for this schedule
+  
+  // Status
+  isActive              Boolean   @default(true)
+  lastRunAt             DateTime?
+  nextRunAt             DateTime?
+  
+  // Results
+  lastRunResult         Json?     // Success/failure details
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  @@index([isActive])
+  @@index([nextRunAt])
+  @@map("allocation_schedules")
+}
+
+// Purchase Event Monitoring Models
+
+model TokenPurchase {
+  id                String    @id @default(cuid())
+  buyerAddress      String    // Buyer's wallet address
+  assetId           Int       // Property ID (sequential)
+  tokenAmount       Int       // Number of tokens purchased
+  paymentToken      String    // ETH, USDC, EURC, TKNZN
+  totalCost         String    // Total cost in wei (as string for BigInt)
+  expectedTokenCost String?   // Expected token cost (for validation)
+  expectedFee       String?   // Expected marketplace fee (for validation)
+  expectedTotalCost String?   // Expected total cost (for validation)
+  transactionHash   String    @unique // Blockchain transaction hash
+  blockNumber       Int       // Block number where transaction was mined
+  logIndex          Int       // Log index within the block
+  timestamp         DateTime  // When the purchase occurred (from blockchain)
+  status            String    @default("COMPLETED") // COMPLETED, PENDING, FAILED
+
+  // Relations
+  realEstateAssetId String?   // Optional link to asset
+  realEstateAsset   RealEstateAsset? @relation(fields: [realEstateAssetId], references: [id])
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([assetId])
+  @@index([buyerAddress])
+  @@index([transactionHash])
+  @@index([blockNumber])
+  @@index([timestamp])
+  @@map("token_purchases")
+}
+
+model PurchaseEventMonitorState {
+  id                String    @id @default("singleton")
+  lastProcessedBlock Int      @default(0)
+  lastUpdated       DateTime @default(now())
+
+  @@map("purchase_event_monitor_state")
+}
+
+// Usage Notes:
+// 1. Run `bun zen:generate` after adding this file
+// 2. Run `bun db:push` to apply schema changes
+// 3. Import this file in main schema.zmodel with: import "./schema-enhanced-tokenization.zmodel"
+// 4. For lazy minting: Check LazyMintConfig before minting
+// 5. For admin actions: Always log to AdminAction model
+// 6. For dependencies: Monitor with DependencyHealthCheck
+// 7. For onboarding: Track progress in TokenOnboarding and OnboardingStep
+

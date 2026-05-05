@@ -1,0 +1,310 @@
+# Ignore dependencies and build artifacts
+/node_modules
+/packages/*/node_modules
+/apps/*/node_modules
+smart-contracts/node_modules
+packages/reown-appkit-module/node_modules
+
+# Ignore build outputs
+/build
+/.next
+/.out
+/dist
+/dist/**
+packages/*/dist
+
+# Ignore MCP server directory (contains Python venv with symlinks)
+/tokenizin-mcp-server
+
+# Ignore generated files and caches
+/lib/prisma/**
+/lib/hooks/**
+/lib/enhancer/**
+/lib/zod/**
+!/lib/.gitkeep
+
+# Ignore compiled JavaScript files in lib directory (TypeScript source files should be used)
+/lib/**/*.js
+!/lib/**/*.config.js
+!/lib/**/*.min.js
+.cache-loader
+.docusaurus
+.build-cache/
+.turbo
+.cursor
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Ignore environment and config files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+next-env.d.ts
+*.tsbuildinfo
+
+# Ignore lock and debug files
+package-lock.json
+bun.lockb
+npm-debug.log*
+bun-debug.log*
+bun-error.log*
+.pnpm-debug.log*
+.pnp.js
+/.pnp
+
+# Ignore IDE/editor files
+.idea
+.DS_Store
+
+# Ignore deployment and CI/CD files
+.vercel
+.vercel.json
+.vercelignore
+
+# Ignore test coverage
+/coverage
+
+# Ignore deprecated and redundant files
+/prisma/prisma/
+prisma/schema.vercel.prisma
+
+# Ignore misc
+*.pem
+
+# Only keep files required for building and packaging
+*/node_modules
+
+# =========================
+# General Node/JS/TS ignores
+# =========================
+node_modules/
+**/node_modules/
+npm-debug.log*
+bun-debug.log*
+bun-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+.pnp.js
+.pnp/
+package-lock.json
+bun.lockb
+pnpm-lock.yaml
+
+# =========================
+# Build and output folders
+# =========================
+build/
+dist/
+dist/**
+out/
+.next/
+.out/
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+.cache-loader/
+.docusaurus/
+.build-cache/
+.turbo/
+tmp/
+temp/
+.temp-generated/
+*.tsbuildinfo
+
+# =========================
+# IDE/editor/system files
+# =========================
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# =========================
+# Environment/config files
+# =========================
+.env
+.env.*
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.vercel*
+next-env.d.ts
+
+# =========================
+# Prisma/ORM generated
+# =========================
+prisma/.env
+prisma/migrations/
+prisma/dev.db
+prisma/prisma/
+prisma/schema.vercel.prisma
+
+# =========================
+# Project-specific generated
+# =========================
+lib/prisma/**
+lib/hooks/**
+lib/enhancer/**
+lib/zod/**
+!lib/.gitkeep
+
+# =========================
+# Deployment/CI/CD
+# =========================
+.vercel/
+.vercel.json
+.vercelignore
+
+# =========================
+# Security-sensitive files
+# =========================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# =========================
+# Miscellaneous
+# =========================
+*.log
+*.swp
+*.swo
+
+# =========================
+# Remove all package build artifacts
+# =========================
+packages/*/dist/
+packages/*/node_modules/
+apps/*/node_modules/
+apps/*/dist/
+
+# =========================
+# Smart contracts build artifacts
+# =========================
+smart-contracts/node_modules/
+smart-contracts/build/
+smart-contracts/artifacts/
+smart-contracts/cache/
+smart-contracts/typechain-types/
+smart-contracts/coverage/
+smart-contracts/.coverage/
+
+# Smart contract generated files
+smart-contracts/abis/frontend/*.json
+!smart-contracts/abis/frontend/types.ts
+smart-contracts/abis/frontend/integration-example.ts
+
+# Smart contract deployment artifacts (keep important ones)
+smart-contracts/deployments/localhost-*.json
+smart-contracts/deployments/*-verification-results.json
+smart-contracts/deployments/function-signature-registration.json
+smart-contracts/deployments/comprehensive-function-registration.json
+smart-contracts/deployments/signature-verification.json
+smart-contracts/deployed-addresses-proxy.json
+
+# Keep important deployment files (DO NOT IGNORE):
+# !smart-contracts/deployments/sepolia-proxies.json
+# !smart-contracts/deployments/sepolia.json
+# !smart-contracts/deployments/sepolia/*.json
+# !smart-contracts/deployments/mainnet/*.json
+
+# Smart contract test artifacts
+smart-contracts/test-results/
+smart-contracts/coverage/
+smart-contracts/.gas-snapshot
+
+# Generated test execution files (regenerated on each run)
+smart-contracts/test-execution-report.txt
+smart-contracts/test-case-data.json
+test-sync-monitor.log
+*.test-output.txt
+
+# Smart contract local node artifacts
+smart-contracts/local node/*.json
+smart-contracts/local node/*.log
+
+# =========================
+# Only keep files required for building and packaging (unignore if needed)
+# =========================
+# !mcp-server/node_modules/.pnpm/@ai-sdk+deepinfra@1.0.20_zod@3.25.76/node_modules/@ai-sdk/deepinfra/dist/index.js
+# !mcp-server/node_modules/.pnpm/@ai-sdk+provider-utils@3.0.10_zod@3.25.76/node_modules/@ai-sdk/provider-utils/dist/test/index.d.mts
+
+# =========================
+# Remove OS-specific files
+# =========================
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# =========================
+# Remove test snapshots
+# =========================
+__snapshots__/
+*.snap
+
+# =========================
+# Remove coverage and reports
+# =========================
+coverage/
+lcov-report/
+*.lcov
+
+# =========================
+# Remove logs and debug
+# =========================
+*.log
+logs/
+debug.log
+*.log.*
+
+# =========================
+# Remove old or deprecated files
+# =========================
+# (add any other deprecated or redundant files here)
+/stale-docs/
+stale-docs/
+
+# =========================
+# Backup files
+# =========================
+*.backup
+**/*.backup
+archive/backups/
+
+# =========================
+# MCP Server
+# =========================
+mcp-server/node_modules/
+
+# =========================
+# AI/IDE Rules (keep project rules, ignore external)
+# =========================
+.clinerules/byterover-rules.md
+.kilocode/rules/byterover-rules.md
+.roo/rules/byterover-rules.md
+.windsurf/rules/byterover-rules.md
+.cursor/rules/byterover-rules.mdc
+.kiro/steering/byterover-rules.md
+.qoder/rules/byterover-rules.md
+.augment/rules/byterover-rules.md
+autogen-dry-run/
+src/generated/
+docs/chapters/feature*
+
+docs/chapters/excluded/
+docs/archive/redundant/
+archive/docs/
+docs/chapters/
+docs/archive/
+archive/blog/
+archive/blog/*
+docs/chapters/*.md
+generation-comparison
+archive
+bun.lock

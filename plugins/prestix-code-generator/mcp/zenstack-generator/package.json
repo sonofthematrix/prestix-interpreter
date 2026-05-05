@@ -1,0 +1,6 @@
+{
+  "name": "zenstack-generator-mcp-server",
+  "version": "1.2.0",
+  "description": "MCP server for the Prestix Code Generator plugin",
+  "main": "dist/index.js"
+}

@@ -1,0 +1,120 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@/generated/*": [
+        "./src/generated/*"
+      ],
+      "@/components/*": [
+        "./src/components/*"
+      ],
+      "@/hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@/lib/utils/*": [
+        "./src/lib/utils/*"
+      ],
+      "@/lib/db": [
+        "./src/lib/db.ts"
+      ],
+      "@/lib/*": [
+        "./src/lib/*"
+      ],
+      "@/types/*": [
+        "./src/types/*"
+      ],
+      "@/utils/*": [
+        "./src/utils/*"
+      ],
+      "@/api/*": [
+        "./src/api/*"
+      ],
+      "@/stores/*": [
+        "./src/stores/*"
+      ],
+      "@/styles/*": [
+        "./src/styles/*"
+      ],
+      "@/server/*": [
+        "./src/server/*"
+      ],
+      "@/ai-profiles": [
+        "./ai-profiles"
+      ],
+      "@/plugins": [
+        "./plugins"
+      ],
+      "@TKNZN/reown-appkit-module": [
+        "./packages/reown-appkit-module/src/config/index.ts"
+      ],
+      "@TKNZN/reown-appkit-module/context": [
+        "./packages/reown-appkit-module/src/context/index.tsx"
+      ],
+      "@TKNZN/reown-appkit-module/components": [
+        "./packages/reown-appkit-module/src/components/index.ts"
+      ],
+      "@TKNZN/reown-appkit-module/components/*": [
+        "./packages/reown-appkit-module/src/components/*"
+      ]
+    },
+    "target": "ES2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": false,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "strictNullChecks": false,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    "prisma/seed-games.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+, "src/utils/PaymentUtil.ts"  ],
+  "exclude": [
+    "node_modules",
+    "dist/**/*",
+    "plugins/**/*",
+    "plugins/templates/**/*",
+    "autogen-dry-run/plugins/templates/**/*",
+    "src/generated/api/**/*",
+    ".next/**/*",
+    "stale-docs/**/*",
+    "archived/**/*",
+    "archive/**/*",
+    "backup/**/*",
+    "code-repos/**/*",
+    "qtech-bundle/**/*",
+    "smart-contracts/**/*",
+    "mcp-server/**/*",
+    "packages/**/*",
+    "!packages/reown-appkit-module/**/*",
+    "prisma/**/*",
+    "scripts/**/*",
+    "services/**/*",
+    "**/*.backup",
+    "**/*.backup.*"
+  ]
+}

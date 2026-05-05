@@ -1,0 +1,28 @@
+FROM node:22-alpine
+WORKDIR /app
+
+RUN apk add --no-cache curl
+
+# Install missing dependencies for standalone mode
+RUN npm install styled-jsx@^5.1.7
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy the flattened standalone output
+# This contains server.js, node_modules, .next/server, etc.
+COPY standalone_flat ./
+
+# Ensure the user has permissions
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

@@ -1,0 +1,50 @@
+/**
+ * Theme colors — single place to configure all parameters for each theme.
+ * Edit the values below to change dark and light theme appearance.
+ * Link colors override the browser default (e.g. -webkit-any-link purple).
+ */
+
+/* ========== Dark theme (default) ========== */
+:root {
+  /* Page & surfaces */
+  --bg-page: #000;
+  --bg-alt: #0a0a0a;
+
+  /* Text */
+  --text: #fff;
+  --text-muted: rgba(255, 255, 255, 0.8);
+
+  /* Borders & dividers */
+  --border: rgba(241, 79, 73, 0.59);
+  
+
+  /* Accent (buttons, highlights, active states) */
+  --accent-strong: #8e2626;
+
+  /* Links — overrides browser default (e.g. a:-webkit-any-link) */
+  --link: #ffffff;
+  --link-hover: #ffffff;
+  --link-visited: #ffffff;
+}
+
+/* ========== Light theme (body.theme-light) ========== */
+body.theme-light {
+  /* Page & surfaces */
+  --bg-page: #f5f5f5;
+  --bg-alt: #fff;
+
+  /* Text */
+  --text: #1a1a1a;
+  --text-muted: rgba(0, 0, 0, 0.7);
+
+  /* Borders & dividers */
+  --border: rgba(241, 79, 73, 0.59);
+
+  /* Accent (buttons, highlights, active states) */
+  --accent-strong: #8e2626;
+
+  /* Links */
+  --link: #020000;
+  --link-hover: #020000;
+  --link-visited: #020000;
+}

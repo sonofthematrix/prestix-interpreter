@@ -1,0 +1,46 @@
+/* Tokenizin AppKit Styles */
+
+/* AppKit Modal Customizations */
+.w3m-modal {
+  --w3m-background: hsl(var(--background));
+  --w3m-foreground: hsl(var(--foreground));
+  --w3m-accent: hsl(var(--primary));
+  --w3m-overlay: rgba(0, 0, 0, 0.5);
+}
+
+/* Wallet Button Styles */
+.w3m-button {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+}
+
+/* tokenizin-themed wallet button */
+.tokenizin-wallet-button {
+  @apply bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl;
+}
+
+/* Connection status indicators */
+.wallet-connected {
+  @apply bg-green-500 text-white;
+}
+
+.wallet-disconnected {
+  @apply bg-gray-500 text-white;
+}
+
+.wallet-connecting {
+  @apply bg-yellow-500 text-white;
+}
+
+/* AppKit overlay customizations */
+.w3m-modal-overlay {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .w3m-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+}

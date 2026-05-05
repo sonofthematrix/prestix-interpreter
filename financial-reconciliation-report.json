@@ -1,0 +1,327 @@
+{
+  "timestamp": "2026-03-04T15:25:01.634Z",
+  "stats": {
+    "bookings": {
+      "total": 20,
+      "withPromoter": 20,
+      "withPromoCode": 0,
+      "withMagicLink": 0
+    },
+    "commissions": {
+      "total": 20,
+      "credited": 20,
+      "pending": 0
+    },
+    "promoters": {
+      "total": 11,
+      "active": 11
+    },
+    "promoCodes": {
+      "total": 6,
+      "used": 0
+    },
+    "magicLinks": {
+      "total": 0,
+      "clicked": 0
+    }
+  },
+  "issues": [
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpvkq001veit08c30f5dc",
+      "expected": "100000160000",
+      "actual": "260000",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpvdz001ueit04jnb1ice",
+      "expected": "3000048000",
+      "actual": "78000",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpv73001teit06fuxh6kv",
+      "expected": "125005000",
+      "actual": "17500",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpv0v001seit0ej9o5cvc",
+      "expected": "62504250",
+      "actual": "10500",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpuu2001reit07zfh1wab",
+      "expected": "37503750",
+      "actual": "7500",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpupg001qeit0cd03dbim",
+      "expected": "100000128000",
+      "actual": "228000",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpuiq001peit0gs0j4bi5",
+      "expected": "3000048000",
+      "actual": "78000",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpudy001oeit00a4tbhsi",
+      "expected": "1250020000",
+      "actual": "32500",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpu7w001neit0842x7y4b",
+      "expected": "62502500",
+      "actual": "8750",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpu2k001meit097qvcc8t",
+      "expected": "37502550",
+      "actual": "6300",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgptvf001leit07a6k3jk5",
+      "expected": "100000100000",
+      "actual": "200000",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgptoh001keit0aush7mu8",
+      "expected": "3000038400",
+      "actual": "68400",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgptgz001jeit0dx89auj7",
+      "expected": "1250020000",
+      "actual": "32500",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgptcd001ieit0cy2vazv8",
+      "expected": "625010000",
+      "actual": "16250",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpt6o001heit03xr6hwsn",
+      "expected": "37501500",
+      "actual": "5250",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpt11001geit0208cfgz2",
+      "expected": "10000068000",
+      "actual": "168000",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpsu1001feit0a0lb61um",
+      "expected": "3000030000",
+      "actual": "60000",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpsme001eeit04xsg9s7t",
+      "expected": "1250016000",
+      "actual": "28500",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpsgp001deit0fu4c85b5",
+      "expected": "625010000",
+      "actual": "16250",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "ERROR",
+      "category": "REVENUE_SPLIT",
+      "description": "Total platform revenue mismatch",
+      "entityId": "cmmbgpsbd001ceit09qa88jul",
+      "expected": "37506000",
+      "actual": "9750",
+      "impact": "HIGH",
+      "recommendation": "Recalculate as platformFee + platformPassive"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmbgpkf40007eit04yuf4d8j",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmbgpkqz0009eit0f4job111",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmbgpl36000beit090e4blp9",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmbgpldw000deit042o2471y",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmbgplqi000feit0dszqc9i2",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmbgpm1v000heit0efux2edi",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmc57jnx00023ft02rama7uj",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmc57kja00073ft0bal2gptj",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmc591ss00034vt01c3h26hw",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmc59s8c0004opt06evn1q56",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "INFO",
+      "category": "STALE_METRICS",
+      "description": "Active promoter metrics may be outdated",
+      "entityId": "cmmc54p8v0000yat0a4oxg48e",
+      "impact": "LOW",
+      "recommendation": "Trigger metrics refresh job"
+    },
+    {
+      "type": "ERROR",
+      "category": "COMMISSION_TOTAL_MISMATCH",
+      "description": "Commission pool totals mismatch between bookings and commissions",
+      "entityId": "GLOBAL",
+      "actual": "2440000.00",
+      "impact": "HIGH",
+      "recommendation": "Sync commission records with booking data"
+    }
+  ]
+}

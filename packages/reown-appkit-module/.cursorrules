@@ -1,0 +1,231 @@
+# Cursor Rules for ZenStack Integration
+
+## ZenStack Database Client Usage
+
+### Server-Side Only
+- **CRITICAL**: ZenStack database client (`createClient`) is **SERVER-SIDE ONLY**
+- Never import `createClient` directly in client components or client-side code
+- Use API routes (`/app/api/**`) for all database operations
+- Database operations must be async: `const db = await createClient(user)`
+
+### Dynamic Imports
+- `pg` and `kysely` modules are dynamically imported to prevent client bundling
+- These modules use Node.js built-in modules (`dns`, `net`, etc.) that don't exist in browsers
+- Always check `typeof window === 'undefined'` before using database client
+
+### User Context
+- Always pass user context to `createClient()` for access control:
+  ```typescript
+  const systemUser: AuthUser = {
+    id: 'xronr0y2ule1my2abd0wfulc',
+    email: 'system@tigerpalacepro.com',
+    name: 'System Admin',
+    role: 'ADMIN',
+  };
+  const db = await createClient(systemUser);
+  ```
+
+### Schema Import
+- Schema is loaded from parent workspace: `../../../../schema` or `../../../schema`
+- Schema must exist in workspace root as `schema.ts`
+- Schema loading happens lazily on first database operation
+
+### Error Handling
+- Database errors should be caught and handled gracefully
+- Never expose database connection errors to client-side code
+- Use try-catch blocks around all database operations
+- **Optional Models Pattern**: Some models (session, auditLog, userActivity) are optional
+- Always check if models exist before using them to prevent runtime errors
+- Gracefully degrade functionality if optional models are missing
+
+## ZenStack Best Practices
+
+### Query Patterns
+- Use ZenStack's type-safe query API (same as Prisma)
+- Always use `await` for async operations
+- Include relations when needed: `include: { accounts: true, preferences: true }`
+
+### Access Control
+- ZenStack enforces access control policies based on user context
+- System operations should use ADMIN role user context
+- User operations should use authenticated user context
+
+### Session Management
+- Use generic `session` model (preferred) or fallback to `walletSession` for backward compatibility
+- Sessions expire after 24 hours by default
+- Always check session expiration before using stored sessions
+- **IMPORTANT**: Session models are optional - check if models exist before use
+- If session models don't exist, NextAuth cookie-based sessions will still work
+
+## File Organization
+
+### Database Client
+- `src/lib/db.ts` - Main database client factory
+- Never create multiple database clients - use singleton pattern
+- Always await `createClient()` - it's async
+
+### SIWE Integration
+- `src/lib/siwe.ts` - SIWE session management with ZenStack
+- `src/lib/siwe-config.ts` - AppKit SIWE configuration
+- All SIWE functions use ZenStack for persistence
+
+### API Routes
+- All database operations should be in API routes (`/app/api/**`)
+- API routes are server-side by default in Next.js App Router
+- Use `NextRequest` and `NextResponse` for API route handlers
+
+## Client-Safe Database Functions
+
+### Making Functions Client-Safe
+- Functions that might be imported in client components should check `typeof window === 'undefined'`
+- Skip database operations on client-side, use localStorage fallback instead
+- Example pattern:
+  ```typescript
+  export async function getSIWESession(walletAddress: string) {
+    // Only check database on server-side
+    if (typeof window === 'undefined') {
+      const db = await createClient(systemUser);
+      // ... database operations
+    }
+    // Fallback to localStorage (works on both client and server)
+    // ... localStorage operations
+  }
+  ```
+
+## Common Patterns
+
+### Finding or Creating Users
+```typescript
+const db = await createClient(systemUser);
+let user = await db.user.findFirst({
+  where: { walletAddress: checksummedAddress },
+});
+if (!user) {
+  user = await db.user.create({ data: { ... } });
+}
+```
+
+### Creating Sessions (with Optional Model Check)
+```typescript
+// Check if session model exists before using
+const hasSessionModel = typeof db.session !== 'undefined' && typeof db.session.create === 'function';
+const hasWalletSessionModel = typeof db.walletSession !== 'undefined' && typeof db.walletSession.create === 'function';
+
+if (hasSessionModel) {
+  const session = await db.session.create({
+    data: {
+      userId,
+      walletAddress: checksummedAddress,
+      chainId,
+      authMethod: 'wallet',
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    },
+  });
+} else if (hasWalletSessionModel) {
+  // Fallback to walletSession for backward compatibility
+  const session = await db.walletSession.create({
+    data: {
+      userId,
+      walletAddress: checksummedAddress,
+      chainId,
+      authMethod: 'wallet',
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    },
+  });
+} else {
+  // Models don't exist - session storage is optional
+  // NextAuth will handle session via cookies
+  console.warn('⚠️ Session models not found - using cookie-based sessions only');
+}
+```
+
+### Optional Models Pattern
+Some database models are optional and may not exist in the schema:
+- `session` / `walletSession` - Session storage (optional, NextAuth cookies work without it)
+- `auditLog` - Audit logging (optional, logs to console if missing)
+- `userActivity` - User activity tracking (optional)
+
+Always check for model existence before use:
+```typescript
+function hasModel(db: any, modelName: string): boolean {
+  return typeof db[modelName] !== 'undefined' && typeof db[modelName].create === 'function';
+}
+
+if (hasModel(db, 'auditLog')) {
+  await db.auditLog.create({ data: { ... } });
+} else {
+  console.warn('⚠️ Audit model not found - skipping database logging');
+}
+```
+
+### Querying with Relations
+```typescript
+const user = await db.user.findUnique({
+  where: { id: userId },
+  include: {
+    accounts: true,
+    preferences: true,
+    userQtechAccount: true,
+  },
+});
+```
+
+## Webpack Configuration
+
+- `pg` is excluded from client bundles via webpack externals
+- Dynamic imports prevent `pg` from being bundled in client code
+- Never statically import `pg` or `kysely` - use dynamic imports only
+
+## Environment Variables
+
+- `DATABASE_URL` is required for ZenStack database connection
+- Must be set in `.env.local` or environment configuration
+- Connection uses PostgreSQL with SSL in production
+
+## Optional Database Models
+
+### Graceful Degradation
+Some database models are optional and the application should work without them:
+- **Session Models**: `session` or `walletSession` - NextAuth cookie sessions work independently
+- **Audit Models**: `auditLog` and `userActivity` - Logging falls back to console if missing
+
+### Implementation Pattern
+```typescript
+// Helper function to check model existence
+function hasModel(db: any, modelName: string): boolean {
+  return typeof db[modelName] !== 'undefined' && typeof db[modelName].create === 'function';
+}
+
+// Usage in functions
+async function logActivity(userId: string, data: any) {
+  const db = await createClient(systemUser);
+  const { hasAuditLog, hasUserActivity } = {
+    hasAuditLog: hasModel(db, 'auditLog'),
+    hasUserActivity: hasModel(db, 'userActivity'),
+  };
+
+  if (!hasAuditLog && !hasUserActivity) {
+    console.warn('⚠️ Audit models not found - skipping database logging');
+    return; // Gracefully exit without error
+  }
+
+  if (hasAuditLog) {
+    await db.auditLog.create({ data: { ... } });
+  }
+  // ... continue with other operations
+}
+```
+
+### Benefits
+- Application works during schema migrations
+- No breaking changes when models are added/removed
+- Better developer experience with clear warnings
+- NextAuth sessions work independently of database models
+
+## Testing
+
+- Database operations should be tested in API routes
+- Use server-side test utilities for database testing
+- Never test database operations in client-side code
+- Test graceful degradation when optional models are missing
+

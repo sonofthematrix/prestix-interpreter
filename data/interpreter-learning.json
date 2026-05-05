@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "type": "style",
+      "rule": "Translate naturally like a live interpreter, not literally.",
+      "mode": "id-en",
+      "createdAt": "2026-04-30T21:37:25.398Z"
+    },
+    {
+      "type": "glossary",
+      "term": "gua",
+      "meaning": "I/me, informal Indonesian slang",
+      "mode": "id-en",
+      "examples": [
+        "Gua mau pesan kamar"
+      ],
+      "createdAt": "2026-04-30T21:37:25.241Z"
+    },
+    {
+      "type": "correction",
+      "sourceText": "Jadi kalau gua ajak Wali mampus nih",
+      "wrongOutput": "Jadi kalau saya ajak Wali mampus nih",
+      "correctedOutput": "So if I invite Wali, we're dead",
+      "mode": "id-en",
+      "note": "Indonesian slang should translate to English, not normalize Indonesian",
+      "createdAt": "2026-04-30T18:29:00.010Z"
+    }
+  ]
+}

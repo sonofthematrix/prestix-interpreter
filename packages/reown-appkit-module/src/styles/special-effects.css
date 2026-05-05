@@ -1,0 +1,257 @@
+/* Special Effects for Property Cards Close to Funding Goal */
+
+/* Shimmer animation for enhanced shine effect */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Electric pulse animation for particles */
+@keyframes electric-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Simple Distant Light Glow - Faint shadow behind card like distant ember with 25s delay */
+@keyframes distant-glow {
+  /* Dormant - barely visible (extended to create 25s delay) */
+  0% {
+    box-shadow: 
+      0 8px 32px rgba(251, 146, 60, 0.02),
+      0 4px 16px rgba(255, 215, 0, 0.01);
+  }
+  
+  /* Long dormant period - extended for 25 second delay at end */
+  88% {
+    box-shadow: 
+      0 8px 32px rgba(251, 146, 60, 0.02),
+      0 4px 16px rgba(255, 215, 0, 0.01);
+  }
+  
+  /* Gentle flare - like distant light getting slightly brighter */
+  90% {
+    box-shadow: 
+      0 12px 48px rgba(251, 146, 60, 0.12),
+      0 6px 24px rgba(255, 215, 0, 0.08),
+      0 16px 64px rgba(251, 146, 60, 0.05);
+  }
+  
+  /* Peak brightness */
+  92% {
+    box-shadow: 
+      0 16px 64px rgba(251, 146, 60, 0.15),
+      0 8px 32px rgba(255, 215, 0, 0.10),
+      0 20px 80px rgba(251, 146, 60, 0.08);
+  }
+  
+  /* Fade back to distant */
+  95% {
+    box-shadow: 
+      0 10px 40px rgba(251, 146, 60, 0.04),
+      0 5px 20px rgba(255, 215, 0, 0.02);
+  }
+  
+  /* Back to barely visible - holds for remaining 5% (25s delay) */
+  100% {
+    box-shadow: 
+      0 8px 32px rgba(251, 146, 60, 0.02),
+      0 4px 16px rgba(255, 215, 0, 0.01);
+  }
+}
+
+/* Enhanced glow animation */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(251, 146, 60, 0.3),
+      0 0 40px rgba(251, 146, 60, 0.2),
+      0 0 60px rgba(251, 146, 60, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(251, 146, 60, 0.4),
+      0 0 60px rgba(251, 146, 60, 0.3),
+      0 0 90px rgba(251, 146, 60, 0.2);
+  }
+}
+
+/* Heating up border animation */
+@keyframes heating-border {
+  0% {
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+  25% {
+    border-color: rgba(251, 146, 60, 0.5);
+  }
+  50% {
+    border-color: rgba(251, 146, 60, 0.7);
+  }
+  75% {
+    border-color: rgba(251, 146, 60, 0.5);
+  }
+  100% {
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+}
+
+/* Particle sparkle animation */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+/* Enhanced shadow for special cards */
+.special-card-shadow {
+  filter: drop-shadow(0 10px 30px rgba(251, 146, 60, 0.3));
+}
+
+/* SIMPLE DISTANT GLOW Effect - Faint backlight shadow with random timing and 25s delay */
+.dramatic-heating-effect {
+  position: relative;
+  border-radius: 12px;
+  
+  /* Enhanced distant glow animation - 30 seconds total (5s animation + 25s delay) */
+  animation: distant-glow 30s ease-in-out infinite;
+}
+
+/* Random delay variations for different cards (staggered over 25 seconds) */
+.dramatic-heating-effect:nth-child(1) { animation-delay: 0s; }
+.dramatic-heating-effect:nth-child(2) { animation-delay: 2.5s; }
+.dramatic-heating-effect:nth-child(3) { animation-delay: 5s; }
+.dramatic-heating-effect:nth-child(4) { animation-delay: 7.5s; }
+.dramatic-heating-effect:nth-child(5) { animation-delay: 10s; }
+.dramatic-heating-effect:nth-child(6) { animation-delay: 12.5s; }
+.dramatic-heating-effect:nth-child(7) { animation-delay: 15s; }
+.dramatic-heating-effect:nth-child(8) { animation-delay: 17.5s; }
+.dramatic-heating-effect:nth-child(9) { animation-delay: 20s; }
+.dramatic-heating-effect:nth-child(10) { animation-delay: 22.5s; }
+.dramatic-heating-effect:nth-child(11) { animation-delay: 25s; }
+.dramatic-heating-effect:nth-child(12) { animation-delay: 27.5s; }
+
+/* HOVER STATE - Enhanced distant glow like light getting closer */
+.dramatic-heating-effect:hover {
+  /* Slow transition to enhanced distant glow */
+  transition: all 3s ease-in-out;
+  
+  box-shadow: 0 16px 64px rgba(251, 146, 60, 0.12), 0 8px 32px rgba(255, 215, 0, 0.08), 0 24px 96px rgba(251, 146, 60, 0.06) !important;
+}
+
+/* Remove the old infinite animations */
+.dramatic-electric-border {
+  /* No animation - hover only */
+  border-radius: 12px;
+  position: relative;
+}
+
+.lightning-crackle-border {
+  /* No animation - hover only */
+  position: relative;
+}
+
+/* Electric particle effect */
+.electric-particle {
+  animation: electric-pulse 1.5s ease-in-out infinite;
+}
+
+/* Heating up effect */
+.heating-up {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Border heating animation */
+.heating-border {
+  animation: heating-border 3s ease-in-out infinite;
+}
+
+/* Sparkle particles */
+.sparkle-particle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* Enhanced shimmer for nearly funded cards */
+.nearly-funded-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(251, 146, 60, 0.2),
+    rgba(251, 146, 60, 0.4),
+    rgba(251, 146, 60, 0.2),
+    transparent
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* Pulsing glow ring */
+.pulsing-glow-ring {
+  position: relative;
+}
+
+.pulsing-glow-ring::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(45deg, 
+    rgba(251, 146, 60, 0.6), 
+    rgba(251, 146, 60, 0.3), 
+    rgba(251, 146, 60, 0.6)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  animation: glow-pulse 2s ease-in-out infinite;
+  z-index: -1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .electric-particle {
+    width: 2px;
+    height: 2px;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  @keyframes glow-pulse-dark {
+    0%, 100% {
+      box-shadow: 
+        0 0 20px rgba(251, 146, 60, 0.4),
+        0 0 40px rgba(251, 146, 60, 0.3),
+        0 0 60px rgba(251, 146, 60, 0.2);
+    }
+    50% {
+      box-shadow: 
+        0 0 30px rgba(251, 146, 60, 0.5),
+        0 0 60px rgba(251, 146, 60, 0.4),
+        0 0 90px rgba(251, 146, 60, 0.3);
+    }
+  }
+  
+  .heating-up {
+    animation: glow-pulse-dark 2s ease-in-out infinite;
+  }
+}

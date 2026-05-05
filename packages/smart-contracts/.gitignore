@@ -1,0 +1,79 @@
+# Smart Contracts .gitignore
+# Contract-specific ignore patterns
+
+# =========================
+# Build Artifacts
+# =========================
+node_modules/
+build/
+artifacts/
+cache/
+typechain-types/
+coverage/
+.coverage/
+.gas-snapshot
+
+# =========================
+# Generated ABIs (keep source, ignore generated JSON)
+# =========================
+abis/frontend/*.json
+!abis/frontend/types.ts
+
+# =========================
+# Deployment Artifacts
+# =========================
+# Ignore local/test deployment files
+deployments/localhost-*.json
+deployments/*-verification-results.json
+deployments/function-signature-registration.json
+deployments/comprehensive-function-registration.json
+deployments/signature-verification.json
+deployed-addresses-proxy.json
+
+# Keep important deployment files (tracked in main .gitignore exceptions)
+# deployments/sepolia-proxies.json
+# deployments/sepolia.json
+# deployments/sepolia/*.json
+# deployments/mainnet/*.json
+
+# =========================
+# Test Artifacts
+# =========================
+test-results/
+coverage/
+.gas-snapshot
+*.log
+
+# =========================
+# Local Development
+# =========================
+local node/*.json
+local node/*.log
+.env
+.env.local
+.env.*.local
+
+# =========================
+# IDE/Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Temporary Files
+# =========================
+*.tmp
+*.temp
+tmp/
+temp/
+
+.gas-metrics.json

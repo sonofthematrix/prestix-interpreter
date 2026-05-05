@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2025-11-30T05:33:09.977Z",
+  "network": "hardhat",
+  "marketplaceAddress": "0xB9bcC66DcE89F6c4bfb03ed8a9E6EF7d447F2061",
+  "treasuryAddress": "0x0000000000000000000000000000000000000000",
+  "treasuryBalance": "0.0",
+  "totalFeesEver": "0.0",
+  "dailyReports": [
+    {
+      "date": "2025-11-24",
+      "totalMarketCap": "0",
+      "totalFeesCollected": "0",
+      "totalTokensMinted": 0,
+      "totalTokensPurchased": 0,
+      "activeTokens": 0,
+      "topPerformingToken": {
+        "assetId": "N/A",
+        "marketCap": "0",
+        "growth": "0"
+      },
+      "tokenReports": []
+    },
+    {
+      "date": "2025-11-25",
+      "totalMarketCap": "0",
+      "totalFeesCollected": "0",
+      "totalTokensMinted": 0,
+      "totalTokensPurchased": 0,
+      "activeTokens": 0,
+      "topPerformingToken": {
+        "assetId": "N/A",
+        "marketCap": "0",
+        "growth": "0"
+      },
+      "tokenReports": []
+    },
+    {
+      "date": "2025-11-26",
+      "totalMarketCap": "0",
+      "totalFeesCollected": "0",
+      "totalTokensMinted": 0,
+      "totalTokensPurchased": 0,
+      "activeTokens": 0,
+      "topPerformingToken": {
+        "assetId": "N/A",
+        "marketCap": "0",
+        "growth": "0"
+      },
+      "tokenReports": []
+    },
+    {
+      "date": "2025-11-27",
+      "totalMarketCap": "0",
+      "totalFeesCollected": "0",
+      "totalTokensMinted": 0,
+      "totalTokensPurchased": 0,
+      "activeTokens": 0,
+      "topPerformingToken": {
+        "assetId": "N/A",
+        "marketCap": "0",
+        "growth": "0"
+      },
+      "tokenReports": []
+    },
+    {
+      "date": "2025-11-28",
+      "totalMarketCap": "0",
+      "totalFeesCollected": "0",
+      "totalTokensMinted": 0,
+      "totalTokensPurchased": 0,
+      "activeTokens": 0,
+      "topPerformingToken": {
+        "assetId": "N/A",
+        "marketCap": "0",
+        "growth": "0"
+      },
+      "tokenReports": []
+    },
+    {
+      "date": "2025-11-29",
+      "totalMarketCap": "0",
+      "totalFeesCollected": "0",
+      "totalTokensMinted": 0,
+      "totalTokensPurchased": 0,
+      "activeTokens": 0,
+      "topPerformingToken": {
+        "assetId": "N/A",
+        "marketCap": "0",
+        "growth": "0"
+      },
+      "tokenReports": []
+    },
+    {
+      "date": "2025-11-30",
+      "totalMarketCap": "0",
+      "totalFeesCollected": "0",
+      "totalTokensMinted": 0,
+      "totalTokensPurchased": 0,
+      "activeTokens": 0,
+      "topPerformingToken": {
+        "assetId": "N/A",
+        "marketCap": "0",
+        "growth": "0"
+      },
+      "tokenReports": []
+    }
+  ],
+  "summary": {
+    "totalActiveAssets": 0,
+    "totalMarketCap": "0",
+    "totalFeesCollected": "0",
+    "averageTokenPrice": "0",
+    "topAsset": null
+  }
+}

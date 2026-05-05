@@ -1,0 +1,7 @@
+# Ignore smart contracts directory from Bun processing
+smart-contracts/
+
+# Ignore other development directories
+qtech-bundle/
+.cursor/
+*.log

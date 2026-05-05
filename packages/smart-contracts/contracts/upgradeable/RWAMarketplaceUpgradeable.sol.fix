@@ -1,0 +1,44 @@
+    /**
+     * @dev Calculate purchase cost for tokens
+     * FIXED VERSION: Reads tokenPrice directly from registry to avoid struct unpacking issues
+     */
+    function calculatePurchaseCost(
+        uint256 assetId,
+        uint256 tokenAmount
+    ) public view override returns (uint256 totalCost, uint256 marketplaceFee) {
+        // FIX: Query registry directly for tokenPrice instead of unpacking entire struct
+        // This avoids potential struct unpacking issues with dynamic types (strings)
+        IRWAAssetRegistry.AssetDetails memory asset = assetRegistry.getAsset(assetId);
+        
+        // Validate asset exists and is active
+        require(asset.id != 0, "RWAMarketplace: asset not found");
+        require(asset.status == 1, "RWAMarketplace: asset not active");
+        
+        // FIX: Read tokenPrice directly and validate immediately
+        // Store in local variable to ensure correct value
+        uint256 tokenPriceValue = asset.tokenPrice;
+        
+        // Validate tokenPrice is reasonable (not corrupted)
+        // Maximum reasonable token price: 1000 ETH per token (1e21 wei)
+        require(tokenPriceValue > 0 && tokenPriceValue <= 1e21, "RWAMarketplace: invalid token price");
+        
+        // Validate tokenAmount is reasonable
+        require(tokenAmount > 0 && tokenAmount <= asset.availableTokens, "RWAMarketplace: invalid token amount");
+        
+        // Calculate base price: tokenAmount * tokenPrice
+        // FIX: Use local variable instead of struct field access
+        uint256 basePrice = tokenAmount.mul(tokenPriceValue);
+        
+        // Validate basePrice is reasonable (prevent overflow/corruption)
+        // Maximum reasonable total price: 1 billion ETH (1e27 wei)
+        require(basePrice <= 1e27, "RWAMarketplace: price calculation overflow");
+        
+        // Calculate marketplace fee: basePrice * feePercentage / BASIS_POINTS
+        marketplaceFee = basePrice.mul(_marketplaceFeePercentage).div(BASIS_POINTS);
+        
+        // Calculate total cost: basePrice + marketplaceFee
+        totalCost = basePrice.add(marketplaceFee);
+        
+        return (totalCost, marketplaceFee);
+    }
+

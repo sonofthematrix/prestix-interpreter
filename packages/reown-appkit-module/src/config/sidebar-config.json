@@ -1,0 +1,157 @@
+{
+  "navigation": {
+    "links": [
+      {
+        "id": "home",
+        "href": "/",
+        "label": "Home",
+        "icon": "home",
+        "authRequired": false,
+        "description": "Welcome to PRESTIX.VIP",
+        "category": "main"
+      },
+      {
+        "id": "community",
+        "href": "/blog",
+        "label": "Community",
+        "icon": "users",
+        "authRequired": false,
+        "description": "Latest insights and updates",
+        "category": "main"
+      },
+      {
+        "id": "about",
+        "href": "/about",
+        "label": "About",
+        "icon": "about",
+        "authRequired": false,
+        "description": "Learn about PRESTIX.VIP",
+        "category": "main"
+      }
+    ],
+    "social": [
+      {
+        "id": "twitter",
+        "href": "https://twitter.com/tokenizin",
+        "icon": "twitter",
+        "label": "Twitter",
+        "color": "#1DA1F2"
+      },
+      {
+        "id": "instagram",
+        "href": "https://instagram.com/tokenizn",
+        "icon": "instagram",
+        "label": "Instagram",
+        "color": "#E4405F"
+      },
+      {
+        "id": "linkedin",
+        "href": "https://linkedin.com/company/tokenizin",
+        "icon": "linkedin",
+        "label": "LinkedIn",
+        "color": "#0A66C2"
+      }
+    ]
+  },
+  "settings": {
+    "desktop": {
+      "collapsedWidth": "70px",
+      "expandedWidth": "280px",
+      "autoCollapseBreakpoint": 1024,
+      "animationDuration": "300ms",
+      "animationEasing": "cubic-bezier(0.4, 0, 0.2, 1)"
+    },
+    "mobile": {
+      "breakpoint": 768,
+      "closeOnRouteChange": true,
+      "overlayOpacity": 0.5,
+      "slideAnimation": true
+    },
+    "tablet": {
+      "breakpoint": 1024,
+      "autoCollapse": true,
+      "showTooltips": true
+    }
+  },
+  "appearance": {
+    "colors": {
+      "primary": "#0F2030",
+      "secondary": "#125A63",
+      "accent": "#BE9E44",
+      "background": "#F8F9FA",
+      "surface": "#FFFFFF",
+      "border": "#E5E7EB"
+    },
+    "darkMode": {
+      "primary": "#BE9E44",
+      "secondary": "#125A63",
+      "accent": "#0F2030",
+      "background": "#1E1E24",
+      "surface": "#2D2D2D",
+      "border": "#404040"
+    },
+    "spacing": {
+      "padding": "16px",
+      "gap": "8px",
+      "iconSize": "20px",
+      "borderRadius": "8px"
+    },
+    "typography": {
+      "fontFamily": "var(--font-geist-sans)",
+      "fontSize": {
+        "xs": "12px",
+        "sm": "14px",
+        "base": "16px",
+        "lg": "18px"
+      },
+      "fontWeight": {
+        "normal": "400",
+        "medium": "500",
+        "semibold": "600",
+        "bold": "700"
+      }
+    },
+    "shadows": {
+      "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      "md": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+      "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+      "xl": "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+    }
+  },
+  "behavior": {
+    "rememberState": true,
+    "closeOnRouteChange": true,
+    "closeOnOutsideClick": true,
+    "preventBodyScroll": true,
+    "focusTrap": true,
+    "keyboardNavigation": true,
+    "autoFocus": true,
+    "restoreFocus": true
+  },
+  "accessibility": {
+    "ariaLabels": {
+      "sidebar": "Main navigation sidebar",
+      "toggleButton": "Toggle sidebar",
+      "closeButton": "Close sidebar",
+      "expandButton": "Expand sidebar",
+      "collapseButton": "Collapse sidebar"
+    },
+    "keyboardShortcuts": {
+      "toggle": ["Ctrl+B", "Cmd+B"],
+      "close": ["Escape"],
+      "navigate": ["ArrowUp", "ArrowDown", "Tab"]
+    },
+    "screenReader": {
+      "announceStateChanges": true,
+      "describeIcons": true,
+      "navigationLandmarks": true
+    }
+  },
+  "performance": {
+    "lazyLoadIcons": true,
+    "debounceResize": 150,
+    "throttleScroll": 100,
+    "virtualizeLongLists": true,
+    "preloadCriticalIcons": ["home", "settings", "user"]
+  }
+}

@@ -1,0 +1,3365 @@
+// ============================================================================
+// PRESTIX.VIP — ZenStack v3 Complete Schema
+// VIP Nightlife Marketplace · Bali
+// ============================================================================
+//
+// Revenue Architecture
+// ────────────────────
+//   87.5%  →  Venue (settled via Stripe Connect or on-chain split)
+//   10.0%  →  Promoter Commission Pool (then split per PromoterTier below)
+//    2.5%  →  Platform (PRESTIX)
+//
+// Promoter Diminishing Commission Split (of the 10% pool)
+// ─────────────────────────────────────────────────────────
+//   STARTER  →  Promoter 60% / Platform 40%  (of the 10%)
+//   BRONZE   →  Promoter 68% / Platform 32%
+//   SILVER   →  Promoter 75% / Platform 25%
+//   GOLD     →  Promoter 83% / Platform 17%
+//   ELITE    →  Promoter 90% / Platform 10%
+//
+//   As a promoter's tier rises the platform's passive cut shrinks —
+//   incentivising performance while preserving platform sustainability.
+//
+// Payment Rails
+// ─────────────
+//   • Stripe Connect  (card payments, ACH, venue payouts, promoter payouts)
+//   • Blockchain      (crypto payments, on-chain revenue split contracts,
+//                      USDC/EURC stablecoin settlements)
+//
+// Roles
+// ─────
+//   MEMBER · PROMOTER · HOST · VENUE_STAFF · VENUE_ADMIN · PLATFORM_ADMIN
+//
+// ============================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+generator zenstack {
+  provider = "@zenstackhq/orm"
+  output   = "./zenstack"
+}
+
+plugin policy {
+  provider = '@zenstackhq/plugin-policy'
+}
+
+plugin hooks {
+  provider  = '@zenstackhq/tanstack-query'
+  target    = 'react'
+  version   = 'v5'
+  output    = './src/lib/hooks'
+  suspense  = false
+}
+
+
+// ============================================================================
+// ██████████  ENUMS  ██████████
+// ============================================================================
+
+// ─── User & Auth ─────────────────────────────────────────────────────────────
+
+enum PrestixUserRole {
+  MEMBER
+  PROMOTER
+  HOST
+  VENUE_STAFF
+  VENUE_ADMIN
+  PLATFORM_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+// ─── Membership ──────────────────────────────────────────────────────────────
+
+enum MembershipTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+// ─── Venue ───────────────────────────────────────────────────────────────────
+
+enum VenueType {
+  NIGHTCLUB
+  BAR
+  LOUNGE
+  BEACH_CLUB
+  ROOFTOP
+  DAY_CLUB
+}
+
+enum VenueStatus {
+  PENDING_REVIEW
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+// ─── Tables ──────────────────────────────────────────────────────────────────
+
+enum TableType {
+  STANDARD
+  PREMIUM
+  ULTRA_VIP
+  CABANA
+  BOOTH
+}
+
+enum TableStatus {
+  AVAILABLE
+  RESERVED
+  OCCUPIED
+  BLOCKED
+}
+
+// ─── Bookings ─────────────────────────────────────────────────────────────────
+
+enum BookingType {
+  TABLE_RESERVATION
+  EVENT_TICKET
+  HOST_BOOKING
+  PACKAGE
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  NO_SHOW
+}
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+
+enum PaymentRail {
+  STRIPE_CARD       // Credit / debit card via Stripe
+  STRIPE_ACH        // Bank transfer via Stripe
+  CRYPTO_USDC       // USDC stablecoin on Polygon
+  CRYPTO_EURC       // EURC stablecoin
+  CRYPTO_ETH        // Native ETH
+  WALLET_BALANCE    // Internal PrestixWallet credit
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  DISPUTED
+  PARTIALLY_REFUNDED
+}
+
+// ─── Hosts ───────────────────────────────────────────────────────────────────
+
+enum HostStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// ─── Promoters ────────────────────────────────────────────────────────────────
+
+enum PromoterStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum PromoterTier {
+  STARTER   // 0–24 bookings
+  BRONZE    // 25–49
+  SILVER    // 50–99
+  GOLD      // 100–249
+  ELITE     // 250+
+}
+
+// ─── Multi-Promoter Preference Attribution (Addendum B) ───────────────────────
+
+enum PromoterBindingScope {
+  EVENT_DATE  // Bound to specific venue + event + date
+  VENUE_DATE  // Bound to venue on a specific calendar date (no event)
+  VENUE_OPEN  // Bound to venue, all dates (open-ended)
+  PLATFORM_OPEN  // Bound platform-wide, no venue specified
+}
+
+enum MemberPreferenceStatus {
+  PENDING_CHOICE  // Conflict detected, awaiting member decision
+  BOUND  // Member has selected a promoter for this scope
+  BOUND_EXPIRED  // Scope period has ended, historical record only
+  DECLINED  // Non-selected promoter in resolved conflict
+}
+
+// ─── Promoter Performance Dashboard (Addendum B) ───────────────────────────────
+
+enum PromoterPerformanceDimension {
+  CONVERSION  // Click-to-booking conversion rate
+  VELOCITY  // Median click-to-payment time
+  PRE_EVENT  // Pre-event booking rate
+  ON_NIGHT  // On-night average spend per head
+  GENERAL_SPEND  // Total non-event venue spend
+}
+
+enum VenueEventPromoterStatus {
+  NOMINATED  // Venue admin has nominated this promoter
+  ACCEPTED  // Promoter has accepted the nomination
+  DECLINED  // Promoter has declined the nomination
+  SUSPENDED  // Nomination suspended by venue admin
+}
+
+enum SocialChannelPlatform {
+  WHATSAPP
+  TELEGRAM
+  INSTAGRAM
+  SMS
+  EMAIL
+}
+
+// ─── Financial ────────────────────────────────────────────────────────────────
+
+enum WalletTransactionType {
+  BOOKING_PAYMENT
+  COMMISSION_EARNED
+  PASSIVE_INCOME_PLATFORM_CUT // Platform's share of promoter pool
+  REFUND
+  WITHDRAWAL
+  BONUS_MILESTONE
+  WELCOME_CREDIT
+  REFERRAL_CREDIT
+  SETTLEMENT_PAYOUT
+  TAX_WITHHELD
+  ADJUSTMENT
+  CHARGEBACK
+}
+
+enum WalletStatus {
+  ACTIVE
+  FROZEN
+  PENDING_KYC
+  CLOSED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DISPUTED
+  ON_HOLD
+}
+
+// ─── Stripe ───────────────────────────────────────────────────────────────────
+
+enum StripeAccountStatus {
+  PENDING_ONBOARDING
+  PENDING_VERIFICATION
+  ACTIVE
+  RESTRICTED
+  REJECTED
+  DISABLED
+}
+
+enum StripePayoutStatus {
+  PENDING
+  IN_TRANSIT
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum StripeWebhookStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+// ─── Blockchain ───────────────────────────────────────────────────────────────
+
+enum BlockchainNetwork {
+  POLYGON_MAINNET   // Primary: low fee MATIC
+  POLYGON_AMOY      // Testnet
+  ETHEREUM_MAINNET
+  ETHEREUM_SEPOLIA // default
+  BASE_MAINNET
+  BASE_SEPOLIA
+}
+
+enum ContractType {
+  REVENUE_SPLITTER    // AutoSplit — routes funds to venue/promoter/platform
+  PAYMENT_ESCROW      // Holds funds until booking confirmed
+  COMMISSION_VAULT    // Holds promoter commissions, releases on settlement
+  MEMBERSHIP_NFT      // Member tier NFT (optional future)
+}
+
+enum OnChainTxStatus {
+  PENDING
+  MEMPOOL
+  CONFIRMED
+  FAILED
+  REVERTED
+}
+
+// ─── Accounting ───────────────────────────────────────────────────────────────
+
+enum LedgerEntryType {
+  DEBIT
+  CREDIT
+}
+
+enum AccountCode {
+  // Assets
+  CASH_STRIPE           // 1001
+  CASH_CRYPTO           // 1002
+  CASH_WALLET           // 1003
+  RECEIVABLE_BOOKINGS   // 1100
+  // Liabilities
+  PAYABLE_VENUE         // 2001
+  PAYABLE_PROMOTER      // 2002
+  PAYABLE_HOST          // 2003
+  PAYABLE_TAX           // 2100
+  DEFERRED_REVENUE      // 2200
+  // Revenue
+  REVENUE_PLATFORM_FEE  // 4001 (2.5%)
+  REVENUE_PASSIVE_COMMISSION // 4002 (platform's cut of promoter pool)
+  // Expenses
+  EXPENSE_STRIPE_FEES   // 5001
+  EXPENSE_GAS_FEES      // 5002
+  EXPENSE_REFUNDS       // 5003
+  // Clearing
+  CLEARING_SETTLEMENT   // 9001
+}
+
+enum TaxType {
+  VAT_ID_PPN            // Indonesia PPN 11%
+  GST_AU                // Australia GST 10%
+  WITHHOLDING           // WHT on foreign promoter payouts
+  NONE
+}
+
+enum ReportType {
+  DAILY_RECONCILIATION
+  WEEKLY_SETTLEMENT
+  MONTHLY_P_AND_L
+  QUARTERLY_TAX
+  PROMOTER_STATEMENT
+  VENUE_STATEMENT
+  HOST_STATEMENT
+  PLATFORM_SUMMARY
+}
+
+enum ReportStatus {
+  GENERATING
+  READY
+  ARCHIVED
+  FAILED
+}
+
+// ─── Notifications & Support ──────────────────────────────────────────────────
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_REMINDER
+  VIP_ARRIVAL
+  COMMISSION_EARNED
+  TIER_UPGRADED
+  PAYMENT_RECEIVED
+  WITHDRAWAL_PROCESSED
+  MAGIC_LINK_REGISTERED // A person you invited just registered
+  MAGIC_LINK_PURCHASED  // A person you invited just made a purchase
+  PROMO_CODE_USED
+  SETTLEMENT_COMPLETE
+  TAX_DOCUMENT_READY
+  SYSTEM_ALERT
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  SMS
+  IN_APP
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_MEMBER_FAVOR
+  RESOLVED_VENUE_FAVOR
+  CLOSED
+}
+
+enum ContentReportStatus {
+  PENDING
+  REVIEWED
+  ACTIONED
+  DISMISSED
+}
+
+enum ModerationActionType {
+  APPROVE
+  REMOVE
+  WARN
+  SUSPEND
+  BAN
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+
+// ============================================================================
+// ██████████  AUTHENTICATION & SESSION MANAGEMENT  ██████████
+// AppKit (Reown/WalletConnect) + NextAuth compatible
+// ============================================================================
+
+/// NextAuth Account — links external OAuth/wallet providers to a User
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              String                            // "oauth" | "email" | "wallet"
+  provider          String                            // "google" | "apple" | "email" | "siwe"
+  providerAccountId String
+
+  // OAuth tokens (encrypted at rest)
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+/// NextAuth Session — tracks active browser sessions
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+
+  // Device context (for suspicious login detection)
+  ipAddress    String?
+  userAgent    String?
+  deviceType   String?   // "mobile" | "desktop" | "tablet"
+  country      String?
+
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Email verification token
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expires   DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("verification_tokens")
+}
+
+/// Password reset token (forgot-password flow). Create/read/update via system or PLATFORM_ADMIN.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expires   DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@allow('create,read,update,delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+/// AppKit WalletConnect session (SIWE — Sign-In with Ethereum)
+model WalletSession {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  walletAddress  String
+  chainId        Int
+  network        BlockchainNetwork @default(POLYGON_MAINNET)
+  networkName    String?
+
+  // SIWE nonce lifecycle
+  nonce          String    @unique
+  message        String?   @db.Text
+  signature      String?   @db.Text
+  sessionId      String?   @unique
+
+  nonceExpiry    DateTime?
+  verifiedAt     DateTime?
+
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  expiresAt      DateTime
+
+  lastUsedAt     DateTime? @default(now())
+  userAgent      String?   @db.Text
+  ipAddress      String?
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@map("wallet_sessions")
+}
+
+/// Historical record of wallet connections
+model WalletConnection {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletAddress     String
+  chainId           Int?
+  isPrimary         Boolean  @default(false)
+  isVerified        Boolean  @default(false)
+  verificationDate  DateTime?
+  firstConnectedAt  DateTime @default(now())
+  lastConnectedAt   DateTime @default(now())
+  connectionCount   Int      @default(1)
+
+  @@unique([userId, walletAddress])
+  @@index([userId])
+  @@index([walletAddress])
+  @@map("wallet_connections")
+}
+
+/// User behavior / activity log (login, logout, account_created, etc.). Users can read their own.
+model UserActivity {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String   // login, logout, account_created, create_investment, etc.
+  resource   String?  // User, Investment, Portfolio, Authentication, etc.
+  resourceId String?
+  metadata   String?  @db.Text  // JSON string for flexible context
+  createdAt  DateTime @default(now())
+
+  @@allow('create', true)
+  @@allow('read',   auth() != null && (auth().id == userId || auth().role == PLATFORM_ADMIN))
+  @@allow('update', false)
+  @@allow('delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("user_activities")
+}
+
+/// AppKit / Reown configuration (singleton per deployment)
+model AppKitConfig {
+  id              String   @id @default(cuid())
+  projectId       String   // Reown/WalletConnect project ID
+  isActive        Boolean  @default(true)
+
+  themeMode       String   @default("dark")
+  themeVariables  Json     @default("{}")
+  features        Json     @default("{}")
+
+  enabledNetworks Json     @default("[]")      // Array of BlockchainNetwork enum values
+  defaultNetwork  BlockchainNetwork @default(ETHEREUM_SEPOLIA)
+
+  appName         String   @default("PRESTIX.VIP")
+  appDescription  String   @default("VIP Nightlife Marketplace — Bali")
+  appUrl          String
+  appIcons        Json     @default("[]")
+
+  // Supported payment rails on this deployment
+  stripeEnabled   Boolean  @default(true)
+  cryptoEnabled   Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("appkit_config")
+}
+
+
+// ============================================================================
+// ██████████  USER MANAGEMENT  ██████████
+// ============================================================================
+
+/// Central user — one record for every role in the system
+model User {
+  id                  String          @id @default(cuid())
+
+  // Core Identity
+  email               String?         @unique
+  name                String?
+  phone               String?         @unique
+  profileImageUrl     String?
+  dateOfBirth         DateTime?
+  bio                 String?         @db.Text
+
+  // Auth
+  emailVerified       DateTime?
+  password            String?         // bcrypt hash; null for social/wallet-only
+  status              UserStatus      @default(PENDING_VERIFICATION)
+
+  // Web3 / AppKit
+  walletAddress       String?         @unique
+  walletType          String?         // "MetaMask" | "WalletConnect" | "Coinbase"
+  chainId             Int?
+  walletNonce         String?         // SIWE nonce for verification
+  walletNonceExpiry   DateTime?       // Expiration for the nonce
+  authMethod          String          @default("email")   // "email" | "wallet" | "both"
+  lastWalletSignIn    DateTime?
+
+  // Role
+  role                PrestixUserRole @default(MEMBER)
+
+  // Timestamps
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  lastLoginAt         DateTime?
+
+  // Onboarding Attribution
+  // Set when user registers via a magic link or promoter referral
+  onboardedViaLinkId  String?         // PromoterMagicLink.id
+  onboardedByPromoter String?         // PromoterProfile.id
+
+  // Per-user preferences (replaces Blob user-settings-store)
+  preferredTheme     String?         // "light" | "dark" | "system"
+  preferredLanguage  String?
+  ndaAcceptedAt      DateTime?       // When user accepted NDA
+
+  // ── Auth Relations ────────────────────────────────────────────────────────
+  accounts            Account[]
+  sessions            Session[]
+  walletSessions      WalletSession[]
+  walletConnections   WalletConnection[]
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+
+  // ── Role Profile Relations ────────────────────────────────────────────────
+  memberProfile       MemberProfile?
+  promoterProfile     PromoterProfile?
+  hostProfile         HostProfile?
+  venueProfile        VenueProfile?
+  venueStaff          VenueStaff[]
+
+  // ── Activity ──────────────────────────────────────────────────────────────
+  userActivities      UserActivity[]
+  bookings            Booking[]
+  wallet              PrestixWallet?
+  venueReviews        VenueReview[]
+  hostReviews         HostReview[]
+  notifications       Notification[]
+  contentReports      ContentReport[]
+  supportTickets      SupportTicket[]
+  supportMessages     SupportMessage[]
+  bookingDisputes     BookingDispute[]
+  moderationActions   ModerationAction[]
+
+  // ── Referral Attribution ──────────────────────────────────────────────────
+  referredByLink      PromoterMagicLink? @relation("LinkRegisteredUser", fields: [onboardedViaLinkId], references: [id])
+  promoterReferralReceived PromoterReferral[] @relation("ReferredUser")
+  onboardingJourney   OnboardingJourney?
+
+  // ── Stripe (one Stripe customer per user) ────────────────────────────────
+  stripeCustomer      StripeCustomerRecord?
+
+  // ── Profile questionnaire (POST /api/profile) ──────────────────────────────
+  profileSetup         UserProfileSetup?
+
+  // ── Handlers refactor: partnership & subscription (replaces Blob stores) ───
+  partnershipAgreement PartnershipAgreement?
+  roleAgreements        RoleAgreement[]
+  subscriptions        Subscription[]
+
+  // ── Access Control ────────────────────────────────────────────────────────
+  @@allow('create', true)
+  @@allow('read',   auth() != null && (auth().id == id || auth().role == PLATFORM_ADMIN))
+  @@allow('update', auth().id == id || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth().role == PLATFORM_ADMIN)
+
+  @@index([email])
+  @@index([phone])
+  @@index([walletAddress])
+  @@index([role])
+  @@index([status])
+  @@index([onboardedByPromoter])
+  @@index([createdAt])
+  @@map("users")
+}
+
+/// Profile questionnaire submission (POST /api/profile). One per user; upserted on save.
+model UserProfileSetup {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  profileType       String?  // e.g. "influencer", "venue", "promoter"
+  name              String?
+  email             String?
+  companyOrHandle   String?
+  venueName         String?
+  roleAtVenue       String?
+  market            String?
+  eventTypes        String?
+  volume            String?
+  investmentFocus   String?
+  contactPreference String?
+  howHeard          String?
+  comments          String?  @db.Text
+
+  submittedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@allow('read',   auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth().role == PLATFORM_ADMIN)
+  @@map("user_profile_setups")
+}
+
+// ============================================================================
+// ██████████  HANDLERS REFACTOR: Site / Feedback / Membership / Partnership  ██████████
+// Replaces Blob-backed stores: site-settings, feedback, membership, users (agreement), admin-codes, revoked-sessions.
+// ============================================================================
+
+/// Site-wide settings (replaces site-settings-store Blob). Key-value; e.g. marketplaceUrl.
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String?  @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@allow('read', true)
+  @@allow('create,update,delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@map("site_settings")
+}
+
+/// Feedback / analytics events (replaces feedback-store Blob). e.g. experience_hire_bike.
+model Feedback {
+  id        String   @id @default(cuid())
+  event     String
+  payload   Json?
+  userId    String?
+  userEmail String?
+  userName  String?
+  createdAt DateTime @default(now())
+
+  @@allow('create', true)
+  @@allow('read,update,delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([event])
+  @@index([createdAt])
+  @@map("feedback")
+}
+
+/// Platform media assets (blob URLs) for admin/venue host to choose from when setting entity images.
+model PlatformMediaAsset {
+  id        String   @id @default(cuid())
+  name      String   // Display name (e.g. missfish_venue_photo_DJ_list)
+  url       String   // Blob URL or proxy URL for display
+  pathname  String?  // Blob pathname (for private blob proxy)
+  category  String?  // e.g. venue, event, promoter, food
+  source    String?  // Original file path before upload
+  createdAt DateTime @default(now())
+
+  @@allow('read', auth() != null && (auth().role == PLATFORM_ADMIN || auth().role == VENUE_ADMIN || auth().role == HOST || auth().role == VENUE_STAFF))
+  @@allow('create,delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([category])
+  @@map("platform_media_assets")
+}
+
+/// User membership / subscription (replaces membership-store Blob). Tier: essential | pro | event_organizer | elite.
+model Subscription {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier         String   // essential | pro | event_organizer | elite
+  billingPeriod String? // monthly | yearly
+  startDate    DateTime @default(now())
+  expiryDate   DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@allow('read', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create,update', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth().role == PLATFORM_ADMIN)
+  @@index([userId])
+  @@index([expiryDate])
+  @@map("subscriptions")
+}
+
+/// Partnership agreement (replaces agreement data in users-store Blob).
+model PartnershipAgreement {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  venueName         String?
+  contactName       String?
+  email             String?
+  phone             String?
+  venueAddress      String?    @db.Text
+  country           String?
+  googleMapsUrl     String?    @db.Text
+  businessTaxNumber String?
+  agreeLogoOnBike   Boolean    @default(false)
+  agreeVipExperience Boolean   @default(false)
+  agreeTerms        Boolean    @default(false)
+  signatureName     String?
+  comments          String?    @db.Text
+  logoUrl           String?    @db.Text
+  walletAddress     String?
+
+  approved          Boolean    @default(false)
+  approvedAt        DateTime?
+  approvedBy        String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@allow('read', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('update,delete', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@map("partnership_agreements")
+}
+
+/// Role-specific agreement (Event Organizer, Promoter, Influencer). Must be signed before purchasing the corresponding membership tier.
+model RoleAgreement {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleType       String   // event_organizer | promoter | influencer
+  agreeTerms     Boolean  @default(false)
+  signatureName  String?
+  extraData      Json?    // Role-specific form data (organization, social handles, event types, etc.)
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, roleType])
+  @@allow('read', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().id == userId)
+  @@allow('update,delete', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@index([userId])
+  @@index([roleType])
+  @@map("role_agreements")
+}
+
+/// Admin 6-digit verification code (replaces admin-codes-store Blob). Short-lived; consume = delete.
+model AdminVerificationCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  expiresAt DateTime
+
+  @@allow('create,read,update,delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("admin_verification_codes")
+}
+
+/// Revoked JWT/session IDs (replaces revoked-sessions-store Blob). Prune expired on read or cron.
+model RevokedSession {
+  id        String   @id @default(cuid())
+  jti       String   @unique
+  expiresAt DateTime
+
+  @@allow('create', auth() != null)
+  @@allow('read', true)   // Session validation (internal)
+  @@allow('delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([expiresAt])
+  @@map("revoked_sessions")
+}
+
+// ============================================================================
+// ██████████  MAGIC LINK & PROMOTER ONBOARDING  ██████████
+// Promoters generate personalised invitation links for individuals.
+// The full journey — click → register → purchase — is tracked, attributing
+// all revenue to the promoter for commission and performance scoring.
+// ============================================================================
+
+/// A magic link generated by a promoter and targeted at a specific person
+/// (influencer, VIP guest, high-value contact).
+model PromoterMagicLink {
+  id              String          @id @default(cuid())
+  promoterId      String
+  promoter        PromoterProfile @relation(fields: [promoterId], references: [id], onDelete: Cascade)
+
+  // ── Target Information ───────────────────────────────────────────────────
+  // The specific individual this link was created for
+  targetName      String?         // Recipient's name (pre-fills registration)
+  targetEmail     String?         // If known — pre-fill email
+  targetPhone     String?
+  targetInstagram String?         // Social context
+  targetNotes     String?         @db.Text
+
+  // ── Link Configuration ───────────────────────────────────────────────────
+  linkToken       String          @unique   // Cryptographically random, URL-safe
+  shortCode       String          @unique   // 8-char human-friendly "PX-A3B4C5"
+  fullUrl         String                    // https://prestix.vip/join/PX-A3B4C5
+  qrCodeUrl       String?
+
+  // ── Preset Context (deep-links to a specific offer) ──────────────────────
+  presetVenueId   String?         // Pre-select a venue
+  presetTicketId  String?         // Pre-select an event ticket
+  presetTableType TableType?      // Pre-select a table tier
+  presetEventDate DateTime?       // Pre-select a date
+  referralCode    String          // Inherits promoter.referralCode for commission tracking
+
+  // ── Link Metadata ─────────────────────────────────────────────────────────
+  channel         String?         // "whatsapp" | "instagram_dm" | "email" | "sms"
+  campaignTag     String?         // Free-text campaign label for grouping
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+
+  // ── Validity ─────────────────────────────────────────────────────────────
+  expiresAt       DateTime?       // null = never expires
+  maxUses         Int?            // null = unlimited (personal links usually 1)
+  isActive        Boolean         @default(true)
+  deactivatedAt   DateTime?
+  deactivatedReason String?
+
+  // ── Lifecycle Tracking ────────────────────────────────────────────────────
+  firstClickAt    DateTime?
+  registeredAt    DateTime?       // When the targeted user completed registration
+  firstPurchaseAt DateTime?       // When the targeted user made their first booking
+  registeredUserId String?        // User.id of the person who registered via this link
+
+  // Aggregate counters (updated by triggers / cron)
+  totalClicks     Int             @default(0)
+  uniqueClicks    Int             @default(0)
+  totalConversions Int            @default(0)   // Registrations
+  totalPurchases  Int             @default(0)   // Bookings placed
+  totalRevenue    Decimal         @db.Decimal(18, 2) @default(0)
+  totalCommission Decimal         @db.Decimal(18, 2) @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  clickEvents     MagicLinkClickEvent[]
+  registeredUsers User[]          @relation("LinkRegisteredUser")
+  referrals       PromoterReferral[]
+  broadcasts      PromoterLinkBroadcast[]
+
+  // ── Access Control ────────────────────────────────────────────────────────
+  @@allow('read',   auth().id == promoter.userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().role == PROMOTER)
+  @@allow('update', auth().id == promoter.userId || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth().role == PLATFORM_ADMIN)
+
+  @@index([promoterId])
+  @@index([linkToken])
+  @@index([shortCode])
+  @@index([referralCode])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("promoter_magic_links")
+}
+
+/// Every time someone clicks a magic link — anonymous until they register
+model MagicLinkClickEvent {
+  id            String             @id @default(cuid())
+  linkId        String
+  link          PromoterMagicLink  @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  // Visitor fingerprint (pre-registration)
+  sessionId     String             // Ephemeral browser session ID
+  ipAddress     String?
+  userAgent     String?            @db.Text
+  country       String?
+  city          String?
+  referrer      String?            // Where they came from before the link
+
+  // Post-registration linkage
+  registeredUserId String?         // Set once they complete registration
+
+  // Conversion tracking
+  didRegister   Boolean            @default(false)
+  didPurchase   Boolean            @default(false)
+
+  clickedAt     DateTime           @default(now())
+
+  @@index([linkId])
+  @@index([sessionId])
+  @@index([clickedAt])
+  @@map("magic_link_click_events")
+}
+
+model PromoterLinkBroadcast {
+  id              String              @id @default(cuid())
+  linkId          String
+  link            PromoterMagicLink   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  
+  channelId       String?
+  channel         PromoterSocialChannel? @relation(fields: [channelId], references: [id])
+  
+  platform        SocialChannelPlatform
+  broadcastAt     DateTime            @default(now())
+  message         String?             @db.Text
+  
+  createdAt       DateTime            @default(now())
+  
+  @@allow('read', auth().id == link.promoter.userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().id == link.promoter.userId || auth().role == PLATFORM_ADMIN)
+  
+  @@index([linkId])
+  @@map("promoter_link_broadcasts")
+}
+
+/// Onboarding journey — captures each step a magic-link user takes
+/// from first click through registration to first purchase
+model OnboardingJourney {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Attribution
+  magicLinkId         String?
+  promoterId          String?
+  referralCode        String?
+
+  // Steps completed (timestamps; null = not yet reached)
+  linkClickedAt       DateTime?
+  emailSubmittedAt    DateTime?
+  emailVerifiedAt     DateTime?
+  profileCompletedAt  DateTime?
+  paymentMethodAddedAt DateTime?
+  firstBookingAt      DateTime?
+  firstCheckInAt      DateTime?
+
+  // Preset context inherited from magic link
+  presetVenueId       String?
+  presetTicketId      String?
+  presetEventDate     DateTime?
+
+  // Attribution source
+  source              String?   // "magic_link" | "promoter_ref" | "organic" | "social"
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+
+  // Conversion health
+  dropOffStep         String?   // Last step before abandonment
+  isConverted         Boolean   @default(false)
+  convertedAt         DateTime? // = firstBookingAt
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([promoterId])
+  @@index([magicLinkId])
+  @@index([isConverted])
+  @@map("onboarding_journeys")
+}
+
+
+// ============================================================================
+// ██████████  MEMBER PROFILE  ██████████
+// ============================================================================
+
+model MemberProfile {
+  id                  String         @id @default(cuid())
+  userId              String         @unique
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tier                MembershipTier @default(BRONZE)
+  loyaltyPoints       Int            @default(0)
+  totalSpent          Decimal        @db.Decimal(18, 2) @default(0)
+
+  preferredVenueTypes Json           @default("[]")
+  preferredActivities Json           @default("[]")
+  notificationPrefs   Json           @default("{\"email\":true,\"push\":true,\"sms\":false,\"whatsapp\":false}")
+
+  // Member's own referral code (for friend referral, US-M18)
+  referralCode        String?        @unique
+  referredBy          String?        // PromoterProfile.id or MemberProfile.referralCode
+
+  totalBookings       Int            @default(0)
+  completedBookings   Int            @default(0)
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  favorites           MemberFavorite[]
+
+  // ── Multi-Promoter Preference Relations (Addendum B) ────────────────────
+  promoterPreferences MemberPromoterPreference[]
+
+  @@allow('read',   auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().id == userId || auth().role == PLATFORM_ADMIN)
+
+  @@index([tier])
+  @@index([referralCode])
+  @@map("member_profiles")
+}
+
+model MemberFavorite {
+  id         String        @id @default(cuid())
+  memberId   String
+  member     MemberProfile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  targetType String        // "VENUE" | "HOST"
+  targetId   String
+  createdAt  DateTime      @default(now())
+
+  @@unique([memberId, targetType, targetId])
+  @@map("member_favorites")
+}
+
+
+// ============================================================================
+// ██████████  VENUE MANAGEMENT  ██████████
+// ============================================================================
+
+model VenueProfile {
+  id                    String          @id @default(cuid())
+  userId                String          @unique
+  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name                  String
+  slug                  String          @unique
+  description           String?         @db.Text
+  venueType             VenueType       @default(NIGHTCLUB)
+  status                VenueStatus     @default(PENDING_REVIEW)
+
+  address               String
+  city                  String          @default("Bali")
+  country               String          @default("Indonesia")
+  latitude              Decimal?        @db.Decimal(10, 8)
+  longitude             Decimal?        @db.Decimal(11, 8)
+  phone                 String?
+  email                 String?
+  website               String?
+  instagramHandle       String?
+
+  operatingHours        Json            @default("{}")
+  minAge                Int             @default(18)
+
+  coverImage            String?
+  logoImage             String?
+  /// Cover media for dynamic transitions: [{ type: "image"|"video", url: string }]
+  coverMedia            Json            @default("[]")
+  galleryImages         Json            @default("[]")
+
+  rating                Decimal         @db.Decimal(3, 2)  @default(0)
+  totalReviews          Int             @default(0)
+  totalBookings         Int             @default(0)
+  totalRevenue          Decimal         @db.Decimal(18, 2) @default(0)
+
+  autoAcceptBookings    Boolean         @default(false)
+  requiresDeposit       Boolean         @default(true)
+  depositPercentage     Decimal         @db.Decimal(5, 2)  @default(100)
+  cancellationHours     Int             @default(24)
+
+  currency              String          @default("AUD")
+
+  // ── Tax Registration ──────────────────────────────────────────────────────
+  taxId                 String?         // NPWP for Indonesian entities
+  taxCountry            String          @default("ID")
+  vatRegistered         Boolean         @default(false)
+  vatNumber             String?
+
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  // ── Financial Relations ───────────────────────────────────────────────────
+  stripeAccount         StripeConnectedAccount?
+  tables                VenueTable[]
+  tickets               VenueTicket[]
+  events                VenueEvent[]
+  availability          VenueAvailability[]
+  staff                 VenueStaff[]
+  hostAssignments       VenueHostAssignment[]
+  bookings              Booking[]
+  settlements           VenueSettlement[]
+  reviews               VenueReview[]
+  vipAlerts             VipArrivalAlert[]
+  promotions            VenuePromotion[]
+  announcements         VenueAnnouncement[]
+  dailyMetrics          VenueDailyMetrics[]
+  taxRecords            TaxRecord[]
+
+  // ── Promoter Relations (Addendum B) ──────────────────────────────────────
+  eventPromoters        VenueEventPromoter[]
+  promoterPerformances  PromoterVenuePerformance[]
+  promoterWeightConfig  VenuePromoterWeightConfig?
+  promoterPreferences   MemberPromoterPreference[]
+
+  @@allow('read',   status == ACTIVE || auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth().role == PLATFORM_ADMIN)
+
+  @@index([status])
+  @@index([venueType])
+  @@index([city])
+  @@index([rating])
+  @@index([slug])
+  @@map("venue_profiles")
+}
+
+model VenueStaff {
+  id          String       @id @default(cuid())
+  venueId     String
+  venue       VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role        String       @default("STAFF")
+  permissions Json         @default("[]")
+  isActive    Boolean      @default(true)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([venueId, userId])
+  @@index([venueId])
+  @@map("venue_staff")
+}
+
+model VenueTable {
+  id              String       @id @default(cuid())
+  venueId         String
+  venue           VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  name            String
+  tableNumber     String?
+  tableType       TableType    @default(STANDARD)
+  description     String?      @db.Text
+
+  minCapacity     Int          @default(2)   // Min guests for this table
+  maxCapacity     Int          @default(10)  // Max guests for this table (per-table, not per-tier)
+
+  basePrice       Decimal      @db.Decimal(18, 2)
+  minimumSpend    Decimal?     @db.Decimal(18, 2)
+  currency        String       @default("AUD")
+
+  inclusions      Json         @default("[]")
+  availableAddOns Json         @default("[]")   // [{name, price, required, category}]
+
+  location        String?
+  floorPlanCoords Json?        // {x, y, w, h} for interactive floor plan
+  images          Json         @default("[]")
+  features        Json         @default("[]")
+
+  isActive        Boolean      @default(true)
+  sortOrder       Int          @default(0)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  bookings        Booking[]
+  availability    VenueTableAvailability[]
+
+  @@allow('read',   venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('create', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('update', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+
+  @@index([venueId, isActive])
+  @@index([tableType])
+  @@map("venue_tables")
+}
+
+model VenueTableAvailability {
+  id          String      @id @default(cuid())
+  tableId     String
+  table       VenueTable  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  date        DateTime    @db.Date
+  timeSlot    String?
+  isAvailable Boolean     @default(false)
+  reason      String?
+
+  createdAt   DateTime    @default(now())
+
+  @@unique([tableId, date, timeSlot])
+  @@index([tableId, date])
+  @@map("venue_table_availability")
+}
+
+model VenueAvailability {
+  id        String       @id @default(cuid())
+  venueId   String
+  venue     VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  date      DateTime     @db.Date
+  isOpen    Boolean      @default(true)
+  openTime  String?
+  closeTime String?
+  reason    String?
+
+  createdAt DateTime     @default(now())
+
+  @@unique([venueId, date])
+  @@map("venue_availability")
+}
+
+model VenueEvent {
+  id              String       @id @default(cuid())
+  venueId         String
+  venue           VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String?      @db.Text
+  startDateTime   DateTime
+  endDateTime     DateTime?
+  status          String       @default("PUBLISHED") // DRAFT, PUBLISHED, CANCELLED, COMPLETED
+  imageUrl        String?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  promoters       VenueEventPromoter[]
+  preferences     MemberPromoterPreference[]
+
+  @@allow('read', true)
+  @@allow('create', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('update', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+
+  @@index([venueId, startDateTime])
+  @@map("venue_events")
+}
+
+model VenueTicket {
+  id             String       @id @default(cuid())
+  venueId        String
+  venue          VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  name           String
+  description    String?      @db.Text
+  eventDate      DateTime?
+  isRecurring    Boolean      @default(false)
+  recurringDays  Json         @default("[]")
+
+  price          Decimal      @db.Decimal(18, 2)
+  currency       String       @default("AUD")
+  originalPrice  Decimal?     @db.Decimal(18, 2)
+
+  totalInventory Int?
+  soldCount      Int          @default(0)
+
+  inclusions     Json         @default("[]")
+  images         Json         @default("[]")
+
+  validFrom      DateTime?
+  validUntil     DateTime?
+  isActive       Boolean      @default(true)
+  sortOrder      Int          @default(0)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  bookings       Booking[]
+
+  @@allow('read',   venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('create', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('update', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+
+  @@index([venueId, isActive])
+  @@index([eventDate])
+  @@map("venue_tickets")
+}
+
+model VenueAnnouncement {
+  id        String       @id @default(cuid())
+  venueId   String
+  venue     VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  title     String
+  content   String       @db.Text
+  imageUrl  String?
+  linkUrl   String?
+
+  publishAt DateTime     @default(now())
+  expiresAt DateTime?
+  isActive  Boolean      @default(true)
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@allow('read',   venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('create', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('update', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+
+  @@index([venueId, isActive])
+  @@map("venue_announcements")
+}
+
+
+// ============================================================================
+// ██████████  HOST (ENTERTAINER) SYSTEM  ██████████
+// ============================================================================
+
+model HostProfile {
+  id                  String              @id @default(cuid())
+  userId              String              @unique
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  displayName         String
+  bio                 String?             @db.Text
+  age                 Int?
+  nationality         String?
+  languages           Json                @default("[]")
+
+  status              HostStatus          @default(PENDING_VERIFICATION)
+  isActive            Boolean             @default(true)
+  idVerified          Boolean             @default(false)
+  photoVerified       Boolean             @default(false)
+  verifiedAt          DateTime?
+
+  hourlyRate          Decimal             @db.Decimal(18, 2)
+  minimumHours        Int                 @default(2)
+  currency            String              @default("AUD")
+  services            Json                @default("[]")
+
+  acceptsLastMinute   Boolean             @default(false)
+  advanceBookingDays  Int                 @default(7)
+
+  rating              Decimal             @db.Decimal(3, 2) @default(0)
+  totalReviews        Int                 @default(0)
+  totalBookings       Int                 @default(0)
+  completionRate      Decimal             @db.Decimal(5, 2) @default(100)
+
+  // Tax details
+  taxId               String?
+  taxCountry          String?
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  photos              HostPhoto[]
+  availability        HostAvailability[]
+  venueAssignments    VenueHostAssignment[]
+  bookings            HostBooking[]
+  earnings            HostEarnings[]
+  payouts             HostPayout[]
+  reviews             HostReview[]
+  stripeAccount       StripeConnectedAccount?
+
+  @@allow('read',   (status == ACTIVE && isActive == true) || auth().id == userId || auth().role in [PLATFORM_ADMIN, VENUE_ADMIN])
+  @@allow('update', auth().id == userId || auth().role == PLATFORM_ADMIN)
+
+  @@index([status, isActive])
+  @@index([rating])
+  @@map("host_profiles")
+}
+
+model HostPhoto {
+  id           String      @id @default(cuid())
+  profileId    String
+  profile      HostProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  url          String
+  thumbnailUrl String?
+  isApproved   Boolean     @default(false)
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
+
+  @@index([profileId])
+  @@map("host_photos")
+}
+
+model HostAvailability {
+  id          String      @id @default(cuid())
+  profileId   String
+  profile     HostProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  date        DateTime    @db.Date
+  isAvailable Boolean     @default(true)
+  startTime   String?
+  endTime     String?
+  notes       String?
+  createdAt   DateTime    @default(now())
+
+  @@unique([profileId, date])
+  @@map("host_availability")
+}
+
+model VenueHostAssignment {
+  id         String       @id @default(cuid())
+  venueId    String
+  venue      VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  hostId     String
+  host       HostProfile  @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  isActive   Boolean      @default(true)
+  assignedAt DateTime     @default(now())
+
+  @@unique([venueId, hostId])
+  @@index([venueId])
+  @@map("venue_host_assignments")
+}
+
+model HostBooking {
+  id            String      @id @default(cuid())
+  hostId        String
+  host          HostProfile @relation(fields: [hostId], references: [id])
+  bookingId     String?
+  booking       Booking?    @relation(fields: [bookingId], references: [id])
+
+  memberId      String
+  date          DateTime
+  startTime     String
+  endTime       String
+  durationHours Decimal     @db.Decimal(5, 2)
+  hourlyRate    Decimal     @db.Decimal(18, 2)
+  totalAmount   Decimal     @db.Decimal(18, 2)
+  currency      String      @default("AUD")
+
+  status        BookingStatus @default(PENDING_PAYMENT)
+  notes         String?       @db.Text
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  earnings      HostEarnings[]
+
+  @@index([hostId])
+  @@index([memberId, status])
+  @@map("host_bookings")
+}
+
+model HostEarnings {
+  id            String      @id @default(cuid())
+  hostId        String
+  host          HostProfile @relation(fields: [hostId], references: [id])
+  hostBookingId String
+  hostBooking   HostBooking @relation(fields: [hostBookingId], references: [id])
+
+  grossAmount   Decimal     @db.Decimal(18, 2)
+  platformFee   Decimal     @db.Decimal(18, 2)
+  netEarnings   Decimal     @db.Decimal(18, 2)
+
+  status        String      @default("PENDING")
+  creditedAt    DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([hostId, status])
+  @@map("host_earnings")
+}
+
+model HostPayout {
+  id             String           @id @default(cuid())
+  hostId         String
+  host           HostProfile      @relation(fields: [hostId], references: [id])
+
+  amount         Decimal          @db.Decimal(18, 2)
+  currency       String           @default("AUD")
+  method         String           // "stripe_transfer" | "crypto"
+
+  // Stripe payout reference
+  stripeTransferId String?
+
+  // Crypto payout reference
+  cryptoTxHash   String?
+  cryptoNetwork  BlockchainNetwork?
+  cryptoAddress  String?
+
+  status         WithdrawalStatus @default(PENDING)
+  processedAt    DateTime?
+  transactionRef String?
+  failureReason  String?
+  approvedBy     String?
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([hostId, status])
+  @@map("host_payouts")
+}
+
+
+// ============================================================================
+// ██████████  PROMOTER SYSTEM  ██████████
+// ============================================================================
+
+/// Promoter commission split configuration per tier
+/// (seeded from platform defaults; overridable per promoter by PLATFORM_ADMIN)
+model CommissionSplitConfig {
+  id                  String       @id @default(cuid())
+  tier                PromoterTier @unique
+
+  // Of the 10% promoter commission pool:
+  promoterSharePct    Decimal      @db.Decimal(5, 4)  // e.g. 0.6000 = 60%
+  platformSharePct    Decimal      @db.Decimal(5, 4)  // e.g. 0.4000 = 40%
+
+  // Tier thresholds (total lifetime bookings generated)
+  minBookings         Int          // Lower bound (inclusive)
+  maxBookings         Int?         // Upper bound (null = no cap)
+
+  description         String?
+  effectiveFrom       DateTime     @default(now())
+  isActive            Boolean      @default(true)
+
+  updatedBy           String?
+  updatedAt           DateTime     @updatedAt
+  createdAt           DateTime     @default(now())
+
+  @@allow('read', true)
+  @@allow('create,update,delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@map("commission_split_configs")
+}
+
+model PromoterProfile {
+  id                  String          @id @default(cuid())
+  userId              String          @unique
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status              PromoterStatus  @default(PENDING_APPROVAL)
+  tier                PromoterTier    @default(STARTER)
+
+  // Application
+  socialHandle        String?
+  followerCount       Int?
+  applicationNotes    String?         @db.Text
+  approvedAt          DateTime?
+  approvedBy          String?
+
+  // Marketing bio (for partner/venue host review)
+  marketingBio        String?         @db.Text
+  marketingBioImages  Json            @default("[]")  // Array of image URLs
+
+  // Referral tracking
+  referralCode        String          @unique
+  referralLink        String?
+  qrCodeUrl           String?
+
+  // KYC
+  kycVerified         Boolean         @default(false)
+  kycVerifiedAt       DateTime?
+  kycProvider         String?         // "sumsub" | "manual"
+
+  // Tax
+  taxId               String?
+  taxCountry          String?
+
+  // Aggregate performance (denormalised for fast dashboard reads)
+  totalMagicLinksCreated Int          @default(0)
+  totalReferralClicks    Int          @default(0)
+  totalRegistrations     Int          @default(0)    // Unique users onboarded
+  totalBookings          Int          @default(0)    // Bookings by referred users
+  totalGrossRevenue      Decimal      @db.Decimal(18, 2) @default(0)
+
+  // Commission (10% pool)
+  totalCommissionPool    Decimal      @db.Decimal(18, 2) @default(0)  // Gross 10%
+  totalPromoterEarnings  Decimal      @db.Decimal(18, 2) @default(0)  // After tier split
+  totalPlatformPassive   Decimal      @db.Decimal(18, 2) @default(0)  // Platform's cut
+  lifetimeWithdrawals    Decimal      @db.Decimal(18, 2) @default(0)
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  magicLinks          PromoterMagicLink[]
+  referrals           PromoterReferral[]
+  commissions         PromoterCommission[]
+  milestones          PromoterMilestone[]
+  wallet              PrestixWallet?  @relation("PromoterWallet")
+  dailyMetrics        PromoterDailyMetrics[]
+  stripeAccount       StripeConnectedAccount?
+  bookings            Booking[]
+
+  // ── Multi-Promoter Relations (Addendum B) ───────────────────────────────
+  promoterPreferences  MemberPromoterPreference[]  @relation("PrimaryPromoter")
+  challengerPreferences MemberPromoterPreference[] @relation("ChallengerPromoter")
+  boundPreferences     MemberPromoterPreference[]  @relation("BoundPromoter")
+  eventAssignments     VenueEventPromoter[]
+  socialChannels       PromoterSocialChannel[]
+  venuePerformances    PromoterVenuePerformance[]
+
+  @@allow('read',   auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().id == userId || auth().role == PLATFORM_ADMIN)
+
+  @@index([status, tier])
+  @@index([referralCode])
+  @@map("promoter_profiles")
+}
+
+// ─── Multi-Promoter Preference Attribution (Addendum B) ───────────────────────
+
+/// Tracks promoter attribution conflicts and member preference resolution
+/// CRITICAL: Unique constraint prevents race-condition duplicates
+/// CRITICAL: Member-scoped access policies prevent cross-tenant data leakage
+model MemberPromoterPreference {
+  id                      String                  @id @default(cuid())
+  memberId                String
+  member                  MemberProfile           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  // Candidate promoters in this scope conflict
+  primaryPromoterId       String                  // First attributed promoter
+  primaryPromoter         PromoterProfile         @relation("PrimaryPromoter", fields: [primaryPromoterId], references: [id])
+  challengerPromoterId    String                  // Second attributed promoter
+  challengerPromoter      PromoterProfile         @relation("ChallengerPromoter", fields: [challengerPromoterId], references: [id])
+  boundPromoterId         String?                 // Null until choice is made
+  boundPromoter           PromoterProfile?        @relation("BoundPromoter", fields: [boundPromoterId], references: [id])
+
+  // Scope — defines the event+venue+date intersection
+  bindingScope            PromoterBindingScope    // EVENT_DATE | VENUE_DATE | VENUE_OPEN | PLATFORM_OPEN
+  venueId                 String?
+  venue                   VenueProfile?           @relation(fields: [venueId], references: [id])
+  eventId                 String?
+  event                   VenueEvent?             @relation(fields: [eventId], references: [id])
+  scopeDate               DateTime?               @db.Date
+
+  // Resolution
+  status                  MemberPreferenceStatus  // PENDING_CHOICE | BOUND | BOUND_EXPIRED | DECLINED
+  resolutionMethod        String?                 // MEMBER_CHOICE | FIRST_ATTRIBUTION | SYSTEM
+  resolvedAt              DateTime?
+
+  // CRITICAL: Auto-expire stale PENDING_CHOICE records (24h timeout)
+  resolvedDeadlineAt      DateTime?               // Set at PENDING_CHOICE creation + 24h
+
+  // Binding locks after first transaction in scope
+  firstTransactionId      String?                 // FK → Booking; set when binding locks
+  isLocked                Boolean                 @default(false)
+
+  // Scope-local decay tracking (merged from A.7 specification)
+  boundDecayCounter       Int                     @default(0)      // Scope-local decay counter
+  lastCodeUsedInScope     String?                               // Last promo code used in this scope
+  lastCodeUsedAt          DateTime?                             // When last code was used
+  totalScopeSpend         Decimal                 @db.Decimal(18,2) @default(0)  // Running total spend in scope
+  transactionCount        Int                     @default(0)      // Transactions in this scope
+
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  // CRITICAL: Unique constraint prevents race-condition duplicates
+  @@unique([memberId, bindingScope, venueId, eventId, scopeDate])
+
+  // HIGH: Member-scoped access policies prevent cross-promoter data leakage
+  @@allow('read', auth().id == member.userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().role == PLATFORM_ADMIN)
+
+  @@index([memberId, status])
+  @@index([bindingScope])
+  @@index([status, resolvedDeadlineAt])
+  @@map("member_promoter_preferences")
+}
+
+/// Junction model for venue nomination of promoters for specific events
+/// Prevents unauthorized link generation for non-nominated events
+model VenueEventPromoter {
+  id              String                    @id @default(cuid())
+  venueId         String
+  venue           VenueProfile              @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  eventId         String                    // VenueEvent.id
+  event           VenueEvent                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  promoterId      String
+  promoter        PromoterProfile           @relation(fields: [promoterId], references: [id], onDelete: Cascade)
+
+  status          VenueEventPromoterStatus  @default(NOMINATED)
+  nominatedBy     String                    // User.id of venue admin who nominated
+  nominatedAt     DateTime                  @default(now())
+  acceptedAt      DateTime?
+
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  // Unique constraint prevents duplicate nominations
+  @@unique([venueId, eventId, promoterId])
+
+  // Venue admin can manage their venue's nominations
+  // Promoters can read their own nomination status
+  @@allow('read', auth().id == promoter.userId || venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('create', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('update', venue.userId == auth().id || auth().id == promoter.userId || auth().role == PLATFORM_ADMIN)
+
+  @@index([venueId, eventId])
+  @@index([promoterId, status])
+  @@map("venue_event_promoters")
+}
+
+/// Promoter social channel configuration for broadcast functionality
+model PromoterSocialChannel {
+  id              String                @id @default(cuid())
+  promoterId      String
+  promoter        PromoterProfile       @relation(fields: [promoterId], references: [id], onDelete: Cascade)
+
+  platform        SocialChannelPlatform
+  channelHandle   String                // @username, +1234567890, etc.
+  channelName     String                // Display name
+  channelType     String                @default("DM")  // "DM" | "GROUP" | "CHANNEL"
+  isPrimary       Boolean               @default(false)
+  verifiedAt      DateTime?
+
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  // Unique constraint prevents duplicate channel configurations
+  @@unique([promoterId, platform, channelHandle])
+
+  // Only promoter can manage their own channels
+  @@allow('read', auth().id == promoter.userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().id == promoter.userId || auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().id == promoter.userId || auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth().id == promoter.userId || auth().role == PLATFORM_ADMIN)
+
+  @@index([promoterId, isPrimary])
+  broadcasts      PromoterLinkBroadcast[]
+  @@map("promoter_social_channels")
+}
+
+model PromoterReferral {
+  id             String             @id @default(cuid())
+  promoterId     String
+  promoter       PromoterProfile    @relation(fields: [promoterId], references: [id])
+
+  referredUserId String?
+  referredUser   User?              @relation("ReferredUser", fields: [referredUserId], references: [id])
+
+  // Attribution source
+  magicLinkId    String?
+  magicLink      PromoterMagicLink? @relation(fields: [magicLinkId], references: [id])
+  promoCode      String
+  entryUrl       String?
+  utmSource      String?
+  ipAddress      String?
+
+  // Conversion timeline
+  firstVisitAt   DateTime           @default(now())
+  registeredAt   DateTime?
+  firstBookingAt DateTime?
+
+  // Preset context (copied from magic link)
+  presetVenueId  String?
+  presetEventDate DateTime?
+
+  createdAt      DateTime           @default(now())
+
+  @@allow('read', auth() != null && (promoter.userId == auth().id || auth().role == PLATFORM_ADMIN))
+  @@allow('create', auth() != null && (promoter.userId == auth().id || auth().role == PLATFORM_ADMIN))
+  @@index([promoterId])
+  @@index([referredUserId])
+  @@index([promoCode])
+  @@index([magicLinkId])
+  @@map("promoter_referrals")
+}
+
+/// One commission record per booking that used a promoter referral
+model PromoterCommission {
+  id                  String          @id @default(cuid())
+  promoterId          String
+  promoter            PromoterProfile @relation(fields: [promoterId], references: [id])
+  bookingId           String          @unique
+  booking             Booking         @relation(fields: [bookingId], references: [id])
+
+  bookingAmount       Decimal         @db.Decimal(18, 2)
+  poolRate            Decimal         @db.Decimal(5, 4) @default(0.1000)  // 10%
+  commissionPool      Decimal         @db.Decimal(18, 2)  // bookingAmount × 10%
+
+  // Tier split (snapshot at commission time)
+  promoterTier        PromoterTier
+  promoterSharePct    Decimal         @db.Decimal(5, 4)   // e.g. 0.75
+  platformSharePct    Decimal         @db.Decimal(5, 4)   // e.g. 0.25
+
+  promoterEarning     Decimal         @db.Decimal(18, 2)  // Pool × promoterSharePct
+  platformPassive     Decimal         @db.Decimal(18, 2)  // Pool × platformSharePct
+
+  currency            String          @default("AUD")
+
+  // Payment rail used for the underlying booking
+  paymentRail         PaymentRail?
+
+  status              String          @default("PENDING")  // PENDING|CREDITED|PAID
+  creditedAt          DateTime?
+  walletTxId          String?         // WalletTransaction.id
+
+  // Blockchain record (if paid on-chain)
+  onChainTxId         String?         // BlockchainTransaction.id
+
+  // Stripe transfer (if paid via Stripe)
+  stripeTransferId    String?
+
+  createdAt           DateTime        @default(now())
+
+  @@allow('read', auth() != null && (promoter.userId == auth().id || auth().role == PLATFORM_ADMIN))
+  @@allow('create', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@unique([promoterId, bookingId])
+  @@index([promoterId, status])
+  @@index([createdAt])
+  @@map("promoter_commissions")
+}
+
+model PromoterMilestone {
+  id           String          @id @default(cuid())
+  promoterId   String
+  promoter     PromoterProfile @relation(fields: [promoterId], references: [id])
+
+  milestone    String          // "25_BOOKINGS" | "50_BOOKINGS" | "100_BOOKINGS" | "250_BOOKINGS"
+  bookingCount Int
+  bonusAmount  Decimal         @db.Decimal(18, 2)
+  currency     String          @default("AUD")
+
+  awardedAt    DateTime        @default(now())
+  creditedAt   DateTime?
+  walletTxId   String?
+
+  @@index([promoterId])
+  @@map("promoter_milestones")
+}
+
+// ─── Promoter Performance Dashboard (Addendum B) ────────────────────────────
+
+/// Core analytical model storing pre-computed performance metrics per promoter per venue
+/// MEDIUM: isStale field added for batch job compatibility
+model PromoterVenuePerformance {
+  id                    String                  @id @default(cuid())
+  promoterId            String
+  promoter              PromoterProfile         @relation(fields: [promoterId], references: [id])
+
+  venueId               String
+  venue                 VenueProfile            @relation(fields: [venueId], references: [id])
+
+  // Lookback window for this snapshot
+  windowDays            Int                     // 7 | 30 | 90 | 180 | 0 (all time)
+  snapshotDate          DateTime                @db.Date  // date this was computed
+
+  // MEDIUM: isStale flag for batch job compatibility
+  isStale               Boolean                 @default(false)
+
+  // Raw metrics
+  totalLinkClicks       Int                     @default(0)
+  totalRegistrations    Int                     @default(0)
+  totalBookings         Int                     @default(0)
+  totalCompletedTx      Int                     @default(0)
+  conversionRate        Decimal                 @db.Decimal(6,4)  // 0.0000–1.0000
+  medianVelocityHours   Decimal                 @db.Decimal(8,2)  // click-to-payment median
+  preEventBookingRate   Decimal                 @db.Decimal(6,4)
+  onNightSpendPerHead   Decimal                 @db.Decimal(18,2)
+  generalVenueSpend     Decimal                 @db.Decimal(18,2)
+  totalCommissionEarned Decimal                 @db.Decimal(18,2)
+
+  // Normalised scores (0–100) against all venue promoters
+  conversionScore       Int                     @default(0)  // 0–100
+  velocityScore         Int                     @default(0)
+  preEventScore         Int                     @default(0)
+  onNightScore          Int                     @default(0)
+  generalSpendScore     Int                     @default(0)
+  compositeScore        Int                     @default(0)  // weighted sum
+
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  // Venue admin can read performance data for their venues
+  @@allow('read', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().role == PLATFORM_ADMIN)
+
+  @@index([promoterId, venueId])
+  @@index([venueId, snapshotDate])
+  @@index([promoterId, venueId, windowDays, isStale])  // MEDIUM: Composite index for batch job
+  @@map("promoter_venue_performance")
+}
+
+/// Time-series record capturing promoter performance per event
+model PromoterPerformanceSnapshot {
+  id                String                  @id @default(cuid())
+  promoterId        String
+  venueId           String
+  eventId           String?                 // null for non-event-night snapshots
+  snapshotType      String                  // EVENT_NIGHT | NON_EVENT | MONTHLY_SUMMARY
+  periodStart       DateTime
+  periodEnd         DateTime
+
+  // Funnel metrics for this period/event
+  linkClicks        Int                     @default(0)
+  newRegistrations  Int                     @default(0)
+  preEventBookings  Int                     @default(0)
+  preEventRevenue   Decimal                 @db.Decimal(18,2) @default(0)
+  onNightTransactions Int                   @default(0)
+  onNightRevenue    Decimal                 @db.Decimal(18,2) @default(0)
+  commissionsEarned Decimal                 @db.Decimal(18,2) @default(0)
+  conversionRate    Decimal                 @db.Decimal(6,4) @default(0)
+  avgVelocityHours  Decimal                 @db.Decimal(8,2) @default(0)
+
+  createdAt         DateTime                @default(now())
+
+  @@index([venueId, eventId])
+  @@index([promoterId, periodStart])
+  @@map("promoter_performance_snapshots")
+}
+
+/// Venue admin custom dimension weights for composite scoring
+model VenuePromoterWeightConfig {
+  id              String                  @id @default(cuid())
+  venueId         String                  @unique
+  venue           VenueProfile            @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  // Weights must sum to 100
+  weightConversion Int                    @default(30)  // CONVERSION
+  weightPreEvent   Int                    @default(25)  // PRE_EVENT
+  weightOnNight    Int                    @default(20)  // ON_NIGHT
+  weightVelocity   Int                    @default(15)  // VELOCITY
+  weightGenSpend   Int                    @default(10)  // GENERAL_SPEND
+
+  updatedAt       DateTime                @updatedAt
+  updatedBy       String                  // userId of VENUE_ADMIN who last saved
+
+  // Venue admin can manage weights for their venue
+  @@allow('read', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('create', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+  @@allow('update', venue.userId == auth().id || auth().role == PLATFORM_ADMIN)
+
+  @@map("venue_promoter_weight_configs")
+}
+
+
+// ============================================================================
+// ██████████  PROMO CODES  ██████████
+// ============================================================================
+
+model PromoCode {
+  id               String      @id @default(cuid())
+  code             String      @unique
+  description      String?
+
+  discountType     String      @default("PERCENTAGE")  // "PERCENTAGE" | "FIXED"
+  discountValue    Decimal     @db.Decimal(18, 2)
+
+  venueId          String?
+  bookingType      BookingType?
+
+  maxUsages        Int?
+  usageCount       Int         @default(0)
+  maxUsagesPerUser Int         @default(1)
+
+  isWelcomeCode    Boolean     @default(false)
+
+  validFrom        DateTime    @default(now())
+  validUntil       DateTime?
+  isActive         Boolean     @default(true)
+
+  createdBy        String
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  bookingUses      Booking[]
+
+  @@allow('read', true)
+  @@allow('create,update,delete', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([code])
+  @@map("promo_codes")
+}
+
+model VenuePromotion {
+  id            String       @id @default(cuid())
+  venueId       String
+  venue         VenueProfile @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  title         String
+  description   String?      @db.Text
+  imageUrl      String?
+
+  discountType  String       @default("PERCENTAGE")
+  discountValue Decimal      @db.Decimal(18, 2)
+
+  validFrom     DateTime
+  validUntil    DateTime
+  isActive      Boolean      @default(true)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([venueId, isActive])
+  @@map("venue_promotions")
+}
+
+
+// ============================================================================
+// ██████████  BOOKING SYSTEM  ██████████
+// ============================================================================
+
+model Booking {
+  id                   String        @id @default(cuid())
+  bookingNumber        String        @unique   // "PX-20260301-0001"
+
+  memberId             String
+  member               User          @relation(fields: [memberId], references: [id])
+  venueId              String
+  venue                VenueProfile  @relation(fields: [venueId], references: [id])
+
+  bookingType          BookingType
+  tableId              String?
+  table                VenueTable?   @relation(fields: [tableId], references: [id])
+  ticketId             String?
+  ticket               VenueTicket?  @relation(fields: [ticketId], references: [id])
+
+  bookingDate          DateTime      @db.Date
+  startTime            String
+  endTime              String?
+  guestCount           Int           @default(1)
+
+  // Pricing
+  baseAmount           Decimal       @db.Decimal(18, 2)
+  addOnsAmount         Decimal       @db.Decimal(18, 2) @default(0)
+  discountAmount       Decimal       @db.Decimal(18, 2) @default(0)
+  taxAmount            Decimal       @db.Decimal(18, 2) @default(0)
+  totalAmount          Decimal       @db.Decimal(18, 2)
+  currency             String        @default("AUD")
+
+  // Revenue split (computed & stored at booking creation)
+  venueShare           Decimal       @db.Decimal(18, 2) @default(0)   // 87.5%
+  commissionPool       Decimal       @db.Decimal(18, 2) @default(0)   // 10% gross
+  promoterEarning      Decimal       @db.Decimal(18, 2) @default(0)   // Pool × tier%
+  platformPassive      Decimal       @db.Decimal(18, 2) @default(0)   // Pool × (1-tier%)
+  platformFee          Decimal       @db.Decimal(18, 2) @default(0)   // 2.5% base
+  totalPlatformRevenue Decimal       @db.Decimal(18, 2) @default(0)   // platformFee + platformPassive
+
+  // Attribution
+  promoterReferralCode String?
+  promoterId           String?       // PromoterProfile.id
+  promoter             PromoterProfile? @relation(fields: [promoterId], references: [id])
+  magicLinkId          String?       // PromoterMagicLink.id
+  promoCodeId          String?
+  promoCode            PromoCode?    @relation(fields: [promoCodeId], references: [id])
+
+  // Payment Rail
+  paymentRail          PaymentRail   @default(STRIPE_CARD)
+
+  status               BookingStatus @default(PENDING_PAYMENT)
+
+  // QR code for venue entry
+  qrCode               String?       @unique
+  arrivedAt            DateTime?
+  arrivedConfirmedBy   String?
+  specialNotes         String?       @db.Text
+
+  cancelledAt          DateTime?
+  cancellationReason   String?       @db.Text
+  refundAmount         Decimal?      @db.Decimal(18, 2)
+
+  // Onboarding journey linkage (was this booking driven by a magic link?)
+  isFirstBooking       Boolean       @default(false)
+  onboardingJourneyId  String?
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  // Relations
+  addOns               BookingAddOn[]
+  payment              BookingPayment?
+  activityLog          BookingActivity[]
+  commission           PromoterCommission?
+  dispute              BookingDispute?
+  hostBookings         HostBooking[]
+  vipAlert             VipArrivalAlert?
+  reviews              VenueReview[]
+  taxRecords           TaxRecord[]
+  ledgerEntries        LedgerEntry[]
+
+  @@allow('read', auth().id == memberId
+      || auth().role in [PLATFORM_ADMIN]
+      || venue.userId == auth().id)
+  @@allow('create', auth().role == MEMBER || auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().id == memberId
+      || auth().role in [VENUE_STAFF, VENUE_ADMIN, PLATFORM_ADMIN])
+  @@allow('delete', auth().role == PLATFORM_ADMIN)
+
+  @@index([memberId])
+  @@index([venueId])
+  @@index([status])
+  @@index([bookingDate])
+  @@index([promoterId])
+  @@index([magicLinkId])
+  @@index([bookingNumber])
+  @@index([paymentRail])
+  @@map("bookings")
+}
+
+model BookingAddOn {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  name       String
+  category   String   // "BEVERAGE" | "FOOD" | "ENTERTAINMENT" | "OTHER"
+  quantity   Int      @default(1)
+  unitPrice  Decimal  @db.Decimal(18, 2)
+  totalPrice Decimal  @db.Decimal(18, 2)
+  currency   String   @default("AUD")
+  notes      String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([bookingId])
+  @@map("booking_addons")
+}
+
+model BookingPayment {
+  id                    String        @id @default(cuid())
+  bookingId             String        @unique
+  booking               Booking       @relation(fields: [bookingId], references: [id])
+
+  amount                Decimal       @db.Decimal(18, 2)
+  currency              String        @default("AUD")
+  rail                  PaymentRail   @default(STRIPE_CARD)
+  status                PaymentStatus @default(PENDING)
+
+  // ── Stripe Card ───────────────────────────────────────────────────────────
+  stripePaymentIntentId String?       @unique
+  stripeCustomerId      String?
+  stripeChargeId        String?
+
+  // ── Crypto ────────────────────────────────────────────────────────────────
+  cryptoTxHash          String?       @unique
+  cryptoNetwork         BlockchainNetwork?
+  cryptoWalletFrom      String?
+  cryptoWalletTo        String?       // Platform escrow contract address
+  cryptoToken           String?       // "USDC" | "EURC" | "ETH"
+  cryptoAmountWei       String?       // Amount in smallest denomination (string for BigInt)
+  cryptoUsdEquivalent   Decimal?      @db.Decimal(18, 2)  // USD equivalent at time of payment
+  cryptoConfirmations   Int?
+
+  // ── On-chain auto-split ───────────────────────────────────────────────────
+  splitContractAddress  String?       // RevenueSplitter contract that processed this
+  onChainSplitTxHash    String?       // Tx where split was executed
+
+  // ── Processing ────────────────────────────────────────────────────────────
+  processedAt           DateTime?
+  failedAt              DateTime?
+  failureReason         String?
+  failureCode           String?       // Stripe decline code, on-chain revert reason
+
+  // ── Refund ────────────────────────────────────────────────────────────────
+  refundedAmount        Decimal?      @db.Decimal(18, 2)
+  refundedAt            DateTime?
+  refundReason          String?
+  stripeRefundId        String?
+
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  // Blockchain transaction record
+  blockchainTx          BlockchainTransaction? @relation(fields: [onChainSplitTxHash], references: [txHash])
+
+  @@allow('read', true)
+  @@allow('create,update', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@index([status])
+  @@index([rail])
+  @@map("booking_payments")
+}
+
+model BookingActivity {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  actorId    String
+  actorRole  String
+  action     String
+  fromStatus String?
+  toStatus   String?
+  notes      String?  @db.Text
+  metadata   Json?    // Extra context (stripe event id, tx hash, etc.)
+
+  createdAt  DateTime @default(now())
+
+  @@index([bookingId])
+  @@map("booking_activity")
+}
+
+model VipArrivalAlert {
+  id               String       @id @default(cuid())
+  venueId          String
+  venue            VenueProfile @relation(fields: [venueId], references: [id])
+  bookingId        String       @unique
+  booking          Booking      @relation(fields: [bookingId], references: [id])
+
+  memberId         String
+  memberName       String?
+  memberTier       MembershipTier?
+  tableInfo        String?
+  specialNotes     String?      @db.Text
+
+  alertedAt        DateTime     @default(now())
+  seenAt           DateTime?
+  acknowledgedAt   DateTime?
+  acknowledgedBy   String?
+
+  @@index([venueId, alertedAt])
+  @@map("vip_arrival_alerts")
+}
+
+
+// ============================================================================
+// ██████████  STRIPE INTEGRATION  ██████████
+// ============================================================================
+
+/// Platform-level Stripe configuration (singleton)
+model StripeConfig {
+  id                      String   @id @default(cuid())
+  isLiveMode              Boolean  @default(false)
+
+  // Keys stored encrypted; loaded from env at runtime
+  publishableKey          String   // pk_live_... or pk_test_...
+  webhookSecret           String   // whsec_...
+
+  // Platform Stripe account (for marketplace payouts)
+  platformAccountId       String   // acct_...
+
+  // Default currency and settlement interval
+  defaultCurrency         String   @default("AUD")
+  settlementDays          Int      @default(7)   // T+7 venue settlement
+
+  // Stripe fee passthrough
+  stripeRatePercent       Decimal  @db.Decimal(5, 4) @default(0.0175)  // 1.75%
+  stripeFixedFeeAud       Decimal  @db.Decimal(18, 2) @default(0.30)   // $0.30
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("stripe_config")
+}
+
+/// Stripe Connect account for venues, promoters, and hosts
+/// (enables direct payouts from platform to these parties)
+model StripeConnectedAccount {
+  id                  String              @id @default(cuid())
+
+  // One of these will be set
+  venueId             String?             @unique
+  venue               VenueProfile?       @relation(fields: [venueId], references: [id])
+  promoterId          String?             @unique
+  promoter            PromoterProfile?    @relation(fields: [promoterId], references: [id])
+  hostId              String?             @unique
+  host                HostProfile?        @relation(fields: [hostId], references: [id])
+
+  // Stripe identifiers
+  stripeAccountId     String              @unique   // acct_...
+  accountType         String              @default("express")  // "express" | "custom"
+
+  // Onboarding
+  status              StripeAccountStatus @default(PENDING_ONBOARDING)
+  onboardingUrl       String?             // Stripe-hosted onboarding URL
+  onboardingExpiresAt DateTime?
+
+  // Capabilities
+  cardPayments        Boolean             @default(false)
+  transfers           Boolean             @default(false)
+
+  // Verification
+  verifiedAt          DateTime?
+  disabledReason      String?
+
+  // KYC / compliance data reflected from Stripe
+  country             String?
+  currency            String              @default("AUD")
+  businessType        String?             // "individual" | "company"
+  requirements        Json?               // Current Stripe requirements JSON
+
+  // Payout schedule
+  payoutSchedule      String              @default("weekly")  // "daily" | "weekly" | "monthly"
+  payoutAnchor        String?             // "monday" for weekly
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  payouts             StripeTransfer[]
+
+  @@index([status])
+  @@map("stripe_connected_accounts")
+}
+
+/// Stripe customer record for members (stores payment methods)
+model StripeCustomerRecord {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  stripeCustomerId String   @unique   // cus_...
+  currency         String   @default("AUD")
+
+  // Default payment method
+  defaultPaymentMethodId String?      // pm_...
+  savedPaymentMethods    Json         @default("[]") // Masked card list {id, brand, last4, expiry}
+
+  // Billing address
+  billingName      String?
+  billingEmail     String?
+  billingAddress   Json?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([stripeCustomerId])
+  @@map("stripe_customer_records")
+}
+
+/// Transfer from platform to a connected account (venue, promoter, host payout)
+model StripeTransfer {
+  id                    String                  @id @default(cuid())
+  connectedAccountId    String
+  connectedAccount      StripeConnectedAccount  @relation(fields: [connectedAccountId], references: [id])
+
+  stripeTransferId      String                  @unique   // tr_...
+  amount                Decimal                 @db.Decimal(18, 2)
+  currency              String                  @default("AUD")
+
+  transferType          String     // "venue_settlement" | "promoter_commission" | "host_earnings"
+  referenceId           String?    // venueSettlementId | promoterCommissionId | hostEarningsId
+  referenceType         String?
+
+  status                StripePayoutStatus      @default(PENDING)
+  failureMessage        String?
+
+  // Stripe payout details
+  stripePayoutId        String?    // po_... when funds leave Stripe
+  arrivedAt             DateTime?
+
+  metadata              Json?
+
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  // Back-relations
+  venueSettlements      VenueSettlement[]
+
+  @@index([connectedAccountId, status])
+  @@index([transferType])
+  @@map("stripe_transfers")
+}
+
+/// Stripe webhook event log — ensures idempotent processing
+model StripeWebhookEvent {
+  id              String             @id @default(cuid())
+  stripeEventId   String             @unique   // evt_...
+  eventType       String             // "payment_intent.succeeded" etc.
+  apiVersion      String?
+  liveMode        Boolean            @default(false)
+
+  payload         Json               // Full Stripe event payload
+  status          StripeWebhookStatus @default(RECEIVED)
+
+  processingError String?
+  processedAt     DateTime?
+  retryCount      Int                @default(0)
+
+  createdAt       DateTime           @default(now())
+
+  @@index([eventType])
+  @@index([status])
+  @@map("stripe_webhook_events")
+}
+
+
+// ============================================================================
+// ██████████  BLOCKCHAIN & SMART CONTRACTS  ██████████
+// ============================================================================
+
+/// Blockchain network configuration
+model BlockchainNetworkConfig {
+  id               String            @id @default(cuid())
+  network          BlockchainNetwork @unique
+  isActive         Boolean           @default(true)
+  isTestnet        Boolean           @default(false)
+
+  chainId          Int               @unique
+  nativeCurrency   String            // "MATIC" | "ETH"
+  rpcUrl           String
+  fallbackRpcUrls  Json              @default("[]")
+  wssUrl           String?
+  explorerUrl      String
+
+  // Gas config
+  gasMultiplier    Decimal           @db.Decimal(5, 2) @default(1.20)   // 20% buffer
+  maxGasPriceGwei  String?
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  contracts        SmartContract[]
+
+  @@map("blockchain_network_configs")
+}
+
+/// Deployed smart contract registry
+model SmartContract {
+  id               String                  @id @default(cuid())
+  networkId        String
+  network          BlockchainNetworkConfig @relation(fields: [networkId], references: [id])
+
+  contractType     ContractType
+  name             String                  // "PRESTIXRevenueSplitter" | "PRESTIXEscrow"
+  address          String                  // 0x...
+  abi              Json                    // Full ABI array
+  version          String                  @default("1.0.0")
+
+  // Deployment
+  deployedBy       String                  // Admin wallet
+  deployedAt       DateTime
+  deploymentTxHash String                  @unique
+  deploymentBlock  BigInt
+
+  // Upgradeable proxy
+  isUpgradeable    Boolean                 @default(false)
+  proxyType        String?                 // "TRANSPARENT" | "UUPS"
+  implementationAddress String?
+  proxyAdminAddress     String?
+
+  isActive         Boolean                 @default(true)
+  isVerified       Boolean                 @default(false)
+  verifiedAt       DateTime?
+
+  // Split configuration stored in contract (mirrors on-chain state)
+  splitConfig      Json?                   // {venueShare: 8750, promoterShare: 1000, platformShare: 250} (bps)
+
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  transactions     BlockchainTransaction[]
+
+  @@unique([networkId, contractType])
+  @@index([address])
+  @@map("smart_contracts")
+}
+
+/// On-chain transaction record
+model BlockchainTransaction {
+  id               String            @id @default(cuid())
+  contractId       String?
+  contract         SmartContract?    @relation(fields: [contractId], references: [id])
+
+  txHash           String            @unique
+  network          BlockchainNetwork
+  blockNumber      BigInt?
+  blockTimestamp   DateTime?
+
+  from             String            // Sender wallet
+  to               String            // Contract or recipient wallet
+
+  // Function call
+  methodName       String?           // "splitPayment" | "releaseEscrow" | "transfer"
+  decodedInput     Json?
+  decodedOutput    Json?
+
+  // Value
+  valueWei         String            @default("0")
+  valueUsd         Decimal?          @db.Decimal(18, 2)
+
+  // Token transfer details
+  tokenAddress     String?           // ERC-20 contract (USDC, EURC)
+  tokenSymbol      String?
+  tokenAmountWei   String?
+
+  // Gas
+  gasUsed          String?
+  gasPriceWei      String?
+  gasCostWei       String?
+  gasCostUsd       Decimal?          @db.Decimal(18, 4)
+
+  status           OnChainTxStatus   @default(PENDING)
+  confirmations    Int               @default(0)
+  revertReason     String?
+
+  // Split details (populated after split execution)
+  splitVenueWei    String?
+  splitPromoterWei String?
+  splitPlatformWei String?
+
+  createdAt        DateTime          @default(now())
+  confirmedAt      DateTime?
+
+  // Relations
+  bookingPayments  BookingPayment[]
+
+  @@index([txHash])
+  @@index([network, blockNumber])
+  @@index([status])
+  @@index([from])
+  @@map("blockchain_transactions")
+}
+
+
+// ============================================================================
+// ██████████  WALLET & FINANCIAL SYSTEM  ██████████
+// ============================================================================
+
+model PrestixWallet {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  promoterId      String?          @unique
+  promoter        PromoterProfile? @relation("PromoterWallet", fields: [promoterId], references: [id])
+
+  balance         Decimal          @db.Decimal(18, 2) @default(0)
+  pendingBalance  Decimal          @db.Decimal(18, 2) @default(0)
+  currency        String           @default("AUD")
+
+  status          WalletStatus     @default(ACTIVE)
+
+  kycVerified     Boolean          @default(false)
+  kycVerifiedAt   DateTime?
+  kycProvider     String?
+
+  // Payout settings
+  bankAccountName       String?
+  bankBsb               String?
+  bankAccountNumber     String?
+  stripeConnectedAccId  String?    // Stripe connected acct for direct payouts
+  cryptoAddress         String?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  transactions    WalletTransaction[]
+  withdrawals     WalletWithdrawal[]
+
+  @@allow('read',   auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('update', auth().id == userId || auth().role == PLATFORM_ADMIN)
+
+  @@map("prestix_wallets")
+}
+
+model WalletTransaction {
+  id              String                  @id @default(cuid())
+  walletId        String
+  wallet          PrestixWallet           @relation(fields: [walletId], references: [id])
+
+  type            WalletTransactionType
+  amount          Decimal                 @db.Decimal(18, 2)
+  balance         Decimal                 @db.Decimal(18, 2)   // Running balance after
+  currency        String                  @default("AUD")
+
+  description     String?
+  referenceId     String?
+  referenceType   String?
+
+  // Payment rail that originated this transaction
+  rail            PaymentRail?
+
+  // Accounting linkage
+  ledgerEntryIds  Json                    @default("[]")   // Array of LedgerEntry.id
+
+  createdAt       DateTime                @default(now())
+
+  @@allow('read', auth() != null && (wallet.userId == auth().id || auth().role == PLATFORM_ADMIN))
+  @@allow('create', auth() != null && (wallet.userId == auth().id || auth().role == PLATFORM_ADMIN))
+
+  @@index([walletId, type])
+  @@index([createdAt])
+  @@map("wallet_transactions")
+}
+
+model WalletWithdrawal {
+  id             String           @id @default(cuid())
+  walletId       String
+  wallet         PrestixWallet    @relation(fields: [walletId], references: [id])
+
+  amount         Decimal          @db.Decimal(18, 2)
+  currency       String           @default("AUD")
+  method         String           // "stripe_connect" | "bank_transfer" | "crypto"
+
+  stripeTransferId String?
+  cryptoAddress    String?
+  cryptoNetwork    BlockchainNetwork?
+  cryptoTxHash     String?
+
+  status         WithdrawalStatus @default(PENDING)
+  processedAt    DateTime?
+  transactionRef String?
+  failureReason  String?
+
+  approvedBy     String?
+  approvedAt     DateTime?
+
+  // Tax withheld on payout (if applicable)
+  taxWithheld    Decimal?         @db.Decimal(18, 2)
+  taxType        TaxType          @default(NONE)
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@allow('read',   auth() != null && (wallet.userId == auth().id || auth().role == PLATFORM_ADMIN))
+  @@allow('create', auth() != null && (wallet.userId == auth().id || auth().role == PLATFORM_ADMIN))
+  @@allow('update', auth().role == PLATFORM_ADMIN)
+
+  @@index([walletId, status])
+  @@map("wallet_withdrawals")
+}
+
+/// Periodic venue settlement (87.5% net of gross bookings)
+model VenueSettlement {
+  id                  String           @id @default(cuid())
+  venueId             String
+  venue               VenueProfile     @relation(fields: [venueId], references: [id])
+
+  settlementNumber    String           @unique
+  periodStart         DateTime
+  periodEnd           DateTime
+
+  grossRevenue        Decimal          @db.Decimal(18, 2)
+  totalBookings       Int
+  stripeFees          Decimal          @db.Decimal(18, 2) @default(0)
+  platformFee         Decimal          @db.Decimal(18, 2)   // 2.5% base
+  platformPassive     Decimal          @db.Decimal(18, 2) @default(0) // Platform's promoter cut
+  promoterCommissions Decimal          @db.Decimal(18, 2)   // 10% gross
+  refunds             Decimal          @db.Decimal(18, 2)   @default(0)
+  adjustments         Decimal          @db.Decimal(18, 2)   @default(0)
+  taxCollected        Decimal          @db.Decimal(18, 2)   @default(0)
+  netSettlement       Decimal          @db.Decimal(18, 2)   // ~87.5% net
+
+  currency            String           @default("AUD")
+  status              SettlementStatus @default(PENDING)
+
+  // Payment rail
+  rail                PaymentRail?
+  stripeTransferId    String?
+  stripeTransfer      StripeTransfer?  @relation(fields: [stripeTransferId], references: [stripeTransferId])
+  blockchainTxHash    String?
+
+  processedAt         DateTime?
+  transactionRef      String?
+  failureReason       String?
+  bookingBreakdown    Json             @default("[]")
+  approvedBy          String?
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  ledgerEntries       LedgerEntry[]
+
+  @@allow('read', auth() != null && (venue.userId == auth().id || auth().role == PLATFORM_ADMIN))
+  @@allow('create', auth() != null && auth().role == PLATFORM_ADMIN)
+
+  @@index([venueId, status])
+  @@index([periodStart, periodEnd])
+  @@map("venue_settlements")
+}
+
+
+// ============================================================================
+// ██████████  ACCOUNTING, BOOKKEEPING & TAX  ██████████
+// Double-entry ledger captures every money movement for full auditability,
+// reconciliation, P&L reporting, and tax compliance.
+// ============================================================================
+
+/// Chart of Accounts — reference table
+model ChartOfAccount {
+  id          String      @id @default(cuid())
+  code        AccountCode @unique
+  name        String
+  category    String      // "ASSET" | "LIABILITY" | "REVENUE" | "EXPENSE" | "CLEARING"
+  description String?
+  currency    String      @default("AUD")
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  entries     LedgerEntry[] @relation("DebitAccount")
+  credits     LedgerEntry[] @relation("CreditAccount")
+
+  @@map("chart_of_accounts")
+}
+
+/// Double-entry journal entry — every debit has a matching credit
+model LedgerEntry {
+  id               String         @id @default(cuid())
+
+  // Journal context
+  journalRef       String         // Groups debit+credit pairs: "JNL-20260301-0001"
+  description      String
+
+  // Accounts
+  debitAccountCode  AccountCode
+  debitAccount      ChartOfAccount @relation("DebitAccount",  fields: [debitAccountCode],  references: [code])
+  creditAccountCode AccountCode
+  creditAccount     ChartOfAccount @relation("CreditAccount", fields: [creditAccountCode], references: [code])
+
+  amount           Decimal        @db.Decimal(18, 2)
+  currency         String         @default("AUD")
+
+  // Source document linkage (polymorphic)
+  sourceType       String         // "BOOKING" | "SETTLEMENT" | "COMMISSION" | "WITHDRAWAL" | "REFUND"
+  sourceId         String
+
+  // Booking / settlement relations (optional FK shortcuts)
+  bookingId        String?
+  booking          Booking?       @relation(fields: [bookingId], references: [id])
+  settlementId     String?
+  settlement       VenueSettlement? @relation(fields: [settlementId], references: [id])
+
+  // Period
+  entryDate        DateTime       @default(now())
+  accountingPeriodId String?
+  period           AccountingPeriod? @relation(fields: [accountingPeriodId], references: [id])
+
+  // Audit
+  createdBy        String?        // system | userId
+  isReversed       Boolean        @default(false)
+  reversedById     String?        // LedgerEntry.id of reversal
+
+  createdAt        DateTime       @default(now())
+
+  @@index([journalRef])
+  @@index([sourceType, sourceId])
+  @@index([entryDate])
+  @@index([accountingPeriodId])
+  @@map("ledger_entries")
+}
+
+/// Monthly/quarterly accounting period — controls when ledger is closed
+model AccountingPeriod {
+  id          String       @id @default(cuid())
+  name        String       // "March 2026"
+  periodType  String       @default("MONTHLY")   // "MONTHLY" | "QUARTERLY"
+  startDate   DateTime
+  endDate     DateTime
+  isClosed    Boolean      @default(false)
+  closedAt    DateTime?
+  closedBy    String?
+
+  createdAt   DateTime     @default(now())
+
+  ledgerEntries LedgerEntry[]
+  reports       FinancialReport[]
+
+  @@unique([startDate, endDate])
+  @@index([isClosed])
+  @@map("accounting_periods")
+}
+
+/// Tax configuration per jurisdiction
+model TaxConfiguration {
+  id            String   @id @default(cuid())
+  country       String
+  taxType       TaxType
+  name          String   // "Indonesia PPN" | "Australia GST" | "WHT Promoter"
+  rate          Decimal  @db.Decimal(5, 4)  // e.g. 0.1100 = 11%
+  applicableTo  Json     @default("[]")      // ["BOOKING", "SETTLEMENT", "PROMOTER_PAYOUT"]
+  thresholdAud  Decimal? @db.Decimal(18, 2)  // Minimum amount before tax applies
+  isActive      Boolean  @default(true)
+  effectiveFrom DateTime @default(now())
+  effectiveTo   DateTime?
+  notes         String?  @db.Text
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  taxRecords    TaxRecord[]
+
+  @@index([country, taxType])
+  @@map("tax_configurations")
+}
+
+/// Individual tax record per taxable transaction
+model TaxRecord {
+  id                  String            @id @default(cuid())
+  taxConfigId         String
+  taxConfig           TaxConfiguration  @relation(fields: [taxConfigId], references: [id])
+
+  // Source document
+  sourceType          String            // "BOOKING" | "SETTLEMENT" | "PAYOUT" | "COMMISSION"
+  sourceId            String
+
+  bookingId           String?
+  booking             Booking?          @relation(fields: [bookingId], references: [id])
+  venueId             String?
+  venue               VenueProfile?     @relation(fields: [venueId], references: [id])
+
+  // Tax calculation
+  taxableAmount       Decimal           @db.Decimal(18, 2)
+  taxRate             Decimal           @db.Decimal(5, 4)
+  taxAmount           Decimal           @db.Decimal(18, 2)
+  currency            String            @default("AUD")
+  taxType             TaxType
+  country             String
+
+  // Reporting period
+  taxPeriodMonth      Int               // 1–12
+  taxPeriodYear       Int
+
+  // Remittance
+  isRemitted          Boolean           @default(false)
+  remittedAt          DateTime?
+  remittanceRef       String?
+
+  createdAt           DateTime          @default(now())
+
+  @@index([sourceType, sourceId])
+  @@index([taxPeriodYear, taxPeriodMonth])
+  @@index([venueId])
+  @@map("tax_records")
+}
+
+/// Generated financial reports (PDF / JSON)
+model FinancialReport {
+  id               String           @id @default(cuid())
+  reportType       ReportType
+  status           ReportStatus     @default(GENERATING)
+
+  // Period
+  periodId         String?
+  period           AccountingPeriod? @relation(fields: [periodId], references: [id])
+  startDate        DateTime
+  endDate          DateTime
+
+  // Scope (only one will be set)
+  venueId          String?
+  promoterId       String?
+  hostId           String?
+  isplatform       Boolean          @default(false)
+
+  // Output
+  fileUrl          String?          // S3 / Cloudflare R2 URL
+  fileSizeBytes    Int?
+  checksum         String?
+
+  // Summary snapshot stored for quick display
+  summaryData      Json             @default("{}")
+
+  // Generation
+  generatedAt      DateTime?
+  generatedBy      String?          // "system" | userId
+  generationError  String?
+
+  createdAt        DateTime         @default(now())
+
+  @@index([reportType, status])
+  @@index([venueId])
+  @@index([promoterId])
+  @@map("financial_reports")
+}
+
+/// Platform-level revenue summary (for accounting dashboard)
+model PlatformRevenueRecord {
+  id                    String   @id @default(cuid())
+  date                  DateTime @db.Date @unique
+
+  // Gross flows
+  gmv                   Decimal  @db.Decimal(18, 2) @default(0)   // Total booking value
+  stripeGmv             Decimal  @db.Decimal(18, 2) @default(0)
+  cryptoGmv             Decimal  @db.Decimal(18, 2) @default(0)
+  walletGmv             Decimal  @db.Decimal(18, 2) @default(0)
+
+  // Platform income
+  platformFeeRevenue    Decimal  @db.Decimal(18, 2) @default(0)   // 2.5% of GMV
+  platformPassiveIncome Decimal  @db.Decimal(18, 2) @default(0)   // Cut of promoter pool
+  totalPlatformRevenue  Decimal  @db.Decimal(18, 2) @default(0)
+
+  // Distributions out
+  venueSettlementsTotal Decimal  @db.Decimal(18, 2) @default(0)
+  promoterPayoutsTotal  Decimal  @db.Decimal(18, 2) @default(0)
+  hostPayoutsTotal      Decimal  @db.Decimal(18, 2) @default(0)
+
+  // Fees & taxes
+  stripeFees            Decimal  @db.Decimal(18, 2) @default(0)
+  gasFees               Decimal  @db.Decimal(18, 2) @default(0)
+  taxCollected          Decimal  @db.Decimal(18, 2) @default(0)
+  taxRemitted           Decimal  @db.Decimal(18, 2) @default(0)
+
+  // Refunds & chargebacks
+  refundsTotal          Decimal  @db.Decimal(18, 2) @default(0)
+  chargebacksTotal      Decimal  @db.Decimal(18, 2) @default(0)
+
+  // Net
+  netPlatformIncome     Decimal  @db.Decimal(18, 2) @default(0)
+
+  // Volume
+  totalBookings         Int      @default(0)
+  completedBookings     Int      @default(0)
+  cancelledBookings     Int      @default(0)
+
+  createdAt             DateTime @default(now())
+
+  @@index([date])
+  @@map("platform_revenue_records")
+}
+
+
+// ============================================================================
+// ██████████  REVIEWS & RATINGS  ██████████
+// ============================================================================
+
+model VenueReview {
+  id             String       @id @default(cuid())
+  venueId        String
+  venue          VenueProfile @relation(fields: [venueId], references: [id])
+  memberId       String
+  member         User         @relation(fields: [memberId], references: [id])
+  bookingId      String?
+  booking        Booking?     @relation(fields: [bookingId], references: [id])
+
+  overallRating  Int
+  serviceRating  Int?
+  ambienceRating Int?
+  valueRating    Int?
+
+  title          String?
+  content        String?      @db.Text
+  photos         Json         @default("[]")
+
+  isVerified     Boolean      @default(false)
+  isApproved     Boolean      @default(true)
+  moderatedBy    String?
+  moderatedAt    DateTime?
+
+  venueResponse  String?      @db.Text
+  responseAt     DateTime?
+
+  helpfulCount   Int          @default(0)
+  reportCount    Int          @default(0)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([venueId, memberId, bookingId])
+  @@allow('read',   isApproved == true || auth().id == memberId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().role == MEMBER)
+  @@allow('update', auth().id == memberId || auth().role in [VENUE_ADMIN, PLATFORM_ADMIN])
+  @@allow('delete', auth().role == PLATFORM_ADMIN)
+
+  @@index([venueId, overallRating])
+  @@map("venue_reviews")
+}
+
+model HostReview {
+  id          String      @id @default(cuid())
+  hostId      String
+  host        HostProfile @relation(fields: [hostId], references: [id])
+  memberId    String
+  member      User        @relation(fields: [memberId], references: [id])
+
+  rating      Int
+  content     String?     @db.Text
+  isApproved  Boolean     @default(true)
+  moderatedBy String?
+  moderatedAt DateTime?
+
+  createdAt   DateTime    @default(now())
+
+  @@unique([hostId, memberId])
+  @@allow('read',   isApproved == true || auth().id == memberId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().role == MEMBER)
+  @@allow('update', auth().role == PLATFORM_ADMIN)
+
+  @@index([hostId])
+  @@map("host_reviews")
+}
+
+
+// ============================================================================
+// ██████████  NOTIFICATIONS  ██████████
+// ============================================================================
+
+model Notification {
+  id            String              @id @default(cuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          NotificationType
+  channel       NotificationChannel @default(IN_APP)
+  status        NotificationStatus  @default(UNREAD)
+
+  title         String
+  body          String              @db.Text
+  imageUrl      String?
+
+  referenceType String?
+  referenceId   String?
+
+  sentAt        DateTime?
+  readAt        DateTime?
+
+  createdAt     DateTime            @default(now())
+
+  @@allow('read',   auth().id == userId)
+  @@allow('update', auth().id == userId)
+
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+
+// ============================================================================
+// ██████████  SUPPORT & MODERATION  ██████████
+// ============================================================================
+
+model ContentReport {
+  id          String             @id @default(cuid())
+  reporterId  String
+  reporter    User               @relation(fields: [reporterId], references: [id])
+  contentType String
+  contentId   String
+  reason      String
+  description String?            @db.Text
+  evidence    Json               @default("[]")
+  status      ContentReportStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  actionTaken String?
+  createdAt   DateTime           @default(now())
+
+  @@allow('read',   auth().id == reporterId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth() != null)
+  @@allow('update', auth().role == PLATFORM_ADMIN)
+
+  @@index([status])
+  @@map("content_reports")
+}
+
+model ModerationAction {
+  id              String               @id @default(cuid())
+  moderatorId     String
+  moderator       User                 @relation(fields: [moderatorId], references: [id])
+  targetType      String
+  targetId        String
+  actionType      ModerationActionType
+  reason          String
+  details         String?              @db.Text
+  originalContent Json?
+  createdAt       DateTime             @default(now())
+
+  @@allow('read',   auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth().role == PLATFORM_ADMIN)
+
+  @@index([targetType, targetId])
+  @@map("moderation_actions")
+}
+
+model SupportTicket {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  ticketNumber String       @unique
+  category     String
+  subject      String
+  description  String       @db.Text
+  priority     String       @default("MEDIUM")
+  relatedType  String?
+  relatedId    String?
+  status       TicketStatus @default(OPEN)
+  assignedTo   String?
+  resolution   String?      @db.Text
+  resolvedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  messages     SupportMessage[]
+
+  @@allow('read',   auth().id == userId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth() != null)
+  @@allow('update', auth().role == PLATFORM_ADMIN)
+
+  @@index([userId, status])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id           String        @id @default(cuid())
+  ticketId     String
+  ticket       SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId     String
+  sender       User          @relation(fields: [senderId], references: [id])
+  content      String        @db.Text
+  attachments  Json          @default("[]")
+  isStaffReply Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+
+  @@index([ticketId])
+  @@map("support_messages")
+}
+
+model BookingDispute {
+  id                String        @id @default(cuid())
+  bookingId         String        @unique
+  booking           Booking       @relation(fields: [bookingId], references: [id])
+  initiatedBy       String
+  initiatedByUserId String
+  initiator         User          @relation(fields: [initiatedByUserId], references: [id])
+  reason            String
+  description       String        @db.Text
+  evidence          Json          @default("[]")
+  status            DisputeStatus @default(OPEN)
+  assignedTo        String?
+  resolution        String?       @db.Text
+  refundAmount      Decimal?      @db.Decimal(18, 2)
+  resolvedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@allow('read',   auth().id == initiatedByUserId || auth().role == PLATFORM_ADMIN)
+  @@allow('create', auth() != null)
+  @@allow('update', auth().role == PLATFORM_ADMIN)
+
+  @@index([status])
+  @@map("booking_disputes")
+}
+
+
+// ============================================================================
+// ██████████  ANALYTICS & METRICS  ██████████
+// ============================================================================
+
+model VenueDailyMetrics {
+  id                String       @id @default(cuid())
+  venueId           String
+  venue             VenueProfile @relation(fields: [venueId], references: [id])
+  date              DateTime     @db.Date
+
+  totalBookings     Int          @default(0)
+  completedBookings Int          @default(0)
+  cancelledBookings Int          @default(0)
+  noShowBookings    Int          @default(0)
+
+  grossRevenue      Decimal      @db.Decimal(18, 2) @default(0)
+  netRevenue        Decimal      @db.Decimal(18, 2) @default(0)
+  stripeRevenue     Decimal      @db.Decimal(18, 2) @default(0)
+  cryptoRevenue     Decimal      @db.Decimal(18, 2) @default(0)
+  totalGuests       Int          @default(0)
+
+  avgRating         Decimal?     @db.Decimal(3, 2)
+  newReviews        Int          @default(0)
+
+  createdAt         DateTime     @default(now())
+
+  @@unique([venueId, date])
+  @@index([venueId, date])
+  @@map("venue_daily_metrics")
+}
+
+model PromoterDailyMetrics {
+  id                  String          @id @default(cuid())
+  promoterId          String
+  promoter            PromoterProfile @relation(fields: [promoterId], references: [id])
+  date                DateTime        @db.Date
+
+  // Funnel metrics
+  magicLinksSent      Int             @default(0)
+  linkClicks          Int             @default(0)
+  newRegistrations    Int             @default(0)
+  newBookings         Int             @default(0)
+  conversionRate      Decimal?        @db.Decimal(5, 4)  // registrations / clicks
+
+  // Financial
+  commissionPool      Decimal         @db.Decimal(18, 2) @default(0)  // Gross 10%
+  promoterEarned      Decimal         @db.Decimal(18, 2) @default(0)  // After tier split
+  platformPassive     Decimal         @db.Decimal(18, 2) @default(0)  // Platform's cut
+
+  createdAt           DateTime        @default(now())
+
+  @@unique([promoterId, date])
+  @@index([promoterId, date])
+  @@map("promoter_daily_metrics")
+}
+
+model PlatformDailyMetrics {
+  id                    String   @id @default(cuid())
+  date                  DateTime @db.Date @unique
+
+  newMembers            Int      @default(0)
+  activeMembers         Int      @default(0)
+  newPromoters          Int      @default(0)
+  activePromoters       Int      @default(0)
+  newHosts              Int      @default(0)
+
+  magicLinksSent        Int      @default(0)
+  magicLinkClicks       Int      @default(0)
+  magicLinkRegistrations Int     @default(0)
+
+  totalBookings         Int      @default(0)
+  completedBookings     Int      @default(0)
+  cancelledBookings     Int      @default(0)
+
+  // Revenue
+  gmv                   Decimal  @db.Decimal(18, 2) @default(0)
+  stripeGmv             Decimal  @db.Decimal(18, 2) @default(0)
+  cryptoGmv             Decimal  @db.Decimal(18, 2) @default(0)
+
+  platformFeeRevenue    Decimal  @db.Decimal(18, 2) @default(0)
+  platformPassiveIncome Decimal  @db.Decimal(18, 2) @default(0)
+  totalPlatformRevenue  Decimal  @db.Decimal(18, 2) @default(0)
+
+  promoterPayouts       Decimal  @db.Decimal(18, 2) @default(0)
+  venueSettlements      Decimal  @db.Decimal(18, 2) @default(0)
+  hostPayouts           Decimal  @db.Decimal(18, 2) @default(0)
+
+  stripeFees            Decimal  @db.Decimal(18, 2) @default(0)
+  gasFees               Decimal  @db.Decimal(18, 2) @default(0)
+
+  createdAt             DateTime @default(now())
+
+  @@index([date])
+  @@map("platform_daily_metrics")
+}
+
+// ============================================================================
+// ██████████  AUDIT LOG  ██████████
+// Immutable append-only record of all system-level events
+// ============================================================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?  // null = system
+  actorRole   String?
+  action      String   // "CREATE" | "UPDATE" | "DELETE" | "PAYMENT" | "SETTLEMENT" | "LOGIN" etc.
+  targetType  String   // Model name
+  targetId    String
+  changes     Json?    // {before: {...}, after: {...}}
+  ipAddress   String?
+  userAgent   String?  @db.Text
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

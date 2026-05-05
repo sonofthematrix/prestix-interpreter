@@ -1,0 +1,32 @@
+🏢 TIGER PALACE RWA MARKETPLACE FINANCIAL REPORT
+============================================================
+
+📅 Generated: 11/30/2025, 1:33:09 PM
+🌐 Network: hardhat
+🏪 Marketplace: 0xB9bcC66DcE89F6c4bfb03ed8a9E6EF7d447F2061
+🏦 Treasury: 0x0000000000000000000000000000000000000000
+
+💰 TREASURY SUMMARY
+------------------------------
+Current Balance: 0.0 ETH
+Total Fees Ever: 0.0 ETH
+
+📊 MARKET SUMMARY
+------------------------------
+Active Assets: 0
+Total Market Cap: 0 ETH
+Total Fees Collected: 0 ETH
+Average Token Price: 0 ETH
+
+📈 DAILY REPORTS (Last 7 Days)
+----------------------------------------
+2025-11-24: Market Cap: 0 ETH, Fees: 0 ETH, Active: 0
+2025-11-25: Market Cap: 0 ETH, Fees: 0 ETH, Active: 0
+2025-11-26: Market Cap: 0 ETH, Fees: 0 ETH, Active: 0
+2025-11-27: Market Cap: 0 ETH, Fees: 0 ETH, Active: 0
+2025-11-28: Market Cap: 0 ETH, Fees: 0 ETH, Active: 0
+2025-11-29: Market Cap: 0 ETH, Fees: 0 ETH, Active: 0
+2025-11-30: Market Cap: 0 ETH, Fees: 0 ETH, Active: 0
+
+🏠 INDIVIDUAL ASSET REPORTS
+----------------------------------------

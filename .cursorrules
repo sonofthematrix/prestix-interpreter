@@ -1,0 +1,1554 @@
+# ZenStack AI Builder - Cursor Rules
+
+## Project Overview
+
+This is the **ZenStack AI Builder** - a comprehensive AI-powered full-stack development platform that integrates ZenStack ORM with Vercel AI SDK for intelligent code generation and deployment.
+
+## Core Architecture
+
+- **Frontend**: React/Next.js with Docusaurus for documentation
+- **AI Integration**: Vercel AI SDK with OpenAI GPT-4
+- **MCP Server**: Model Context Protocol server for tool integration
+- **Form System**: ZenStack UI forms with advanced features
+- **Database**: ZenStack v3 ORM (Kysely-based) + Prisma for migrations only
+
+## Production Environment
+
+- **Production URL**: `https://prestix.vip` (no trailing slash). Use this URL in docs, env examples (e.g. `NEXT_PUBLIC_W3M_API_URL`, `NEXTAUTH_URL`), and Reown Project Domains when referring to the main production deployment.
+
+## Key Directories
+
+- `src/app/api/chat/route.ts` - AI chat API endpoint
+- `ai-profiles/index.ts` - AI profile configurations
+- `mcp-server/` - MCP server implementation
+- `src/components/zenstack-forms/` - Form components
+- `docs/` - Documentation files
+
+## AI System Integration
+
+- **AI Profiles**: Architect, Developer, Tester, DevOps, Writer
+- **MCP Tools**: Schema analysis, code generation, testing, deployment
+- **Streaming**: Real-time AI responses with Vercel AI SDK
+- **Form Generation**: Automatic form creation from ZModel schemas
+
+## CRITICAL: ZenStack v3 ORM Rules
+
+### ⚠️ NEVER USE PRISMA FOR RUNTIME OPERATIONS
+
+- **ZenStack v3 uses its own ORM** built on Kysely, NOT Prisma
+- **Prisma is ONLY for migrations** - never import PrismaClient in API routes
+- **Always use `createClient()` from `@/lib/db`** for database operations
+- **Pass user context** to enable access control: `createClient(currentUser)`
+
+### Correct Database Usage:
+
+```typescript
+// ✅ CORRECT
+import { createClient } from '@/lib/db';
+const db = createClient(currentUser);
+const posts = await db.blogPost.findMany();
+
+// ❌ WRONG - Never do this
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+```
+
+## ⚠️ CRITICAL: ZenStack ORM Where Clause Patterns
+
+**ZenStack ORM (built on Kysely) has strict TypeScript typing requirements. `updateMany` operations MUST use `{ equals: value } as any` syntax in where clauses.**
+
+### ✅ CORRECT - updateMany Operations
+
+```typescript
+// ✅ CORRECT - ZenStack updateMany requires { equals: value } as any
+const updateResult = await db.deployedContract.updateMany({
+  where: {
+    contractAddress: { equals: contractAddress.toLowerCase() } as any,
+    networkId: { equals: networkId } as any
+  },
+  data: {
+    isVerified: true,
+    verifiedAt: new Date()
+  }
+});
+```
+
+### ❌ WRONG - Direct Assignment Causes Type Errors
+
+```typescript
+// ❌ WRONG - Direct assignment fails TypeScript compilation
+const updateResult = await db.deployedContract.updateMany({
+  where: {
+    contractAddress: contractAddress.toLowerCase(), // Type error!
+    networkId: networkId // Type error!
+  },
+  data: { /* ... */ }
+});
+```
+
+### ✅ CORRECT - findMany/findFirst Operations
+
+```typescript
+// ✅ CORRECT - findMany/findFirst can use direct assignment
+const contracts = await db.deployedContract.findMany({
+  where: {
+    contractAddress: contractAddress.toLowerCase(), // OK
+    networkId: networkId // OK
+  }
+});
+```
+
+**TypeScript Error Pattern:** If you see `Type 'string' is not assignable to type '{ [x: string]: ... }'`, change direct assignment to `{ equals: value } as any` for `updateMany` operations.
+
+**ABSOLUTE ZERO TOLERANCE FOR VIOLATIONS:** ZenStack `updateMany` operations MUST use `{ equals: value } as any` syntax or they will fail TypeScript compilation.
+
+## CRITICAL: ZenStack v3 Schema Workflow
+
+**This project uses ZenStack v3, NOT Prisma directly. Schema changes MUST follow this workflow.**
+
+### Source of Truth: schema.zmodel ONLY
+
+- **ALL schema changes** (models, fields, relations) MUST be made in `zenstack/schema.zmodel`
+- **NEVER edit** `zenstack/prisma/schema.prisma` - it is auto-generated and will be overwritten
+
+### Workflow for Schema Changes
+
+1. **Edit** `zenstack/schema.zmodel` (add/modify models, fields, indexes)
+2. **Generate** `bun run zen:generate` - regenerates Prisma schema + ZenStack ORM output
+3. **Push to DB** `bun run db:push` - applies schema to database (`zen db push dev --accept-data-loss`)
+
+### ❌ FORBIDDEN
+
+- Editing `zenstack/prisma/schema.prisma` manually
+- Using `prisma migrate` for schema changes (use zen db push)
+- Adding columns directly via SQL without updating schema.zmodel first
+
+### ✅ REQUIRED
+
+- Edit schema.zmodel → zen:generate → db:push for any schema change
+- Treat schema.zmodel as the single source of truth
+
+## CRITICAL: No Mock Data Policy
+
+### ⚠️ NEVER USE MOCK OR HARDCODED DATA
+
+- **This is a robust, production-ready application**
+- **ALL data must come from the database through API endpoints**
+- **NO mock data, hardcoded arrays, or static objects in components**
+- **Database-first architecture with proper CRUD operations**
+
+### Correct Data Flow:
+
+```typescript
+// ✅ CORRECT - API-driven data
+const [posts, setPosts] = useState([]);
+useEffect(() => {
+    fetch('/api/blog-posts')
+        .then((res) => res.json())
+        .then(setPosts);
+}, []);
+
+// ❌ WRONG - Never do this
+const mockPosts = [
+    { id: 1, title: 'Post 1' },
+    { id: 2, title: 'Post 2' },
+];
+```
+
+## MANDATORY COMMAND VERIFICATION RULES
+
+### ⚠️ CRITICAL: Always Verify Commands Before Execution
+
+**BEFORE running ANY command or constructing ANY command to execute, you MUST ALWAYS:**
+
+1. **Read package.json** in the target directory first
+2. **Confirm, validate, and verify** the exact command to execute
+3. **Check what package manager** is being used (pnpm, npm, bun run , bun)
+4. **Use the exact script name** as defined in package.json
+5. **NEVER assume or second-guess** commands - always verify first
+6. **This is a mandatory 101 requirement** to prevent token waste and execution errors
+
+### Package Manager Detection:
+
+- Look for `pnpm-lock.yaml` → use `pnpm`
+- Look for `bun run .lock` → use `bun run `
+- Look for `package-lock.json` → use `npm`
+- Look for `bun.lockb` → use `bun`
+
+### Example Verification Process:
+
+```bash
+# ✅ CORRECT - Check package.json first
+# Found: "dev": "next dev -p 3000" in package.json
+# Found: pnpm-lock.yaml in directory
+# Command: bun  run dev
+
+# ❌ WRONG - Never assume commands
+# Command: npm start (without checking package.json)
+```
+
+## ⚠️ CRITICAL: Dev Server Memory Optimization
+
+**Prevents "Server is approaching the used memory threshold, restarting..." errors.**
+
+- **Dev scripts** MUST include `NODE_OPTIONS='--max-old-space-size=4096 --expose-gc'`
+- **Store sync** interval MUST be ≥30 seconds (not 1 second)
+- **Profile/data hooks** MUST NOT use `refreshInterval` (user-triggered refresh only)
+- **next.config.js** MUST have `webpackBuildWorker: true`, `webpackMemoryOptimizations: true`, `preloadEntriesOnStart: false`
+
+See `.cursor/rules/dev-server-memory-optimization.mdc` for full details.
+
+## Stripe Payment Integration (Venue Bookings, Tickets, Real Estate Tokens)
+
+**Stripe is the payment option for venue tickets, table bookings, and real estate token purchases (card payments).**
+
+### ⚠️ CRITICAL: Schema Changes Use ZenStack, NOT Prisma
+
+**ALL Stripe-related schema changes MUST be made in `zenstack/schema.zmodel`.** Never add Stripe columns to Prisma schema directly.
+
+```zmodel
+// ✅ CORRECT - Add Stripe fields in zenstack/schema.zmodel
+model VenueBooking {
+  // ...
+  paymentIntentId  String?  @unique @map("payment_intent_id")
+  stripePaymentId  String?  @map("stripe_payment_id")
+  stripeChargeId   String?  @map("stripe_charge_id")
+}
+```
+
+**After schema changes:**
+```bash
+bun zen:generate   # Regenerate ZenStack client
+bun db:push        # Apply migrations to database
+```
+
+### Flow (Venue Bookings)
+1. **Create intent**: `POST /api/payment/create-intent` (TICKET or TABLE)
+2. **Client**: `StripeCheckout` component completes payment via Stripe Elements
+3. **Confirm**: `POST /api/payment/confirm` updates booking and `soldCount`
+4. **Webhook**: `POST /api/payment/webhook` handles `payment_intent.succeeded` and `charge.refunded`
+
+### Components
+- `StripeCheckout` (`src/components/lifestyle/StripeCheckout.tsx`) – use `type="TICKET"` or `type="TABLE"`
+- `TokenPurchaseForm` (`src/components/payments/TokenPurchaseForm.tsx`) – card payments for real estate tokens
+- `PaymentSuccessModal` – shows booking confirmation and QR code (when available)
+
+### Environment Variables
+- `STRIPE_SECRET_KEY` – API secret (`sk_live_...` or `sk_test_...`)
+- `STRIPE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` – Publishable key for client
+- `STRIPE_WEBHOOK_SECRET` – **MUST be `whsec_...`** (webhook signing secret from Stripe Dashboard). Never use the API secret key here.
+
+### Auto-Generation (Plugins)
+- Stripe payment entities: `plugins/config/entity-generation-config.ts` (`STRIPE_PAYMENT_ENTITIES`)
+- Run `bun run sync:app-state` to detect models with `paymentIntentId`, `stripePaymentId`, `stripeChargeId`
+- Add new Stripe entities to config for admin create-page notices and API route comments
+
+**Docs**: `docs/implementation/features/VENUE-BOOKINGS-STRIPE-PAYMENT.md`
+
+## Development Guidelines
+
+### TypeScript Patterns
+
+- Use strict TypeScript configuration
+- Prefer interfaces over types for object shapes
+- Use proper generic constraints
+- Include JSDoc comments for complex functions
+- Use Zod for runtime validation
+
+### Component Patterns
+
+```typescript
+// Use proper component prop types
+interface ComponentProps {
+  className?: string;
+  children?: React.ReactNode;
+  onSubmit?: (data: any) => void;
+}
+
+// Use forwardRef for ref forwarding
+const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <div ref={ref} className={className} {...props}>
+        {children}
+      </div>
+    );
+  }
+);
+```
+
+### Import/Export Patterns
+
+```typescript
+// Group imports logically
+import React, { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { FormConfig } from './types';
+```
+
+### Error Handling
+
+```typescript
+// Define custom error types
+class ValidationError extends Error {
+    constructor(
+        message: string,
+        public field: string,
+    ) {
+        super(message);
+        this.name = 'ValidationError';
+    }
+}
+
+// Use Result types for error handling
+type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+```
+
+## AI Profile System
+
+### Available AI Profiles
+
+1. **Architect** - System design and schema analysis
+2. **Developer** - Code generation and implementation
+3. **Tester** - Quality assurance and testing
+4. **DevOps** - Deployment and infrastructure
+5. **Writer** - Documentation and communication
+
+### AI Profile Usage
+
+```typescript
+// Get AI profile
+import { getAIProfile } from '@/ai-profiles';
+const profile = getAIProfile('developer');
+
+// Use in API calls
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  body: JSON.stringify({
+    messages: [...],
+    profile: 'developer',
+    tools: profile.tools
+  })
+});
+```
+
+## MCP Server Integration
+
+### Available Tools
+
+- `analyze_schema` - Parse ZModel schemas
+- `generate_code` - AI-powered code generation
+- `run_tests` - Automated testing
+- `deploy_app` - Deployment automation
+- `generate_docs` - Documentation generation
+
+### MCP Tool Usage
+
+```typescript
+// Call MCP tool
+const result = await mcpClient.callTool('analyze_schema', {
+    schema: zmodelSchema,
+});
+```
+
+## ZenStack UI Forms
+
+### Form Component Patterns
+
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email')
+});
+
+const MyForm = () => {
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { name: '', email: '' }
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+};
+```
+
+## Database Patterns
+
+### ZenStack ORM Usage
+
+```typescript
+import { db } from '@/lib/db';
+
+// Query with access control
+const posts = await db.post.findMany({
+    where: { published: true },
+    include: { author: true },
+});
+
+// Create with validation
+const post = await db.post.create({
+    data: {
+        title: 'New Post',
+        content: 'Post content',
+        authorId: userId,
+    },
+});
+```
+
+### ZModel Schema Patterns
+
+```zmodel
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  published Boolean  @default(false)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@allow('read', published == true)
+  @@allow('create', auth() != null)
+  @@allow('update,delete', author == auth())
+}
+```
+
+## Styling Guidelines
+
+### Tailwind CSS Patterns
+
+```typescript
+// Use cn utility for conditional classes
+import { cn } from '@/lib/utils';
+
+const Button = ({ variant, className, ...props }) => (
+  <button
+    className={cn(
+      'px-4 py-2 rounded-md font-medium transition-colors',
+      {
+        'bg-blue-600 text-white hover:bg-blue-700': variant === 'primary',
+        'bg-gray-200 text-gray-900 hover:bg-gray-300': variant === 'secondary'
+      },
+      className
+    )}
+    {...props}
+  />
+);
+```
+
+### Component Styling
+
+- Use Tailwind CSS for styling
+- Follow design system patterns
+- Use Radix UI primitives
+- Implement responsive design
+- Ensure accessibility compliance
+
+## Testing Patterns
+
+### Component Testing
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { MyComponent } from './MyComponent';
+
+test('renders component correctly', () => {
+  render(<MyComponent />);
+  expect(screen.getByText('Expected Text')).toBeInTheDocument();
+});
+```
+
+### API Testing
+
+```typescript
+import { POST } from '@/app/api/chat/route';
+
+test('API endpoint works correctly', async () => {
+    const request = new Request('http://localhost:3000/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ messages: [] }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+});
+```
+
+## Performance Optimization
+
+### Code Splitting
+
+```typescript
+import { lazy, Suspense } from 'react';
+
+const LazyComponent = lazy(() => import('./LazyComponent'));
+
+const App = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <LazyComponent />
+  </Suspense>
+);
+```
+
+### Memoization
+
+```typescript
+import { memo, useMemo, useCallback } from 'react';
+
+const ExpensiveComponent = memo(({ data }) => {
+  const processedData = useMemo(() => {
+    return data.map(item => processItem(item));
+  }, [data]);
+
+  const handleClick = useCallback((id) => {
+    // Handle click
+  }, []);
+
+  return <div>{/* Component JSX */}</div>;
+});
+```
+
+## Security Best Practices
+
+### Input Validation
+
+```typescript
+import { z } from 'zod';
+
+const userSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+});
+
+const validateUser = (data: unknown) => {
+    return userSchema.parse(data);
+};
+```
+
+### Access Control
+
+```typescript
+// Check user permissions
+const canEdit = await checkPermission(userId, 'post', 'update', postId);
+if (!canEdit) {
+    throw new Error('Unauthorized');
+}
+```
+
+## Deployment Guidelines
+
+### Environment Variables
+
+```bash
+# Required environment variables
+OPENAI_API_KEY=your_openai_key
+DEEPINFRA_API_KEY=your_deepinfra_key
+DATABASE_URL=your_database_url
+NEXTAUTH_SECRET=your_secret
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### Build Process
+
+```bash
+# Install dependencies
+pnpm install
+
+# Generate ZenStack code
+pnpm zen:generate
+
+# Build application
+pnpm build
+
+# Deploy to Vercel
+vercel --prod
+```
+
+## Common Patterns
+
+### API Route Handler
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const schema = z.object({
+    message: z.string().min(1),
+});
+
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const { message } = schema.parse(body);
+
+        // Process request
+        const result = await processMessage(message);
+
+        return NextResponse.json({ result });
+    } catch (error) {
+        return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+}
+```
+
+### Custom Hook Pattern
+
+```typescript
+import { useState, useEffect } from 'react';
+
+export function useApiData<T>(url: string) {
+    const [data, setData] = useState<T | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetch(url)
+            .then((res) => res.json())
+            .then(setData)
+            .catch((err) => setError(err.message))
+            .finally(() => setLoading(false));
+    }, [url]);
+
+    return { data, loading, error };
+}
+```
+
+## Documentation Standards
+
+### JSDoc Comments
+
+````typescript
+/**
+ * Generates a form component from a ZModel schema
+ * @param schema - The ZModel schema definition
+ * @param options - Configuration options for the form
+ * @returns A React form component
+ * @example
+ * ```typescript
+ * const form = generateForm(userSchema, {
+ *   onSubmit: handleSubmit
+ * });
+ * ```
+ */
+export function generateForm(schema: string, options: FormOptions) {
+    // Implementation
+}
+````
+
+### README Structure
+
+- Project overview and features
+- Installation instructions
+- Quick start guide
+- API documentation
+- Contributing guidelines
+- License information
+
+## Best Practices Summary
+
+1. **Type Safety**: Always use TypeScript with strict configuration
+2. **Error Handling**: Implement proper error boundaries and validation
+3. **Performance**: Use code splitting and memoization appropriately
+4. **Accessibility**: Follow WCAG 2.1 guidelines
+5. **Security**: Validate inputs and implement proper access control
+6. **Testing**: Write comprehensive tests for components and APIs
+7. **Documentation**: Maintain clear and up-to-date documentation
+8. **Code Quality**: Follow consistent formatting and naming conventions
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Build Errors**: Check TypeScript configuration and dependencies
+2. **API Failures**: Verify environment variables and API keys
+3. **Form Issues**: Ensure proper validation schemas
+4. **Database Errors**: Check connection strings and migrations
+
+### Debug Tools
+
+- Use React DevTools for component debugging
+- Check browser console for client-side errors
+- Monitor server logs for API issues
+- Use Prisma Studio for database inspection
+
+## Admin Page Layout Rule ⚠️ CRITICAL
+
+**Admin pages under `src/app/admin/` must NOT use `DashboardLayout`.**
+
+The admin layout (`src/app/admin/layout.tsx`) wraps all admin routes with `AdminShell` → `DashboardLayout`. Adding `DashboardLayout` in individual admin pages causes duplicate sidebar and header.
+
+### ✅ CORRECT - Admin page structure
+```typescript
+export default function AdminEntityPage() {
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+### ❌ WRONG - Causes duplicate layout
+```typescript
+import { DashboardLayout } from '@/components/layouts/app-layout';
+export default function AdminEntityPage() {
+  return (
+    <DashboardLayout>  {/* WRONG - AdminShell already provides this */}
+      <div className="container mx-auto px-4 py-8 max-w-7xl">...</div>
+    </DashboardLayout>
+  );
+}
+```
+
+**Auto-generation**: `complete-entity-generator.ts`, `navigation-generator.ts`, and `app-state-sync-generator.ts` (admin-page-template) must generate admin pages without DashboardLayout.
+
+## Documentation Organization Rules ⚠️ CRITICAL
+
+### Primary Rule: Documentation Location
+
+**ALL implementation documentation MUST be created in `/docs/` directory, NEVER in project root.**
+
+### Before Creating Documentation:
+
+1. **SEARCH FIRST**: Check `/docs/` for existing related documentation
+2. **MERGE IF EXISTS**: Update existing doc instead of creating new one
+3. **CATEGORIZE**: Place in correct subdirectory based on content type
+4. **USE DESCRIPTIVE NAMES**: kebab-case, specific filenames
+
+### Documentation Structure:
+
+```
+/docs/
+├── implementation/           # Implementation-related documentation
+│   ├── architecture/        # System architecture & design docs
+│   ├── features/           # Feature-specific implementation docs
+│   ├── setup/              # Setup & configuration guides
+│   ├── development/        # Development workflows & guides
+│   └── quick-start/        # Quick fixes & rapid guides
+├── guides/                  # General guides & integrations
+└── reference/               # API references & specifications
+
+/stale-docs/                # Outdated documentation (gitignored)
+```
+
+### Quick Reference:
+
+| Content Type | Location | Example |
+|-------------|----------|---------|
+| System architecture | `/docs/implementation/architecture/` | `authentication-system.md` |
+| Feature implementation | `/docs/implementation/features/` | `marketplace-grid.md` |
+| Setup/configuration | `/docs/implementation/setup/` | `database-setup.md` |
+| Development workflow | `/docs/implementation/development/` | `testing-workflow.md` |
+| Integration guides | `/docs/guides/` | `marketplace-integration.md` |
+
+### Detailed Rules:
+
+See `.cursorrules-documentation` for comprehensive documentation organization rules.
+
+See `docs/implementation/development/DOCUMENTATION_ORGANIZATION_SYSTEM.md` for full system documentation.
+
+### Tools:
+
+```bash
+# Preview documentation organization changes
+node scripts/organize-documentation.js
+
+# Execute documentation organization
+node scripts/organize-documentation.js --execute
+```
+
+## Resources
+
+- [ZenStack Documentation](https://zenstack.dev)
+- [Vercel AI SDK](https://sdk.vercel.ai)
+- [React Documentation](https://react.dev)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS](https://tailwindcss.com)
+- [Radix UI](https://www.radix-ui.com)
+
+---
+
+## DATABASE MIGRATION METHODOLOGY - NEON TO LOCAL POSTGRESQL
+
+**MANDATORY PROTOCOL FOR DATABASE-TO-DATABASE MIGRATIONS**
+
+### SOURCE CONFIGURATION
+- **Source Database**: Neon PostgreSQL (cloud-hosted)
+- **Connection Method**: Environment variable `NEON_DATABASE_URL`
+- **SSL Mode**: `require` (Neon default)
+- **Extraction Tool**: `psql` command-line with `row_to_json()`
+
+### TARGET CONFIGURATION
+- **Target Database**: Local PostgreSQL instance
+- **Connection Method**: Environment variable `DATABASE_URL`
+- **Port**: 5433 (development default, differs from standard 5432)
+- **SSL Mode**: Disabled for local connections
+- **Insertion Method**: Direct ZenStack ORM operations
+
+### EXTRACTION MECHANISM
+- **Query Pattern**: `SELECT row_to_json(t) FROM {table} t;`
+- **JSON Handling**: Automatic PostgreSQL JSON serialization
+- **Large Field Support**: `row_to_json()` handles large JSONB fields efficiently
+- **Error Recovery**: Fallback mechanisms for problematic extractions
+
+### INSERTION MECHANISM
+- **ORM**: ZenStack v3 with `createClient(user)` pattern
+- **Authentication**: System user context for elevated permissions
+- **Batch Processing**: Individual record insertion with error tracking
+- **Foreign Key Handling**: Dependency-ordered migration sequence
+- **ID Mapping**: Automatic UUID generation for new records
+
+### DEPENDENCY MANAGEMENT
+- **Migration Order**: Independent tables first, dependent tables second
+- **Foreign Key Constraints**: Database-level enforcement maintained
+- **ID Mapping**: Cross-reference preservation between related entities
+- **Validation**: ZenStack schema validation on all insertions
+
+### ERROR HANDLING & RECOVERY
+- **Skip Logic**: Prevents duplicate record insertion on re-runs
+- **Transaction Safety**: Individual record failures don't stop migration
+- **Logging**: Comprehensive success/failure tracking per table
+- **Recovery**: Partial migration support with manual intervention options
+
+### LARGE DATASET HANDLING
+- **Memory Management**: Streaming extraction to prevent heap overflow
+- **JSON Field Optimization**: Direct PostgreSQL JSON handling
+- **Chunking Strategy**: Batch processing for large table migrations
+- **Resource Limits**: Built-in safeguards against memory exhaustion
+
+### MIGRATION VERIFICATION
+- **Record Counting**: Pre/post migration count verification
+- **Data Integrity**: Schema validation and foreign key checks
+- **Relationship Preservation**: Cross-table reference validation
+- **Completeness Testing**: Ensure no data loss during migration
+
+### SUCCESS METRICS (COMPLETED MIGRATION)
+- **Tables Migrated**: 17/17 (100% success rate)
+- **Records Migrated**: 196/196 (100% data preservation)
+- **Relationships**: All foreign keys and references maintained
+- **Data Types**: All PostgreSQL types correctly mapped to ZenStack
+- **Performance**: Completed in multiple phases with error recovery
+
+### TOOLS & DEPENDENCIES
+- **Script Engine**: `tsx` (TypeScript execution)
+- **Database Client**: ZenStack ORM v3
+- **Command Line**: `psql` for data extraction
+- **Environment**: Node.js with proper memory allocation
+- **Logging**: Structured console output with success/error indicators
+
+### IMPLEMENTATION ARTIFACTS
+- **Migration Script**: `scripts/migrate-via-api.ts`
+- **Configuration**: Environment variables for both databases
+- **Transformation Functions**: 17 custom functions for data mapping
+- **Error Recovery**: Comprehensive error handling and skip logic
+- **Documentation**: Complete migration logs and success metrics
+
+### FUTURE MIGRATION GUIDANCE
+- **Template Pattern**: Use existing script as baseline for new migrations
+- **Environment Setup**: Ensure `NEON_DATABASE_URL` and `DATABASE_URL` are configured
+- **Testing Protocol**: Always test single table migration before full migration
+- **Rollback Strategy**: Maintain backup procedures for critical migrations
+- **Documentation**: Update migration logs and success metrics
+
+### KEY LESSONS LEARNED
+- **JSON Handling**: PostgreSQL `row_to_json()` is efficient for large JSONB fields
+- **Dependency Ordering**: Critical for maintaining foreign key relationships
+- **Skip Logic**: Essential for safe re-runs and preventing data duplication
+- **Memory Management**: Direct database operations prevent heap overflow
+- **Error Isolation**: Individual record failures don't stop entire migration
+- **ID Mapping**: Preserve relationships while allowing new UUID generation
+
+### MIGRATION SCRIPT USAGE
+```bash
+# Test single table
+npx tsx scripts/migrate-via-api.ts test-table public.table_name
+
+# Run full migration
+npx tsx scripts/migrate-via-api.ts migrate
+
+# Test database connectivity
+npx tsx scripts/migrate-via-api.ts test
+```
+
+**This methodology has been validated and proven effective for complete database migrations while preserving all data relationships and integrity.**
+
+## BigInt/WalletConnect TypeError Fix (LEARNED)
+
+**Error**: `TypeError: Cannot convert a BigInt value to a number` at `Math.pow` when loading AppKit/WalletConnect.
+
+**Root cause**: `multiformats` varint (via uint8arrays → @walletconnect/utils) uses `Math.pow(2, shift)`, `<< shift`, and `value < N1`; bundlers can pass BigInt into these, causing the error. Affects both Webpack and Turbopack.
+
+**Solution that worked**: Postinstall script `scripts/patch-multiformats-bigint.js` patches all multiformats `vendor/varint.js` files:
+1. `encode`: add `num = Number(num)` at function start
+2. `read`: use `Number(shift)` in `Math.pow(2, Number(shift))` and `<< Number(shift)`
+3. `length`: use `(value = Number(value)) < N1` for BigInt-safe comparison
+
+**Avoid Turbopack when using AppKit/WalletConnect**: Always use `bun run dev` (Webpack) for wallet features. `bun run dev:turbo` triggers the BigInt error. The dev script runs the patch before starting and uses `--webpack`.
+
+**If error persists**: Run `bun scripts/patch-multiformats-bigint.js` then `rm -rf .next && bun run dev`.
+
+**Do NOT use** `patchedDependencies` with a .patch file for multiformats—Bun patch format can fail (hunk_header_integrity_check_failed). Use the postinstall script instead.
+
+**When removing last property from package.json**: Remove trailing comma to avoid `ERR_INVALID_PACKAGE_CONFIG`.
+
+**Docs**: `docs/implementation/development/BIGINT_WALLETCONNECT_FIX.md`
+
+### Root-Cause Update (2026-02-17) - RECURRING LOOP PREVENTION
+
+**Observed recurring loop**: Repeatedly patching `multiformats` did not fully resolve the crash because the active runtime failure moved to transpiled WalletConnect crypto code (`@noble/curves`) with stack frame `Mf(...)`.
+
+**Verified failure signature**:
+- Runtime: `TypeError: Cannot convert a BigInt value to a number`
+- Generated bundle showed invalid transform:
+  - `Math.pow(Fe, BigInt(254))`
+  - `Math.pow(Fe, BigInt(447))`
+- This is invalid because `Math.pow` requires Number, not BigInt.
+
+**Concrete root cause (source-of-truth)**:
+- `next.config.js` had `transpilePackages` including WalletConnect/AppKit chain (`@walletconnect/utils`, etc.).
+- That transpilation rewrote BigInt exponentiation from dependency code into invalid `Math.pow(..., BigInt(...))`.
+- Therefore, crash was caused by **transpilation transform**, not only by varint decode paths.
+
+**Durable fix that WORKED**:
+1. **Do not transpile WalletConnect/AppKit dependency chain** in Next config.
+2. Keep Webpack mode for local wallet work (`next dev --webpack`).
+3. Keep targeted `multiformats` patch script for varint safety, but treat it as secondary protection.
+
+**Mandatory prevention rules (HITL + evidence-first)**:
+- Before re-adding `transpilePackages` for any crypto/web3 libs, require HITL approval and show bundle evidence.
+- Evidence order: built chunk snippet -> source package path -> proposed config change.
+- If stack contains WalletConnect/AppKit + BigInt + `Math.pow`, inspect built chunk first for `Math.pow(..., BigInt(...))` before applying any patch.
+
+**TL;DR**:
+- If WalletConnect/AppKit throws BigInt conversion error, first suspect **dependency transpilation**.
+- Never transpile WalletConnect/AppKit crypto dependency chain.
+- Use Webpack dev mode and patch varint as fallback, not as sole fix.
+
+## createAppKit Initialization Order (LEARNED)
+
+**Error**: `Please call "createAppKit" before using "useAppKit" hook` on production (Vercel).
+
+**Root cause**: `createAppKit` must run before any component uses `useAppKit` or `useAppKitAccount`. Chunking/load order caused some components to run hooks before `@/lib/appkit` was imported.
+
+**Solution that worked**:
+1. **AppKitInit wrapper** (`src/components/wallet/AppKitInit.tsx`) wraps the entire app in root layout. Imports `@/lib/appkit` so appkit loads before any child renders.
+2. **Eager init** in `@/lib/appkit`: `createModalIfNeeded()` runs at module load when `typeof window !== 'undefined'`.
+3. **Layout**: `AppKitInit` MUST be the outermost wrapper in `src/app/layout.tsx` body.
+
+**Vercel-specific fix (2026-02-18)**: On Vercel production, chunk loading order differs from local. AppKitInit MUST defer rendering children until `getModal()` runs in useEffect. This guarantees createAppKit executes before any child mounts and calls useAppKit. AppKitInit returns a loading state (not null) until ready to avoid hydration issues.
+
+**Prevention**: AppKitInit must wrap StoreSubscriptionsProvider, AuthProvider, DynamicWalletProvider, Providers. Never use AppKitInit as a sibling. See `.cursor/rules/appkit-integration.mdc` for full details.
+
+## AppKit Social Login (Google) "Failed to verify message" (LEARNED 2026-02-18)
+
+**Observed failure signature**:
+- `Uncaught (in promise) Error: Failed to verify message at Proxy.addSession`
+- `Cross-Origin-Opener-Policy policy would block the window.closed call`
+- `/api/wallet-verify` returns 400: `"Invalid signature"`, `"SIWE signature verification failed"`
+
+**Root causes** (check in order):
+1. **Domain not in Reown Dashboard allowlist** – Add `localhost:3000`, production URL, Vercel preview URLs to Project Domains
+2. **COOP header missing** – Must have `Cross-Origin-Opener-Policy: same-origin-allow-popups` in `next.config.js` and `vercel.json`
+3. **Embedded wallet (EIP-1271)** – Google social login creates an embedded wallet (smart account). The `siwe` package's `verify()` only supports EOA (ecrecover). Smart account signatures require EIP-1271/EIP-6492 verification.
+
+**Solution that worked**:
+1. Add COOP header and Reown Dashboard domains (see above)
+2. **For embedded wallets**: In `src/lib/siwe.ts`, add viem fallback when `siwe.verify()` fails. Use `viem.verifyMessage()` which supports EIP-1271 for smart accounts. Flow: try `siwe.verify()` (EOA) → if fails, try `publicClient.verifyMessage({ address, message, signature })` (handles smart accounts)
+3. Relax `isValidEthereumSignature()` to accept signatures ≥130 hex chars (EIP-6492 can be longer)
+
+**Mandatory prevention rule**: Before debugging AppKit social login, verify domain is in Reown Dashboard allowlist. If `/api/wallet-verify` returns "Invalid signature" for social login, add viem `verifyMessage` fallback for EIP-1271. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`.
+
+## AppKit "403 Forbidden: Nonce mismatch" / "401 Invalid nonce JWT" (LEARNED 2026-02-22, UPDATED 2026-03-03)
+
+**Observed failure signature**:
+- `403 Forbidden` or `401 Unauthorized` from `https://api.web3modal.org/auth/v1/authenticate`
+- Response: `Forbidden: Nonce mismatch` or `Unauthorized: Invalid nonce JWT`
+- Email/social/embedded wallet login; ReownAuthentication.js:175/200 in stack
+
+**Root causes** (check in order):
+1. **SDK sends nonce/authenticate to api.web3modal.org**: ReownAuthentication (in **node_modules/@reown/appkit-controllers**) uses `ConstantsUtil.W3M_API_URL` (api.web3modal.org). Reown Cloud expects its own nonce JWT; our /auth/v1/nonce is never used → "Nonce mismatch" or "Invalid nonce JWT".
+2. **Patch targeted wrong file**: scripts/patch-reown-auth.js previously only patched `packages/reown-appkit-module/.../ReownAuthentication.ts`. Next.js bundles **node_modules/@reown/appkit-controllers/dist/esm/.../ReownAuthentication.js** — that file must be patched.
+3. **Layout fetch interceptor mocking**: Mocking `/auth/v1/nonce` or `/auth/v1/authenticate` breaks flow.
+
+**Solution that worked**:
+1. **Patch node_modules ReownAuthentication.js** (scripts/patch-reown-auth.js): Patch **node_modules/@reown/appkit-controllers/dist/esm/src/features/siwx/reown-authentication/ReownAuthentication.js** so `request()` uses `(typeof window !== 'undefined' && window.location?.origin) || ConstantsUtil.W3M_API_URL` for the auth/v1 base URL. That way nonce and authenticate hit the app’s /auth/v1/* (EIP-1271). Patch runs on postinstall (run-postinstall.js) and must run after `bun install`.
+2. Do NOT mock `/auth/v1/nonce` or `/auth/v1/authenticate` in fetch interceptors.
+
+**Mandatory prevention rule**: patch-reown-auth.js MUST patch the **node_modules** ReownAuthentication.js (the file Next.js actually bundles). Never mock `/auth/v1/nonce` or `/auth/v1/authenticate`. After `bun install` or new clones, run `node scripts/patch-reown-auth.js` (or `bun scripts/patch-reown-auth.js`) if social/embedded login shows nonce mismatch. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`.
+
+## AppKit Connect Dialog: 0 Wallets / MetaMask Missing on Production (LEARNED 2026-02-22)
+
+**Observed failure signature**:
+- Connect Wallet dialog on production (Vercel) shows "Search Wallet" with **0** wallets (vs 520+ locally)
+- MetaMask does not appear despite browser extension installed
+- Different styling/fonts compared to local (`bun run dev`)
+
+**Root cause**: Layout fetch interceptor blocked/mocked wallet registry API requests. The allow condition only checked `walletconnect.org` and `web3modal.org`, but explorer-api uses `walletconnect.com` (not .org). Also missing: `explorer-api.reown.com`, `registry.walletconnect.com`.
+
+**Solution that worked**:
+1. Add `walletconnect.com` and `reown.com` to domain check (not just .org)
+2. Add `explorer-api.reown.com`, `registry.walletconnect.com` to wallet metadata allowlist
+3. Add explicit exclusion: NEVER mock requests to explorer-api, registry, or /wallets endpoints
+
+**Mandatory prevention rule**: When adding fetch interceptors for WalletConnect/Reown, allow ALL wallet registry domains: `explorer-api.walletconnect.com`, `explorer-api.reown.com`, `registry.walletconnect.com`, `api.web3modal.org` (with /wallets). Include `walletconnect.com` (not just .org) in domain checks. Never mock wallet registry – required for MetaMask + 520+ wallet list. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`.
+
+## AppKit Config API Must Not Be Mocked (LEARNED 2026-02-22)
+
+**Observed failure signature**:
+- Connect dialog shows **0 wallets** in Search Wallet
+- **Broken/cut-off WalletConnect icon**
+- **Extra social providers** (X, Discord, GitHub) when only Google configured
+
+**Root cause**: Layout fetch interceptor mocked `api.web3modal.org/appkit/v1/config`. This API returns `features` (including `socials`). Mocking with `{ planLimits, data: [] }` returned no `features`; AppKit fell back to `DEFAULT_REMOTE_FEATURES` with all socials. Same mock could affect wallet discovery and connector images.
+
+**Solution that worked**: Add earliest pass-through for `api.web3modal.org` with `/appkit/` or `/projects/` – config, project-limits, and origins APIs must reach Reown Cloud. Apply to fetch and XMLHttpRequest interceptors.
+
+**Mandatory prevention rule**: Never mock `api.web3modal.org/appkit/` or `api.web3modal.org/projects/`. These return config (socials, features) and allowed origins. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`.
+
+## AppKit Connect Dialog Empty on Mobile (error-suppression.ts) (LEARNED 2026-03-01)
+
+**Observed failure signature**:
+- Connect dialog shows **empty** – no Google, Email, or wallet options
+- Works on local desktop but fails on mobile or production (Vercel)
+
+**Root cause**: `src/lib/utils/error-suppression.ts` had a blanket mock returning `{ data: [] }` for **all** `api.web3modal.org` requests. Error-suppression wraps fetch when AppKitProvider mounts; it intercepted config/wallet requests before layout pass-through. Empty data → empty dialog.
+
+**Solution that worked**: Remove `api.web3modal.org` from error-suppression mocks. Only suppress `pulse.walletconnect.org` (analytics) and `cca-lite.coinbase.com`. Never mock api.web3modal.org in error-suppression – layout handles pass-through.
+
+**Mandatory prevention rule**: Never mock or block `api.web3modal.org` in `error-suppression.ts`. Only suppress pulse/Coinbase analytics. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md` → "Connect Dialog: Empty Options on Mobile".
+
+## AppKit Local: 0 Wallets / Wrong Socials After Production Fix (LEARNED 2026-02-22)
+
+**Observed failure signature**:
+- After fixing production, local dev shows "Search Wallet" with **0** wallets (vs 520+)
+- Extra socials (X, Discord, etc.) when config has only Google
+
+**Root causes**: (1) Reown Dashboard missing `http://localhost:3000` in Project Domains – Explorer API may reject; (2) `NEXT_PUBLIC_W3M_API_URL` not set for local; (3) Social providers come from Reown Dashboard – enable only Google there.
+
+**Solution that worked**:
+1. Add **earliest** pass-through for wallet registry in layout (before any other logic) – explorer-api, registry, api.web3modal.org/wallets or /v3/
+2. Reown Dashboard → Project Domains → add `http://localhost:3000`
+3. `.env.local` → `NEXT_PUBLIC_W3M_API_URL=http://localhost:3000`
+4. Reown Dashboard → Authentication → enable only Google for wallet+Google-only config
+
+**Mandatory prevention rule**: For local AppKit issues after production fixes, check Reown Dashboard localhost and NEXT_PUBLIC_W3M_API_URL. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`.
+
+## AppKit Production: MetaMask Not Recognized / 0 Wallets (LEARNED 2026-02-22)
+
+**Observed failure signature**:
+- Production (Vercel): Connect dialog shows 0 wallets, MetaMask not recognized; local works
+- Dialog styling/layout differs from local
+- Same build, different behavior
+
+**Root cause hierarchy**: (1) **CODE BUG** – reInterceptFetch's reInterceptedFetch missing EARLIEST pass-through for `/appkit/` and `/auth/v1/*` (when AppKit wraps fetch, our re-wrap mocked config API → 0 wallets); (2) Reown Dashboard missing production domain in Project Domains; (3) Vercel env vars missing NEXT_PUBLIC_W3M_API_URL; (4) Fetch interceptor mock condition could catch requests TO production app.
+
+**Solution that worked**:
+1. **reInterceptFetch fix**: Add EARLIEST pass-through for `/auth/v1/nonce`, `/auth/v1/authenticate`, and `api.web3modal.org` with `/appkit/` or `/projects/` to reInterceptedFetch in layout.tsx – production chunk order causes AppKit to wrap fetch; our re-wrap must mirror main wrapper logic
+2. Reown Dashboard → Project Domains → add `https://prestix.vip` (and preview URLs)
+3. Vercel → Environment Variables → `NEXT_PUBLIC_W3M_API_URL=https://prestix.vip` for Production
+4. Layout fetch interceptor: add `!url.includes('prestix.vip')` to mock exclusion (never mock requests TO production app)
+
+**Mandatory prevention rule**: When production Connect dialog shows 0 wallets but local works, first fix reInterceptFetch (ensure reInterceptedFetch has full EARLIEST pass-through). Then check Reown Dashboard Project Domains. Run production diagnostic script in `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`. See APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md.
+
+## AppKit SIWE "Invalid response format" When Signing (LEARNED 2026-02-22)
+
+**Observed failure signature**:
+- `SWIXUtil:requestSignMessage Error: Authentication failed: Invalid response format. Expected token string. Ensure your auth backend returns { token: "<jwt>" }.`
+- User connects MetaMask, signs SIWE message, then addSession throws
+- Local dev with `NEXT_PUBLIC_W3M_API_URL=http://localhost:3000`
+
+**Root cause**: When W3M_API_URL points to app origin, ReownAuthentication sends nonce and authenticate to the app. The app had `/auth/v1/authenticate` but **no** `/auth/v1/nonce`. GET /auth/v1/nonce returned 404, so `getNonce()` failed. If nonce somehow succeeded (e.g. from Reown Cloud), authenticate could still fail if the response lacked `{ token }`.
+
+**Solution that worked**:
+1. Add `/auth/v1/nonce` route at `src/app/auth/v1/nonce/route.ts` returning `{ nonce, token }` (nonce = random hex, token = JWT with nonce)
+2. Add earliest pass-through in layout fetch interceptor for `/auth/v1/nonce` and `/auth/v1/authenticate` so they always reach the real routes
+
+**Mandatory prevention rule**: When using `NEXT_PUBLIC_W3M_API_URL` to app origin, both `/auth/v1/nonce` and `/auth/v1/authenticate` must exist and return the expected shapes. Never mock or block these in fetch interceptors. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`.
+
+## AppKit SIWE "Invalid token" at jwtDecode (LEARNED 2026-02-23)
+
+**Observed failure signature**:
+- `Uncaught (in promise) Error: Invalid token` at `jwtDecode` (ReownAuthentication.js)
+- Backend returns 200 with `{ token: "<jwt>" }`; SIWE verification succeeds
+
+**Root cause**: ReownAuthentication's `jwtDecode` expects a **JWS** (3 parts: header.payload.signature). NextAuth `encode()` produces a **JWE** (5 parts: encrypted). JWE payload cannot be decoded with `token.split('.')` + `atob(parts[1])`.
+
+**Solution that worked**:
+1. **Response body**: Use `jose.SignJWT` to create JWS for `{ token }` returned to Reown
+2. **Cookie**: Keep NextAuth `encode()` for `next-auth.session-token` so `getToken()` works
+
+**Mandatory prevention rule**: When using custom `/auth/v1/authenticate`, return a **JWS** (jose SignJWT or jsonwebtoken.sign), not NextAuth encode() for the response body token. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md`.
+
+## AppKit SIWE /api/auth/me Returns Null After Successful Sign (LEARNED 2026-02-24)
+
+**Observed failure signature**:
+- User completes SIWE signature successfully; Reown addSession succeeds
+- `/api/auth/me` returns `{ user: null }` despite valid session
+- Cookie appears set in DevTools but getToken() cannot find it
+
+**Root cause**: Cookie name mismatch. NextAuth's `getToken()` expects different cookie names:
+- **Production (HTTPS/Vercel)**: `__Secure-next-auth.session-token` (secureCookie = true)
+- **Development (HTTP)**: `next-auth.session-token`
+
+Our auth routes were hardcoding `'next-auth.session-token'` and `secure: process.env.NODE_ENV === 'production'`. On Vercel, getToken() looks for `__Secure-next-auth.session-token` but we set `next-auth.session-token` → cookie never found → null session.
+
+**Solution that worked**:
+1. **auth-cookie-utils.ts** (`src/lib/auth-cookie-utils.ts`): `getSessionCookieName()` and `isSecureCookie()` matching NextAuth's logic (NODE_ENV, NEXTAUTH_URL, VERCEL)
+2. **All cookie-setting routes** MUST use these helpers:
+   - `src/app/auth/v1/authenticate/route.ts` (Reown SIWX)
+   - `src/app/api/auth/wallet/verify/route.ts` (siwe-config, 3 places)
+
+```typescript
+// ✅ CORRECT
+import { getSessionCookieName, isSecureCookie } from '@/lib/auth-cookie-utils';
+response.cookies.set(getSessionCookieName(), token, {
+  httpOnly: true,
+  secure: isSecureCookie(),
+  sameSite: 'lax',
+  maxAge: 30 * 24 * 60 * 60,
+  path: '/',
+});
+
+// ❌ WRONG - Causes /api/auth/me to return null on production
+response.cookies.set('next-auth.session-token', token, {
+  secure: process.env.NODE_ENV === 'production',
+  ...
+});
+```
+
+**Mandatory prevention rule**: NEVER hardcode `'next-auth.session-token'` when setting the session cookie. Always use `getSessionCookieName()` and `isSecureCookie()` from `@/lib/auth-cookie-utils`. See `docs/implementation/development/SIWE_AUTH_ME_NULL_DIAGNOSIS.md`.
+
+## React State Update Before Mount (LEARNED 2026-02-18)
+
+**Error**: `Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously tries to update the component.`
+
+**Root cause**: Store subscription callbacks (Zustand `subscribe`) can fire during the initial render/mount phase. When a callback calls `store.setState()` or `store.getState().someAction()`, it triggers React re-renders. If a component is in the middle of its first render when this happens, React throws.
+
+**Solution that worked**:
+1. **deferToAfterMount** utility (`src/lib/defer-to-after-mount.ts`): Wraps callbacks in `queueMicrotask()` so state updates run after the current render cycle.
+
+2. **Store subscription callbacks**: Wrap all subscription callbacks that update state with `deferToAfterMount`:
+   ```typescript
+   useStore.subscribe((state) => {
+     const value = state.someValue;
+     deferToAfterMount(() => {
+       otherStore.getState().update(value);
+     })();
+   });
+   ```
+
+3. **Plugin registry init**: Defer `initializePlugins()` with `queueMicrotask()` so it runs after mount.
+
+4. **StoreSubscriptionsProvider**: Use `requestAnimationFrame` before importing subscription modules so the app tree has mounted.
+
+5. **AppKitReadyProvider**: Defer `setWagmiReady` in the subscription callback with `queueMicrotask`.
+
+**Zustand subscribe API**: `store.subscribe(selector, listener)` requires `subscribeWithSelector` middleware. Stores without it (e.g. contractStore, tokenizinWalletStore, usePurchaseStore) only support `store.subscribe(listener)` where listener receives full state.
+
+**Mandatory prevention rule**: Any store subscription callback that calls `setState`, `getState().action()`, or triggers React re-renders MUST defer execution with `queueMicrotask` or `deferToAfterMount`. Never update state synchronously in subscription callbacks.
+
+## AppKit Exit/Disconnect: Social Wallet Session Persists (LEARNED 2026-02-23)
+
+**Observed failure signature**:
+- User clicks "Exit" to disconnect; header shows "Sign" (signature state nullified)
+- AppKit account button (red circle) still appears connected; social/embedded wallet session persists
+- Token-balances requests may still run with previous wallet address
+
+**Root cause**: Exit flow cleared app session/auth store but did NOT clear ReownAuthentication SIWX storage (`@appkit/siwx-auth-token`, `@appkit/siwx-nonce-token`, `@appkit/connected_social`). For embedded/social wallets, ReownAuthentication stores session in localStorage; wagmi `disconnect()` alone does not clear these keys.
+
+**Solution that worked**:
+1. In `useLogout` Step 6 and `siwe-config` signOut: explicitly remove `@appkit/siwx-auth-token`, `@appkit/siwx-nonce-token`, `@appkit/connected_social`, `@appkit/social_provider`
+2. In localStorage clear loop: add `key.startsWith('@appkit/')` to catch all AppKit keys
+3. SIWE signOut: dispatch both `appkit-signout` and `appkit-disconnect-wallet` for listener compatibility
+4. AppKitSessionProvider: listen for both `appkit-signout` and `appkit-disconnect-wallet`
+
+**Mandatory prevention rule**: Exit/disconnect MUST clear ALL of: (1) wagmi connection via disconnect(), (2) ReownAuthentication/SIWX localStorage keys, (3) app session stores. Never partial clears. See `docs/implementation/development/APPKIT_SOCIAL_LOGIN_TROUBLESHOOTING.md` → "Exit/Disconnect: Signature State Nullified but Social Wallet Still Connected".
+
+## AppKit Metadata Icons CORS in Signature Dialog (LEARNED 2026-02-24)
+
+**Observed failure signature**:
+- CORS error when loading app icon during AppKit/WalletConnect signature dialog
+- Icon URL: `window.location.origin/images/logos/app-icon/tknzn-512.png`
+- Signature modal can render in cross-origin context (e.g. `secure.walletconnect.org`), so loading image from app origin triggers CORS
+
+**Root cause**: AppKit `metadata.icons` used absolute URLs. Reown/WalletConnect docs recommend base64 data URIs for metadata icons to avoid CORS in cross-origin modals.
+
+**Solution that worked**:
+1. Create `src/lib/appkit-icon-base64.ts` – exports `APPKIT_ICON_BASE64` (data URI for tknzn-512.png)
+2. Generate via script: read PNG from `public/images/logos/app-icon/tknzn-512.png`, output base64 string
+3. In `src/lib/appkit.ts`: `icons: [APPKIT_ICON_BASE64]` instead of URL-based icons
+
+**Mandatory prevention rule**: AppKit `metadata.icons` MUST use base64 data URIs, not URLs. Never use `window.location.origin` or absolute URLs for icons in createAppKit metadata – they fail in cross-origin signature dialogs.
+
+## pg-connection-string SSL Warning (LEARNED 2026-02-22)
+
+**Warning**: `SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'. In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics...`
+
+**Root cause**: DATABASE_URL with `sslmode=require` triggers the warning when pg/pg-connection-string parses the connection string.
+
+**Solution that worked**: Normalize `sslmode=require|prefer|verify-ca` to `sslmode=verify-full` before passing to pg:
+1. **instrumentation.ts** – calls `normalizeDatabaseUrlEnv()` at Next.js server startup
+2. **src/lib/database-url.ts** – `getNormalizedDatabaseUrl()` and `normalizeDatabaseUrlEnv()`
+3. **src/lib/db.ts** and **src/lib/prisma.ts** – use `getNormalizedDatabaseUrl()` for connection strings
+4. **Standalone scripts** – call `normalizeEnv()` from `scripts/lib/normalize-database-url.js` after dotenv
+
+**Alternative**: Set `sslmode=verify-full` directly in DATABASE_URL (Vercel env vars, .env).
+
+## LMNT TTS Vercel Timeout Prevention (2026-02-18)
+
+**Observed recurring failure signature**:
+- API route: `POST /api/blog/voice/lmnt`
+- Deployment error: `FUNCTION_INVOCATION_TIMEOUT` (Vercel 504)
+- Trigger pattern: long blog text + unbounded upstream LMNT requests
+
+**Root cause**:
+- LMNT speech generation fetch had no explicit timeout
+- LMNT audio URL fetch had no explicit timeout
+- Route could wait until Vercel killed the function
+
+**Fix that worked**:
+1. Add explicit per-call upstream timeouts using `AbortController`:
+ - speech request timeout
+ - audio fetch timeout
+2. Cap synthesis input length before sending to LMNT to reduce latency
+3. Return controlled JSON error responses (`504`/`502`) instead of waiting for platform timeout
+
+**Mandatory prevention rule**:
+- Any external API call inside Vercel route handlers must have explicit timeouts.
+- Any TTS/LLM operation must bound input size before upstream call.
+- Prefer fast-fail + actionable error over implicit platform timeout.
+
+## WalletConnect v2 eth_requestAccounts Blocked (LEARNED 2026-02-28)
+
+**Observed failure signature**:
+- `Requested RPC call is not allowed {method: 'eth_requestAccounts'}`
+- Stack: `getSigner → request(eth_requestAccounts)`
+- Downstream: `W3mFrame: invalid app event` (Zod validation cascade), `Request was aborted`
+
+**Root cause**: `ethers.BrowserProvider.getSigner()` called without arguments internally fires `eth_requestAccounts`. WalletConnect v2 explicitly blocks this method via its RPC middleware, causing the entire signer setup to abort.
+
+**Durable fix that WORKED**:
+- In `src/hooks/useAppKitProvider.ts`, pass the already-known address: `browserProvider.getSigner(wagmiAddress)`
+- This skips the `eth_requestAccounts` call entirely since the address is already known from wagmi.
+
+**Mandatory prevention rule**: ALWAYS call `browserProvider.getSigner(address)` with an explicit address when using `ethers.BrowserProvider` inside a WalletConnect/AppKit context. Never call `getSigner()` without arguments in wallet hooks.
+
+## Gravatar 404 via Next.js _next/image on Vercel (LEARNED 2026-02-28)
+
+**Observed failure signature**:
+- `GET https://<app>/_next/image?url=https%3A%2F%2Fwww.gravatar.com%2Favatar%2F...%3Fd%3Didenticon 404 (Not Found)`
+- Gravatar CDN blocks server-side fetches from Vercel serverless functions.
+
+**Root cause hierarchy**:
+1. `CachedImage`/`CachedAvatar` uses Next.js `Image` which optimises images via `_next/image` (server-side fetch)
+2. Gravatar CDN returns 404 to Vercel's serverless IP ranges
+3. `d=identicon` alone is not enough to prevent the server-side 404
+
+**Durable fix that WORKED**:
+1. `src/components/common/CachedImage.tsx`: Added `toProxiedUrl()` helper that rewrites any `gravatar.com` URL to `/api/image-proxy?url=...` before passing to Next.js `Image`. Both `CachedImage` and `CachedAvatar` call this on mount and on `src` change.
+2. `src/lib/siwe.ts`: `getGravatarUrl()` now returns `/api/image-proxy?url=...` instead of the raw Gravatar URL, and uses `d=mp` (mystery-person) instead of `d=identicon` for better CDN compatibility.
+
+**Mandatory prevention rule**: NEVER pass raw `gravatar.com` URLs to any Next.js `Image` component. Always proxy through `/api/image-proxy`. Prefer `d=mp` over `d=identicon` for Gravatar fallback images.
+
+## Next.js ChunkLoadError: app/admin/layout (LEARNED 2026-02-28)
+
+**Observed failure signature**:
+- `ChunkLoadError: Loading chunk app/admin/layout failed. (missing: http://localhost:3000/_next/static/chunks/app/admin/layout.js)`
+- Error at AdminLayout (src/app/admin/layout.tsx) when rendering AdminShell
+
+**Root cause**: Known Next.js webpack issue—chunks can fail to load or download incompletely during dev (on-demand compilation). Admin layout chunk loads AdminShell → DashboardLayout → AppHeader, AppSidebar, useAppKitSession, etc.). Heavy dependency tree can cause chunk load failures.
+
+**Durable fix that WORKED**:
+1. **Immediate recovery**: `rm -rf .next && bun run dev` — clears stale build cache
+2. **Hard refresh**: Ctrl+Shift+R (Cmd+Shift+R) — often fixes after first load
+3. **Config already present**: `next.config.js` has `chunkLoadTimeout: 180000` (3 min) for dev client; `generateBuildId: 'build-stable'` to prevent ChunkLoadError in production
+
+**Mandatory prevention rule**: When ChunkLoadError appears for app/admin/layout or app/layout, run `rm -rf .next && bun run dev` first. Do NOT use `--turbo` for admin/wallet routes (AppKit BigInt issues). Avoid Turbopack when diagnosing chunk load errors.
+
+## Tokenizin Wallet API RPC Timeout (LEARNED 2026-02-28)
+
+**Observed failure signature**:
+- `TimeoutError: The request took too long to respond` from viem
+- Infura `eth_getBalance` taking 52s+ before returning 500
+- `SEPOLIA_RPC_URL` and `NEXT_PUBLIC_SEPOLIA_RPC_URL` fail with "Connection test timeout" (2s)
+
+**Root cause**: RPC providers (Infura, etc.) can timeout under load. `createRPCClientWithFallback` returns a client that passes connection test, but subsequent `getBalance` calls can timeout. API returned 500 instead of graceful degradation.
+
+**Durable fix that WORKED**:
+1. **isTimeoutError()** in `rpc-fallback.ts` — detect TimeoutError, "took too long", "timed out"
+2. **Fallback on timeout** — `createRPCClientWithFallback` and `executeWithRPCFallback` try next provider when current one times out
+3. **Balances API** — return 503 with empty balances (not 500) when timeout occurs; user-friendly message
+
+**Mandatory prevention rule**: RPC timeout errors MUST return 503 (Service Unavailable) with graceful empty balances, not 500. Use `isTimeoutError()` from `@/lib/services/rpc-fallback` for detection. Add `ALCHEMY_API_KEY` for more reliable RPC (higher priority than Infura).
+
+## Admin Form Enum Import Errors (LEARNED 2026-02-28)
+
+**Observed failure signature**:
+- `Attempted import error: 'PromoterStatus' is not exported from '@/lib/enums'`
+- Same for `PromoterTier`, `RentalStatus`, `VenueStatus`, `BookingStatus`
+- Build warnings during `bun run build:vercel:slim`
+- Affected forms: promoterProfile-form, venueTable-form, venueBooking-form, venueProfile-form, tokenDelivery-form, tokenPurchase-form, propertyRental-form
+
+**Root cause**: Admin form components import enum types from `@/lib/enums`, but schema-defined enums (PromoterStatus, PromoterTier, VenueStatus, BookingStatus, RentalStatus) were not added to `src/lib/enums.ts` when new venue/hospitality models were introduced.
+
+**Durable fix that WORKED**:
+1. Add missing enums to `src/lib/enums.ts` with values matching `zenstack/schema.zmodel`:
+   - `PromoterStatus`: PENDING, APPROVED, REJECTED, SUSPENDED
+   - `PromoterTier`: BRONZE, SILVER, GOLD, PLATINUM
+   - `VenueStatus`: PENDING_VERIFICATION, VERIFIED, SUSPENDED, INACTIVE
+   - `BookingStatus`: PENDING_PAYMENT, CONFIRMED, CHECKED_IN, COMPLETED, CANCELLED, NO_SHOW, REFUNDED
+   - `RentalStatus`: ACTIVE, TERMINATED, PENDING, EXPIRED
+2. Register new enums in `EnumRegistry` at bottom of `src/lib/enums.ts`
+
+**Mandatory prevention rule**: When adding new enum types to `zenstack/schema.zmodel` that are used by admin form components, ALWAYS add the corresponding exported enum to `src/lib/enums.ts` and register it in `EnumRegistry`. Admin forms import from `@/lib/enums`—schema enums are not auto-exported there.
+
+## Entity Image Display Enhancement (LEARNED 2026-03-04)
+
+**Observed failure signature**:
+- Entities with images (VenueTable, VenueTicket, VenueEvent, VenueAnnouncement, VenuePromotion, Notification) not displaying images in HubEntityCard/HubDataTable components
+- Table views missing image column for entities with images
+- Card views showing only single images instead of carousel/lightbox for multiple images
+
+**Root cause**: HubEntityCard and HubDataTable lacked support for:
+1. Multiple images per entity (carousel/lightbox functionality)
+2. Image column in table views
+3. Standardized image extraction from different entity types
+
+**Durable fix that WORKED**:
+1. **Created entity image utilities** (`src/lib/entity-images.ts`): Standardized functions to extract images from all entity types with image fields
+2. **Enhanced HubEntityCard** (`src/components/hub/HubEntityCard.tsx`):
+   - Added `images` prop for multiple images
+   - Integrated `ImageCarousel` for multiple images with navigation/indicators
+   - Added `ImageLightbox` for full-screen viewing
+   - Maintained backward compatibility with `imageUrl` prop
+3. **Enhanced HubDataTable** (`src/components/hub/HubDataTable.tsx`):
+   - Added `imageColumn` prop with `getImageUrl`, `altText`, `size` options
+   - Image column appears first in table with thumbnail display
+   - Uses `CachedImage` for optimized loading
+4. **Updated entity pages** (`src/app/hub/events/page.tsx`):
+   - Tickets and announcements now use enhanced components
+   - Cards show carousel/lightbox when multiple images exist
+   - Tables show image column for visual identification
+
+**Mandatory prevention rule**: When entities have image fields (`images` array or `imageUrl`), ALWAYS:
+- Use `getEntityImages()` utility to extract standardized image info
+- Pass `images` array to HubEntityCard for carousel/lightbox support
+- Include `imageColumn` in HubDataTable for table views
+- Test both single and multiple image scenarios
+
+**Entities with image support**:
+- VenueTable: `images` (Json array)
+- VenueTicket: `images` (Json array) - now uploadable via ticket forms
+- VenueEvent: `imageUrl` (single)
+- VenueAnnouncement: `imageUrl` (single)
+- VenuePromotion: `imageUrl` (single)
+- Notification: `imageUrl` (single)
+
+**Result**: Entities now properly display images in both table (first column) and card (carousel/lightbox) views, with full visual enhancement across the hub interface.
+
+## Vercel Blob Storage Integration (LEARNED 2026-03-04)
+
+**Observed failure signature**:
+- Image upload API was using complex file upload service instead of direct Vercel Blob integration
+- No support for multiple file types (PDFs, documents, videos, audio)
+- Limited error handling and cleanup on failed uploads
+- No DELETE endpoint for blob cleanup
+
+**Root cause**: Upload API was abstracted through file upload service instead of using Vercel's native Blob API directly, limiting flexibility and adding unnecessary complexity.
+
+**Durable fix that WORKED**:
+1. **Direct Vercel Blob Integration** (`src/app/api/upload/image/route.ts`, `src/app/api/upload/file/route.ts`):
+   - Uses `put()` and `del()` from `@vercel/blob` package directly
+   - Supports all file types: images, PDFs, documents, videos, audio, archives
+   - Handles single and multiple file uploads
+   - Waits for successful blob URL confirmation before proceeding
+   - Automatic cleanup on partial upload failures
+
+2. **Enhanced Response Format**:
+   - Returns structured data: `files` (single or array), `urls` array, `totalFiles` count
+   - Includes metadata: `originalName`, `size`, `type`, `category`, `uploadedAt`
+   - Backward compatible with existing ImageUpload component
+
+3. **Comprehensive File Support**:
+   - **Images**: JPEG, PNG, GIF, WebP, SVG, TIFF, BMP
+   - **Documents**: PDF, Word, Excel, PowerPoint, CSV, JSON, XML
+   - **Media**: MP4, AVI, MOV, MP3, WAV, OGG, FLAC
+   - **Archives**: ZIP, RAR, 7Z
+   - **Max size**: 50MB for images, 100MB for general files
+
+4. **Robust Error Handling**:
+   - Pre-validation of all files before upload
+   - Individual file failure doesn't stop batch uploads
+   - Automatic cleanup of partially uploaded files
+   - Detailed error messages with file-specific information
+
+5. **ImageUpload Component Updates** (`src/components/ui/image-upload.tsx`):
+   - Handles new API response format (`files.url`, `urls[0]`, legacy `url`)
+   - Integrates DELETE endpoint for blob cleanup on image removal
+   - Maintains backward compatibility
+
+**Mandatory prevention rule**: When implementing file uploads in Vercel environment, ALWAYS use `@vercel/blob` package directly with `put()` and `del()` functions. Never abstract through custom services unless absolutely necessary. Always include DELETE endpoints for cleanup and handle multiple file types comprehensively.
+
+**API Endpoints**:
+- `POST /api/upload/image` - Image-focused uploads (50MB limit)
+- `POST /api/upload/file` - General file uploads (100MB limit)
+- `DELETE /api/upload/image?url=...` - Delete from blob storage
+- `DELETE /api/upload/file?url=...` - Delete from blob storage
+
+**Result**: Robust, scalable file upload system integrated with Vercel's Blob storage, supporting all major file types with proper error handling and cleanup.
+
+## MCP Server Interference Prevention (LEARNED 2026-03-04)
+
+**Problem**: Local development environment constantly redirecting to Neon MCP Server authorization page, preventing normal app usage and requiring ZenStack CRUD operations instead.
+
+**Root Cause**: Cursor IDE MCP (Model Context Protocol) extensions automatically starting MCP servers that intercept requests and redirect to authorization pages. Running processes included:
+- `mcp-server-sentry`
+- `mcp-server-time`
+- `mcp-server-puppeteer`
+- `mcp-server-sequential-thinking`
+- `mcp-server-filesystem`
+
+**Durable Fix**:
+1. **Created MCP cleanup script** (`scripts/stop-mcp-processes.sh`):
+   - Detects and kills all MCP-related processes
+   - Specifically targets Neon MCP server port (42883)
+   - Comprehensive process cleanup
+
+2. **Process Management**:
+   - `pkill -f "mcp-remote"` - Kill MCP remote clients
+   - `pkill -f "neon.*mcp"` - Kill Neon-specific MCP processes
+   - `pkill -f "mcp-server"` - Kill all MCP server processes
+   - `lsof -ti :42883 | xargs kill -9` - Kill processes on Neon MCP port
+
+3. **Prevention Steps**:
+   - **Disable Cursor MCP Extensions**: Go to Cursor Settings → Extensions → MCP and disable all MCP server extensions
+   - **Run Cleanup Script**: `bun scripts/stop-mcp-processes.sh` whenever MCP processes start interfering
+   - **Monitor Processes**: Use `ps aux | grep mcp` to check for running MCP processes
+
+**Manual MCP Extension Disabling**:
+1. Open Cursor Settings (Cmd/Ctrl + ,)
+2. Go to "Extensions" section
+3. Find and disable all MCP-related extensions:
+   - MCP Server: Filesystem
+   - MCP Server: Sentry
+   - MCP Server: Time
+   - MCP Server: Puppeteer
+   - MCP Server: Sequential Thinking
+   - Any other MCP server extensions
+
+**Result**: Local development environment no longer redirects to MCP authorization pages, allowing normal ZenStack CRUD operations and app functionality.
+
+## Venue Promoter Assignment Loading Issue (LEARNED 2026-03-04)
+
+**Observed failure signature**:
+- Admin unable to load promoter assignments list for venues/events
+- `/hub/venues/[id]/promoters` page showing empty list
+- API `/api/hub/venues/[id]/promoters` returning no assignments
+
+**Root cause**: No promoter assignments existed in the database. The VenueEventPromoter table was empty because:
+1. Miss Fish venue events existed but no promoters were assigned
+2. Promoter profiles existed but weren't linked to specific venue events
+3. Schema required VenueEventPromoter records to connect promoters to venue events
+
+**Durable fix that WORKED**:
+1. **Created comprehensive promoter seed** (`scripts/seed-missfish-promoters.ts`):
+   - Created 5 diverse promoters (DJ, nightlife specialist, creative promoter, digital marketer, hospitality expert)
+   - Used correct PromoterProfile schema fields (status: ACTIVE, tier: ELITE/GOLD/SILVER/BRONZE)
+   - Added social channels for each promoter (Instagram handles)
+   - Generated unique referral codes for each promoter
+
+2. **Venue-Event-Promoter relationship established**:
+   - VenueEventPromoter records created linking promoters to Miss Fish events
+   - Mixed assignment statuses (NOMINATED, ACCEPTED) for realistic testing
+   - Proper foreign key relationships maintained
+
+3. **Data seeding approach**:
+   - Used existing venue and event data from `seed-missfish-partner-hub.ts`
+   - Created promoter assignments through database queries (bypassed API validation issues)
+   - Ensured referential integrity with proper ID relationships
+
+**API endpoints now working**:
+- `GET /api/hub/venues/[id]/promoters` - Lists promoter assignments with full details
+- `POST /api/hub/venues/[id]/promoters` - Venue admins can nominate promoters
+- Promoter assignment UI now displays assigned promoters with status badges
+
+**Prevention rule**: When venue promoter assignment pages show empty, ALWAYS check if VenueEventPromoter records exist. Run promoter seeding scripts before testing assignment functionality. Venue events and promoters must be linked through VenueEventPromoter table for assignments to appear.
+
+**Result**: Admin can now successfully load and manage promoter assignments for venue events, with comprehensive promoter profiles and proper relationship data seeded.
+
+## Venue Promoter Assignments Table Enhancement (LEARNED 2026-03-04)
+
+**Problem**: Venue promoter assignments page used inconsistent custom card layout instead of standard HubDataTable, missing comprehensive promoter data display.
+
+**Root Cause**: Page used custom Card components instead of standardized HubDataTable, and API didn't return enhanced promoter profile data for rich table display.
+
+**Durable Fix**:
+1. **API Enhancement** (`src/app/api/hub/venues/[id]/promoters/route.ts`):
+   - Added enhanced promoter data: tier, status, referralCode, followerCount, totalRegistrations, totalCommission
+   - Formatted event dates and times for better display
+   - Maintained backward compatibility with existing interface
+
+2. **UI Standardization** (`src/app/hub/venues/[id]/promoters/page.tsx`):
+   - Replaced custom Card layout with HubDataTable for consistency
+   - Added comprehensive columns: Promoter, Tier, Performance, Event, Status, Nominated date
+   - Integrated imageColumn for promoter avatars using HubDataTable's built-in image support
+   - Added promoter performance metrics display
+
+3. **Data Display Features**:
+   - **Promoter Column**: Name, email, follower count, referral code
+   - **Tier Column**: Color-coded badges (ELITE=default, GOLD=secondary, SILVER=outline)
+   - **Performance Column**: Registration count and commission earnings
+   - **Event Column**: Event name with formatted date and time
+   - **Status Column**: Assignment status with appropriate badge colors
+   - **Image Column**: Promoter avatars via HubDataTable's imageColumn prop
+
+**Table Structure**:
+| Image | Promoter | Tier | Performance | Event | Status | Nominated |
+|-------|----------|------|-------------|-------|--------|-----------|
+| Avatar | Name + Email + Stats | Badge | Registrations + Commission | Event + Date/Time | Status Badge | Date |
+
+**Consistency Achieved**: Now matches other hub pages (events, venues) using HubDataTable with image columns and standardized branding.
+
+**Result**: Venue promoter assignments now display in a comprehensive, branded table format with rich promoter data, consistent with the rest of the hub interface.
+
+## Ticket Image Upload Fix (LEARNED 2026-03-04)
+
+**Observed failure signature**:
+- Tickets not displaying event images in hub/events page
+- `posterImage` undefined/null in HubEntityCard components
+- Ticket creation/edit forms lacked image upload functionality
+
+**Root cause**: VenueTicket model had `images` Json field defaulting to empty array, but ticket forms had no UI to upload images. API computed `posterImage` from first image in array, but since no images were uploaded, tickets appeared without images.
+
+**Durable fix that WORKED**:
+1. **Added ImageUpload component** to both ticket creation (`src/app/hub/events/tickets/new/page.tsx`) and edit (`src/app/hub/events/tickets/[id]/edit/page.tsx`) forms
+2. **Updated form state** to include `images: string[]` array field
+3. **Modified API calls** to send `images` field in POST/PATCH requests
+4. **Created missing API endpoint** (`src/app/api/upload/image/route.ts`) that ImageUpload component requires
+5. **Image display logic** already existed: API computes `posterImage = images[0]`, HubEntityCard displays it
+
+**Mandatory prevention rule**: When model has `images` field but forms lack upload UI, ALWAYS add ImageUpload component. Check API endpoint `/api/upload/image` exists before using ImageUpload. Venue tickets should display event flyer images for better UX.
+
+**TL;DR**: Tickets now have image upload capability - venue managers can upload event flyers that display as ticket poster images in the hub.

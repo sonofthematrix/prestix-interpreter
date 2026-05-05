@@ -1,0 +1,51 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/zenstack/schema": ["./zenstack/schema.ts"],
+      "@/zenstack/*": ["./zenstack/*"],
+      "@/generated/*": ["./src/generated/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/lib/utils/*": ["./src/lib/utils/*"],
+      "@/lib/db": ["./src/lib/db.ts"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/api/*": ["./src/api/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/styles/*": ["./src/styles/*"],
+      "@/server/*": ["./src/server/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "zenstack/schema.ts",
+    "zenstack/models.ts",
+    "zenstack/input.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/components/TokenizinRWAWallet/**/*",
+    "src/app/wallet/**/*",
+    "src/app/layout.tsx",
+    "src/lib/ai-model-analysis.ts",
+    "src/lib/ai-model-manager.ts",
+    "src/lib/ai-profile-customizer.ts",
+    "src/lib/system-alerting.ts",
+    "src/lib/mcp-integration.ts",
+    "src/lib/get-llm-text.ts",
+    "src/lib/services/conversation-persistence.ts",
+    "src/lib/services/file-upload-service.ts",
+    "src/lib/assets/documentation-image-matcher-client.ts",
+    "src/hooks/use-dynamic-model.ts",
+    "src/hooks/use-profile-data.ts",
+  ]
+}

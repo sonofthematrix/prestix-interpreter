@@ -1,0 +1,207 @@
+# Documentation Organization Rules for Cursor AI
+
+## 🎯 PRIMARY RULE: Documentation Location
+
+**ALL implementation documentation MUST be created in `/docs/` directory, NEVER in project root.**
+
+## 📁 Documentation Directory Structure
+
+```
+/docs/
+├── implementation/           # Implementation-related documentation
+│   ├── architecture/        # System architecture & design docs
+│   ├── best-practices/      # Best practices & patterns
+│   ├── development/         # Development workflows & guides
+│   ├── features/           # Feature-specific implementation docs
+│   ├── quick-start/        # Quick start implementation guides
+│   ├── setup/              # Setup & configuration guides
+│   └── user-docs/          # User-facing documentation
+├── guides/                  # General guides
+├── reference/               # Reference documentation & APIs
+└── quick-start/            # Quick start tutorials
+
+/stale-docs/                # Outdated/superseded documentation (gitignored)
+```
+
+## 📝 Documentation Placement Rules
+
+### Before Creating New Documentation:
+
+1. **CHECK EXISTING**: Search `/docs/` for related documentation
+2. **MERGE IF EXISTS**: Update existing doc instead of creating new one
+3. **CATEGORIZE**: Determine correct subdirectory based on content type
+4. **USE DESCRIPTIVE NAMES**: Use kebab-case, descriptive filenames
+
+### Documentation Categories:
+
+| Content Type | Location | Example |
+|-------------|----------|---------|
+| System architecture | `/docs/implementation/architecture/` | `authentication-system.md` |
+| Feature implementation | `/docs/implementation/features/` | `marketplace-grid.md` |
+| Setup/configuration | `/docs/implementation/setup/` | `database-setup.md` |
+| Development workflow | `/docs/implementation/development/` | `testing-workflow.md` |
+| Best practices | `/docs/implementation/best-practices/` | `api-patterns.md` |
+| Quick fixes/guides | `/docs/implementation/quick-start/` | `quick-fix-guide.md` |
+| User guides | `/docs/implementation/user-docs/` | `property-tokenization-guide.md` |
+| Integration guides | `/docs/guides/` | `qtech-integration.md` |
+| API references | `/docs/reference/` | `api-endpoints.md` |
+| General guides | `/docs/guides/` | `deployment.md` |
+
+## 🔄 Documentation Update Workflow
+
+### When Creating Documentation:
+
+```typescript
+// Pseudo-code workflow
+async function createDocumentation(content: string, topic: string) {
+  // 1. Search for existing documentation
+  const existingDocs = await searchDocs(topic);
+  
+  // 2. If exists, merge with existing
+  if (existingDocs.length > 0) {
+    const targetDoc = selectMostRelevant(existingDocs);
+    await mergeDocumentation(targetDoc, content);
+    return { action: 'merged', file: targetDoc };
+  }
+  
+  // 3. Determine category and location
+  const category = categorizeContent(content, topic);
+  const location = getLocationForCategory(category);
+  
+  // 4. Create new documentation
+  const filename = generateFilename(topic);
+  const fullPath = `${location}/${filename}`;
+  await createNewDoc(fullPath, content);
+  
+  return { action: 'created', file: fullPath };
+}
+```
+
+### When Documentation Becomes Stale:
+
+1. **DO NOT DELETE**: Move to `/stale-docs/` directory
+2. **ADD TIMESTAMP**: Prefix with date moved (YYYY-MM-DD)
+3. **UPDATE REFERENCES**: Update any links pointing to stale docs
+4. **LOG REASON**: Add note at top of file explaining why it's stale
+
+## 🚫 Stale Documentation Indicators
+
+Move documentation to `/stale-docs/` if:
+
+- ✅ Superseded by newer, more comprehensive documentation
+- ✅ Describes features/implementations that no longer exist
+- ✅ Contains outdated patterns or deprecated approaches
+- ✅ Temporary fix documentation after proper fix is implemented
+- ✅ Multiple docs covering same topic (keep most current/comprehensive)
+
+## 📋 Documentation Naming Conventions
+
+### Good Filenames:
+- `authentication-system.md` (descriptive, kebab-case)
+- `marketplace-grid-implementation.md` (specific feature)
+- `qtech-integration-guide.md` (clear purpose)
+- `quick-api-fix.md` (indicates quick reference)
+
+### Bad Filenames:
+- `fix.md` (too vague)
+- `TEMP_DOC.md` (indicates temporary, should be integrated)
+- `doc1.md` (non-descriptive)
+- `Implementation.md` (too broad, use PascalCase)
+
+## 🔍 Documentation Search Strategy
+
+Before creating new documentation, search for:
+
+1. **Exact topic match**: `authentication-system.md`
+2. **Related topics**: Files in same category
+3. **Keyword search**: Search file contents for related terms
+4. **Recently modified**: Check recent docs that might cover topic
+
+## 📊 Documentation Merge Strategy
+
+When merging with existing documentation:
+
+1. **Preserve structure**: Maintain existing organization
+2. **Add sections**: Insert new content in logical location
+3. **Update timestamps**: Add "Last Updated" date
+4. **Maintain history**: Keep changelog or revision history
+5. **Remove duplication**: Consolidate redundant information
+
+## ✅ Pre-Creation Checklist
+
+- [ ] Searched `/docs/` for existing related documentation
+- [ ] Determined correct category and subdirectory
+- [ ] Used descriptive, kebab-case filename
+- [ ] Added proper frontmatter/metadata
+- [ ] Included last updated date
+- [ ] Linked to related documentation
+- [ ] Added to relevant index/navigation if needed
+
+## 🎨 Documentation Template
+
+```markdown
+# [Title]
+
+> **Last Updated**: YYYY-MM-DD  
+> **Category**: [Architecture/Features/Setup/etc]  
+> **Status**: [Active/Draft/Supersedes: [old-doc.md]]
+
+## Overview
+
+Brief description of what this documentation covers.
+
+## [Main Content Sections]
+
+...
+
+## Related Documentation
+
+- [Related Doc 1](./related-doc-1.md)
+- [Related Doc 2](./related-doc-2.md)
+
+## Changelog
+
+- YYYY-MM-DD: Initial creation
+- YYYY-MM-DD: Updated with [description]
+```
+
+## 🚀 Quick Reference Commands
+
+```bash
+# Search for existing documentation
+grep -r "topic keyword" docs/
+
+# Find recently modified docs
+find docs/ -name "*.md" -mtime -7
+
+# Check documentation structure
+tree docs/ -L 2
+
+# Move stale documentation
+mv root-doc.md stale-docs/$(date +%Y-%m-%d)-root-doc.md
+```
+
+## 🔧 Automation Hints for AI
+
+When generating documentation:
+
+1. **Always invoke search** of `/docs/` directory first
+2. **Parse existing files** to detect content overlap
+3. **Suggest merge location** if overlap detected
+4. **Auto-categorize** based on content analysis
+5. **Generate proper filename** using topic keywords
+6. **Create in correct location** based on category
+7. **Never create in root** unless explicitly instructed
+
+## 📌 Key Principles
+
+1. **Single Source of Truth**: One comprehensive doc > multiple partial docs
+2. **Maintain History**: Move stale docs, don't delete
+3. **Logical Organization**: Category-based structure for easy discovery
+4. **Consistent Naming**: Kebab-case, descriptive, purposeful
+5. **Always Update**: Merge with existing rather than duplicate
+
+---
+
+**Remember**: When in doubt, search first, merge if found, create in `/docs/` if new!
+

@@ -1,0 +1,900 @@
+[
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔥 Core Operation Gas Analysis > Should measure gas costs for basic staking operations",
+    "operation": "User Stake Creation",
+    "gasUsed": 250160,
+    "parameters": {
+      "poolId": 1,
+      "amount": "1000 TPT"
+    },
+    "timestamp": 1762948282510
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should measure gas costs for pool operations",
+    "operation": "Pool Creation",
+    "gasUsed": 178637,
+    "parameters": {
+      "name": "Performance Test Pool",
+      "duration": "30 days",
+      "multiplier": "11500"
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (1 users)",
+    "gasUsed": 104168,
+    "parameters": {
+      "userCount": 1,
+      "poolId": 5
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (5 users)",
+    "gasUsed": 69968,
+    "parameters": {
+      "userCount": 5,
+      "poolId": 6
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (10 users)",
+    "gasUsed": 69968,
+    "parameters": {
+      "userCount": 10,
+      "poolId": 7
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (15 users)",
+    "gasUsed": 69968,
+    "parameters": {
+      "userCount": 15,
+      "poolId": 8
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 1 stakes",
+    "gasUsed": 104168,
+    "parameters": {
+      "stakeCount": 1,
+      "poolId": 1
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 3 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 3,
+      "poolId": 1
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 5 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 5,
+      "poolId": 1
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 8 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 8,
+      "poolId": 1
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 10 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 10,
+      "poolId": 1
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test performance with large stake amounts",
+    "operation": "Stake 1000.0 TPT",
+    "gasUsed": 250160,
+    "parameters": {
+      "amount": "1000.0 TPT"
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test performance with large stake amounts",
+    "operation": "Stake 10000.0 TPT",
+    "gasUsed": 198872,
+    "parameters": {
+      "amount": "10000.0 TPT"
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test performance with large stake amounts",
+    "operation": "Stake 50000.0 TPT",
+    "gasUsed": 198872,
+    "parameters": {
+      "amount": "50000.0 TPT"
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 1",
+    "gasUsed": 250160,
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 2",
+    "gasUsed": 198860,
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 3",
+    "gasUsed": 198860,
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 4",
+    "gasUsed": 198860,
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 5",
+    "gasUsed": 198860,
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Batch Revenue Allocation (5 users)",
+    "gasUsed": 104168,
+    "parameters": {
+      "userCount": 5
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 5)",
+    "gasUsed": 250160,
+    "parameters": {
+      "poolId": 5
+    },
+    "timestamp": 1762948282511
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 6)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 6
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 7)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 7
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 8)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 8
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 9)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 9
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 5)",
+    "gasUsed": 104168,
+    "parameters": {
+      "poolId": 5
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 6)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 6
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 7)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 7
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 8)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 8
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 9)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 9
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📊 Memory and Storage Efficiency > Should test storage efficiency with large datasets",
+    "operation": "Read User Total Staked",
+    "gasUsed": 0,
+    "parameters": {
+      "userIndex": 0,
+      "poolId": 1
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📊 Memory and Storage Efficiency > Should test storage efficiency with large datasets",
+    "operation": "Read User Stake Info",
+    "gasUsed": 0,
+    "parameters": {
+      "userIndex": 0,
+      "poolId": 1,
+      "stakeIndex": 0
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test computation efficiency for complex calculations",
+    "operation": "Complex Revenue Calculation",
+    "gasUsed": 104264,
+    "parameters": {
+      "userCount": 15,
+      "revenueAmount": "12345.6789 TPT",
+      "complexity": "varied stakes"
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should benchmark against gas limits",
+    "operation": "Max Scale Revenue (18 users)",
+    "gasUsed": 104240,
+    "parameters": {
+      "userCount": 18
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔧 Optimization Opportunities > Should identify gas optimization opportunities",
+    "operation": "First Stake (Cold Storage)",
+    "gasUsed": 104240,
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔧 Optimization Opportunities > Should identify gas optimization opportunities",
+    "operation": "Second Stake (Warm Storage)",
+    "gasUsed": 52940,
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 1000.0 TPT in Pool 1",
+    "gasUsed": 287975,
+    "parameters": {
+      "user": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "poolId": 1,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 5000.0 TPT in Pool 2",
+    "gasUsed": 253787,
+    "parameters": {
+      "user": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "poolId": 2,
+      "amount": "5000.0"
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 10000.0 TPT in Pool 3",
+    "gasUsed": 253787,
+    "parameters": {
+      "user": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "poolId": 3,
+      "amount": "10000.0"
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 25000.0 TPT in Pool 1",
+    "gasUsed": 222168,
+    "parameters": {
+      "user": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "poolId": 1,
+      "amount": "25000.0"
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 5000.0 TPT in Pool 2",
+    "gasUsed": 222168,
+    "parameters": {
+      "user": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "poolId": 2,
+      "amount": "5000.0"
+    },
+    "timestamp": 1762948282512
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Distribute Rewards to Pool 1",
+    "gasUsed": 82739,
+    "parameters": {
+      "poolId": 1,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Distribute Rewards to Pool 2",
+    "gasUsed": 65639,
+    "parameters": {
+      "poolId": 2,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Distribute Rewards to Pool 3",
+    "gasUsed": 65639,
+    "parameters": {
+      "poolId": 3,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔥 Core Operation Gas Analysis > Should measure gas costs for basic staking operations",
+    "operation": "User Stake Creation",
+    "gasUsed": 250160,
+    "parameters": {
+      "poolId": 1,
+      "amount": "1000 TPT"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should measure gas costs for pool operations",
+    "operation": "Pool Creation",
+    "gasUsed": 178637,
+    "parameters": {
+      "name": "Performance Test Pool",
+      "duration": "30 days",
+      "multiplier": "11500"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (1 users)",
+    "gasUsed": 104168,
+    "parameters": {
+      "userCount": 1,
+      "poolId": 5
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (5 users)",
+    "gasUsed": 69968,
+    "parameters": {
+      "userCount": 5,
+      "poolId": 6
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (10 users)",
+    "gasUsed": 69968,
+    "parameters": {
+      "userCount": 10,
+      "poolId": 7
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📈 Scalability Testing > Should test gas efficiency with increasing number of stakers",
+    "operation": "Revenue Allocation (15 users)",
+    "gasUsed": 69968,
+    "parameters": {
+      "userCount": 15,
+      "poolId": 8
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 1 stakes",
+    "gasUsed": 104168,
+    "parameters": {
+      "stakeCount": 1,
+      "poolId": 1
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 3 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 3,
+      "poolId": 1
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 5 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 5,
+      "poolId": 1
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 8 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 8,
+      "poolId": 1
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test gas efficiency with multiple stakes per user",
+    "operation": "Revenue for User with 10 stakes",
+    "gasUsed": 52868,
+    "parameters": {
+      "stakeCount": 10,
+      "poolId": 1
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test performance with large stake amounts",
+    "operation": "Stake 1000.0 TPT",
+    "gasUsed": 250160,
+    "parameters": {
+      "amount": "1000.0 TPT"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test performance with large stake amounts",
+    "operation": "Stake 10000.0 TPT",
+    "gasUsed": 198872,
+    "parameters": {
+      "amount": "10000.0 TPT"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test performance with large stake amounts",
+    "operation": "Stake 50000.0 TPT",
+    "gasUsed": 198872,
+    "parameters": {
+      "amount": "50000.0 TPT"
+    },
+    "timestamp": 1762948282513
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 1",
+    "gasUsed": 250160,
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 2",
+    "gasUsed": 198860,
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 3",
+    "gasUsed": 198860,
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 4",
+    "gasUsed": 198860,
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Sequential Stake 5",
+    "gasUsed": 198860,
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔄 Batch Operations Performance > Should compare sequential vs optimized operations",
+    "operation": "Batch Revenue Allocation (5 users)",
+    "gasUsed": 104168,
+    "parameters": {
+      "userCount": 5
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 5)",
+    "gasUsed": 250160,
+    "parameters": {
+      "poolId": 5
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 6)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 6
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 7)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 7
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 8)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 8
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Cross-Pool Stake (Pool 9)",
+    "gasUsed": 198860,
+    "parameters": {
+      "poolId": 9
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 5)",
+    "gasUsed": 104168,
+    "parameters": {
+      "poolId": 5
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 6)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 6
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 7)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 7
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 8)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 8
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test multiple pool operations efficiency",
+    "operation": "Multi-Pool Revenue (Pool 9)",
+    "gasUsed": 69968,
+    "parameters": {
+      "poolId": 9
+    },
+    "timestamp": 1762948282514
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📊 Memory and Storage Efficiency > Should test storage efficiency with large datasets",
+    "operation": "Read User Total Staked",
+    "gasUsed": 0,
+    "parameters": {
+      "userIndex": 0,
+      "poolId": 1
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "📊 Memory and Storage Efficiency > Should test storage efficiency with large datasets",
+    "operation": "Read User Stake Info",
+    "gasUsed": 0,
+    "parameters": {
+      "userIndex": 0,
+      "poolId": 1,
+      "stakeIndex": 0
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should test computation efficiency for complex calculations",
+    "operation": "Complex Revenue Calculation",
+    "gasUsed": 104264,
+    "parameters": {
+      "userCount": 15,
+      "revenueAmount": "12345.6789 TPT",
+      "complexity": "varied stakes"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "Should benchmark against gas limits",
+    "operation": "Max Scale Revenue (18 users)",
+    "gasUsed": 104240,
+    "parameters": {
+      "userCount": 18
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔧 Optimization Opportunities > Should identify gas optimization opportunities",
+    "operation": "First Stake (Cold Storage)",
+    "gasUsed": 104240,
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-performance.spec.ts",
+    "testName": "🔧 Optimization Opportunities > Should identify gas optimization opportunities",
+    "operation": "Second Stake (Warm Storage)",
+    "gasUsed": 52940,
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 1000.0 TPT in Pool 1",
+    "gasUsed": 287975,
+    "parameters": {
+      "user": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "poolId": 1,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 5000.0 TPT in Pool 2",
+    "gasUsed": 253787,
+    "parameters": {
+      "user": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "poolId": 2,
+      "amount": "5000.0"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 10000.0 TPT in Pool 3",
+    "gasUsed": 253787,
+    "parameters": {
+      "user": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "poolId": 3,
+      "amount": "10000.0"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 25000.0 TPT in Pool 1",
+    "gasUsed": 222168,
+    "parameters": {
+      "user": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "poolId": 1,
+      "amount": "25000.0"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Stake 5000.0 TPT in Pool 2",
+    "gasUsed": 222168,
+    "parameters": {
+      "user": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "poolId": 2,
+      "amount": "5000.0"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Distribute Rewards to Pool 1",
+    "gasUsed": 82739,
+    "parameters": {
+      "poolId": 1,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Distribute Rewards to Pool 2",
+    "gasUsed": 65639,
+    "parameters": {
+      "poolId": 2,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282515
+  },
+  {
+    "testFile": "ecosystem-integration.spec.ts",
+    "testName": "🎯 Complete User Journey - Multiple Users > Should handle complex multi-user staking scenario",
+    "operation": "Distribute Rewards to Pool 3",
+    "gasUsed": 65639,
+    "parameters": {
+      "poolId": 3,
+      "amount": "1000.0"
+    },
+    "timestamp": 1762948282515
+  }
+]
