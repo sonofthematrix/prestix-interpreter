@@ -34,6 +34,10 @@ type VoiceOverrides = {
   en: string;
   id: string;
 };
+type VoicePresetBank = {
+  en: string[];
+  id: string[];
+};
 type ConversationLogEntry = {
   id: string;
   timestamp: string;
@@ -161,6 +165,11 @@ const speechOutputTimeoutMs = 15000;
 const translationRequestTimeoutMs = 30000;
 const conversationLogStorageKey = "prestix-interpreter-conversation-log";
 const voiceOverridesStorageKey = "prestix-interpreter-voice-overrides";
+const voicePresetBankStorageKey = "prestix-interpreter-voice-preset-bank";
+const emptyVoicePresetBank: VoicePresetBank = {
+  en: ["", "", ""],
+  id: ["", "", ""],
+};
 const runtimeStatusMap: Record<RuntimeState, InterpreterStatus> = {
   idle: "READY",
   listening: "LISTENING",
@@ -450,6 +459,29 @@ function normalizeVoiceOverrides(value: unknown): VoiceOverrides {
   };
 }
 
+function normalizeVoicePresetBank(value: unknown): VoicePresetBank {
+  if (typeof value !== "object" || value === null) {
+    return emptyVoicePresetBank;
+  }
+
+  const record = value as Record<string, unknown>;
+  const normalizeSlots = (slots: unknown): string[] => {
+    if (!Array.isArray(slots)) {
+      return ["", "", ""];
+    }
+
+    return [0, 1, 2].map((index) => {
+      const slot = slots[index];
+      return typeof slot === "string" ? slot : "";
+    });
+  };
+
+  return {
+    en: normalizeSlots(record.en),
+    id: normalizeSlots(record.id),
+  };
+}
+
 function speakerLabel(speaker: SpeakerId): string {
   if (speaker === "speaker_a") {
     return "Speaker A";
@@ -491,6 +523,7 @@ export default function InterpreterPage() {
   const [speechBufferStatus, setSpeechBufferStatus] = useState<SpeechBufferStatus>("idle");
   const [activeSpeaker, setActiveSpeaker] = useState<SpeakerId>("unknown");
   const [voiceOverrides, setVoiceOverrides] = useState<VoiceOverrides>({ en: "", id: "" });
+  const [voicePresetBank, setVoicePresetBank] = useState<VoicePresetBank>(emptyVoicePresetBank);
   const [isTranslatorRunning, setIsTranslatorRunning] = useState(false);
   const [bufferLength, setBufferLength] = useState(0);
   const [recognitionRunning, setRecognitionRunning] = useState(false);
@@ -1552,6 +1585,31 @@ export default function InterpreterPage() {
       return;
     }
 
+    try {
+      const storedVoicePresetBank = window.localStorage.getItem(voicePresetBankStorageKey);
+      if (!storedVoicePresetBank) {
+        return;
+      }
+
+      setVoicePresetBank(normalizeVoicePresetBank(JSON.parse(storedVoicePresetBank) as unknown));
+    } catch {
+      setVoicePresetBank(emptyVoicePresetBank);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(voicePresetBankStorageKey, JSON.stringify(voicePresetBank));
+  }, [voicePresetBank]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     const handleManualFlush = (event: KeyboardEvent) => {
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
@@ -1720,6 +1778,51 @@ export default function InterpreterPage() {
                   <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
                     voice EN
                   </div>
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {voicePresetBank.en.map((preset, index) => (
+                      <button
+                        key={`voice-en-preset-${index + 1}`}
+                        type="button"
+                        onClick={() =>
+                          setVoiceOverrides((current) => ({
+                            ...current,
+                            en: preset,
+                          }))
+                        }
+                        className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
+                          preset
+                            ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
+                            : "border-white/5 bg-white/[0.02] text-white/20"
+                        }`}
+                      >
+                        P{index + 1}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVoicePresetBank((current) => ({
+                          ...current,
+                          en: [...current.en.slice(1), voiceOverrides.en.trim()],
+                        }))
+                      }
+                      className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
+                    >
+                      save current
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVoiceOverrides((current) => ({
+                          ...current,
+                          en: "",
+                        }))
+                      }
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/45 transition hover:text-white/75"
+                    >
+                      clear
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={voiceOverrides.en}
@@ -1740,6 +1843,51 @@ export default function InterpreterPage() {
                 <label className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
                   <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
                     voice ID
+                  </div>
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {voicePresetBank.id.map((preset, index) => (
+                      <button
+                        key={`voice-id-preset-${index + 1}`}
+                        type="button"
+                        onClick={() =>
+                          setVoiceOverrides((current) => ({
+                            ...current,
+                            id: preset,
+                          }))
+                        }
+                        className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
+                          preset
+                            ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
+                            : "border-white/5 bg-white/[0.02] text-white/20"
+                        }`}
+                      >
+                        P{index + 1}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVoicePresetBank((current) => ({
+                          ...current,
+                          id: [...current.id.slice(1), voiceOverrides.id.trim()],
+                        }))
+                      }
+                      className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
+                    >
+                      save current
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVoiceOverrides((current) => ({
+                          ...current,
+                          id: "",
+                        }))
+                      }
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/45 transition hover:text-white/75"
+                    >
+                      clear
+                    </button>
                   </div>
                   <input
                     type="text"
