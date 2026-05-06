@@ -8,6 +8,7 @@
 - output zichtbaar
 - speech output werkt
 - ElevenLabs TTS route aanwezig als preferred voice path; browser speechSynthesis blijft fallback
+- UI heeft aparte voice overrides voor EN en ID via localStorage
 - `/api/interpreter` werkt
 - learning module aanwezig
 - feedback route aanwezig

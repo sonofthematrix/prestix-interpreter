@@ -5,6 +5,7 @@ type InterpreterMode = "id-en" | "en-id";
 type RequestBody = {
   mode?: unknown;
   text?: unknown;
+  voiceIdOverride?: unknown;
 };
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,8 @@ export async function POST(request: NextRequest) {
 
   const text = typeof body.text === "string" ? body.text.trim() : "";
   const mode = isInterpreterMode(body.mode) ? body.mode : null;
+  const voiceIdOverride =
+    typeof body.voiceIdOverride === "string" ? body.voiceIdOverride.trim() : "";
 
   if (!text) {
     return errorResponse("Text is required.");
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.ELEVENLABS_API_KEY || "";
-  const voiceId = resolveVoiceId(mode);
+  const voiceId = voiceIdOverride || resolveVoiceId(mode);
 
   if (!apiKey || !voiceId) {
     return new NextResponse(null, { status: 204 });

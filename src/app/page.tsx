@@ -30,6 +30,10 @@ type ProviderInfo = {
   model: string;
   provider: string;
 };
+type VoiceOverrides = {
+  en: string;
+  id: string;
+};
 type ConversationLogEntry = {
   id: string;
   timestamp: string;
@@ -156,6 +160,7 @@ const storyBufferWindowMs = 3500;
 const speechOutputTimeoutMs = 15000;
 const translationRequestTimeoutMs = 30000;
 const conversationLogStorageKey = "prestix-interpreter-conversation-log";
+const voiceOverridesStorageKey = "prestix-interpreter-voice-overrides";
 const runtimeStatusMap: Record<RuntimeState, InterpreterStatus> = {
   idle: "READY",
   listening: "LISTENING",
@@ -433,6 +438,18 @@ function normalizeConversationLogEntry(value: unknown): ConversationLogEntry | n
   };
 }
 
+function normalizeVoiceOverrides(value: unknown): VoiceOverrides {
+  if (typeof value !== "object" || value === null) {
+    return { en: "", id: "" };
+  }
+
+  const record = value as Record<string, unknown>;
+  return {
+    en: typeof record.en === "string" ? record.en : "",
+    id: typeof record.id === "string" ? record.id : "",
+  };
+}
+
 function speakerLabel(speaker: SpeakerId): string {
   if (speaker === "speaker_a") {
     return "Speaker A";
@@ -473,6 +490,7 @@ export default function InterpreterPage() {
   const [captureMode, setCaptureMode] = useState<CaptureMode>("live");
   const [speechBufferStatus, setSpeechBufferStatus] = useState<SpeechBufferStatus>("idle");
   const [activeSpeaker, setActiveSpeaker] = useState<SpeakerId>("unknown");
+  const [voiceOverrides, setVoiceOverrides] = useState<VoiceOverrides>({ en: "", id: "" });
   const [isTranslatorRunning, setIsTranslatorRunning] = useState(false);
   const [bufferLength, setBufferLength] = useState(0);
   const [recognitionRunning, setRecognitionRunning] = useState(false);
@@ -1086,6 +1104,7 @@ export default function InterpreterPage() {
           body: JSON.stringify({
             mode: detectedMode,
             text,
+            voiceIdOverride: detectedMode === "id-en" ? voiceOverrides.en : voiceOverrides.id,
           }),
         });
       } catch (requestError) {
@@ -1144,7 +1163,7 @@ export default function InterpreterPage() {
 
       return playbackResult;
     },
-    [addSpeechDebug, stopAudioPlayback],
+    [addSpeechDebug, stopAudioPlayback, voiceOverrides.en, voiceOverrides.id],
   );
 
   const speakText = useCallback(
@@ -1508,6 +1527,31 @@ export default function InterpreterPage() {
       return;
     }
 
+    try {
+      const storedVoiceOverrides = window.localStorage.getItem(voiceOverridesStorageKey);
+      if (!storedVoiceOverrides) {
+        return;
+      }
+
+      setVoiceOverrides(normalizeVoiceOverrides(JSON.parse(storedVoiceOverrides) as unknown));
+    } catch {
+      setVoiceOverrides({ en: "", id: "" });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(voiceOverridesStorageKey, JSON.stringify(voiceOverrides));
+  }, [voiceOverrides]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     const handleManualFlush = (event: KeyboardEvent) => {
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
@@ -1669,6 +1713,50 @@ export default function InterpreterPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <label className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
+                    voice EN
+                  </div>
+                  <input
+                    type="text"
+                    value={voiceOverrides.en}
+                    onChange={(event) =>
+                      setVoiceOverrides((current) => ({
+                        ...current,
+                        en: event.target.value,
+                      }))
+                    }
+                    placeholder="default env voice"
+                    className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                  />
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
+                    used for ID -&gt; EN output
+                  </div>
+                </label>
+
+                <label className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
+                    voice ID
+                  </div>
+                  <input
+                    type="text"
+                    value={voiceOverrides.id}
+                    onChange={(event) =>
+                      setVoiceOverrides((current) => ({
+                        ...current,
+                        id: event.target.value,
+                      }))
+                    }
+                    placeholder="default env voice"
+                    className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                  />
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
+                    used for EN -&gt; ID output
+                  </div>
+                </label>
               </div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
