@@ -45,7 +45,10 @@ type VoicePresetBank = {
 type ElevenLabsVoiceOption = {
   id: string;
   label: string;
+  gender?: string;
+  accent?: string;
 };
+type SpeechOutputProvider = "pending" | "elevenlabs" | "browser" | "unsupported" | "error";
 type ConversationLogEntry = {
   id: string;
   timestamp: string;
@@ -522,6 +525,10 @@ function speakerLabel(speaker: SpeakerId): string {
   return "Unknown";
 }
 
+function formatVoiceTag(value?: string): string {
+  return value ? value.replace(/_/g, " ").trim() : "";
+}
+
 export default function InterpreterPage() {
   const [input, setInput] = useState("");
   const [liveTranscript, setLiveTranscript] = useState("");
@@ -554,6 +561,8 @@ export default function InterpreterPage() {
   const [voicePresetBank, setVoicePresetBank] = useState<VoicePresetBank>(emptyVoicePresetBank);
   const [voicePresetLabels, setVoicePresetLabels] = useState<VoiceOverrides>({ en: "", id: "" });
   const [availableVoices, setAvailableVoices] = useState<ElevenLabsVoiceOption[]>([]);
+  const [speechOutputProvider, setSpeechOutputProvider] =
+    useState<SpeechOutputProvider>("pending");
   const [isTranslatorRunning, setIsTranslatorRunning] = useState(false);
   const [bufferLength, setBufferLength] = useState(0);
   const [recognitionRunning, setRecognitionRunning] = useState(false);
@@ -1271,12 +1280,14 @@ export default function InterpreterPage() {
             if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
               setError("Speech synthesis is not supported in this browser.");
               setRuntimeState("error", "speech synthesis unsupported");
+              setSpeechOutputProvider("unsupported");
               addSpeechDebug("speech output error", "speech synthesis unsupported");
               addSpeechDebug("speech output done", "unsupported");
               return;
             }
 
             window.speechSynthesis.cancel();
+            setSpeechOutputProvider("browser");
 
             const utterance = new SpeechSynthesisUtterance(chunkText);
             utterance.lang = outputLanguage(detectedMode);
@@ -1301,6 +1312,7 @@ export default function InterpreterPage() {
 
             result = await resolveWithTimeout(speechPromise, speechOutputTimeoutMs, "timeout");
           } else {
+            setSpeechOutputProvider("elevenlabs");
             addSpeechDebug("speech output provider", "elevenlabs");
           }
 
@@ -1310,6 +1322,7 @@ export default function InterpreterPage() {
         }
       } catch (speechError) {
         result = "error";
+        setSpeechOutputProvider("error");
         addSpeechDebug("speech output error", getErrorMessage(speechError));
       } finally {
         speakingRef.current = false;
@@ -1661,12 +1674,28 @@ export default function InterpreterPage() {
         }
 
         const data = (await response.json()) as { voices?: ElevenLabsVoiceOption[] };
-        setAvailableVoices(Array.isArray(data.voices) ? data.voices : []);
+        const voices = Array.isArray(data.voices) ? data.voices : [];
+        const favoriteVoiceIds = new Set(
+          [...voicePresetBank.en, ...voicePresetBank.id]
+            .map((preset) => preset.id)
+            .filter(Boolean),
+        );
+        setAvailableVoices(
+          voices.slice().sort((a, b) => {
+            const aFavorite = favoriteVoiceIds.has(a.id) ? 1 : 0;
+            const bFavorite = favoriteVoiceIds.has(b.id) ? 1 : 0;
+            if (aFavorite !== bFavorite) {
+              return bFavorite - aFavorite;
+            }
+
+            return a.label.localeCompare(b.label);
+          }),
+        );
       } catch {
         setAvailableVoices([]);
       }
     })();
-  }, []);
+  }, [voicePresetBank]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1789,6 +1818,7 @@ export default function InterpreterPage() {
                 <span>RECOG {recognitionRunning ? "YES" : "NO"}</span>
                 <span>TRANSLATOR {isTranslatorRunning ? "RUNNING" : "IDLE"}</span>
                 <span>BUFFERING {speechBufferStatus.toUpperCase()}</span>
+                <span>VOICE OUT {speechOutputProvider.toUpperCase()}</span>
               </div>
 
               <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.7fr)]">
@@ -1929,6 +1959,8 @@ export default function InterpreterPage() {
                     {availableVoices.map((voice) => (
                       <option key={`en-${voice.id}`} value={voice.id}>
                         {voice.label}
+                        {voice.gender ? ` · ${formatVoiceTag(voice.gender)}` : ""}
+                        {voice.accent ? ` · ${formatVoiceTag(voice.accent)}` : ""}
                       </option>
                     ))}
                   </select>
@@ -1946,6 +1978,25 @@ export default function InterpreterPage() {
                   />
                   <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
                     used for ID -&gt; EN output
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-white/35">
+                    {voiceOverrides.en
+                      ? availableVoices
+                          .filter((voice) => voice.id === voiceOverrides.en)
+                          .flatMap((voice) =>
+                            [voice.gender, voice.accent]
+                              .map((tag) => formatVoiceTag(tag))
+                              .filter(Boolean)
+                              .map((tag) => (
+                                <span
+                                  key={`en-tag-${tag}`}
+                                  className="rounded-full border border-white/10 px-2 py-1"
+                                >
+                                  {tag}
+                                </span>
+                              )),
+                          )
+                      : null}
                   </div>
                 </label>
 
@@ -2041,6 +2092,8 @@ export default function InterpreterPage() {
                     {availableVoices.map((voice) => (
                       <option key={`id-${voice.id}`} value={voice.id}>
                         {voice.label}
+                        {voice.gender ? ` · ${formatVoiceTag(voice.gender)}` : ""}
+                        {voice.accent ? ` · ${formatVoiceTag(voice.accent)}` : ""}
                       </option>
                     ))}
                   </select>
@@ -2058,6 +2111,25 @@ export default function InterpreterPage() {
                   />
                   <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
                     used for EN -&gt; ID output
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-white/35">
+                    {voiceOverrides.id
+                      ? availableVoices
+                          .filter((voice) => voice.id === voiceOverrides.id)
+                          .flatMap((voice) =>
+                            [voice.gender, voice.accent]
+                              .map((tag) => formatVoiceTag(tag))
+                              .filter(Boolean)
+                              .map((tag) => (
+                                <span
+                                  key={`id-tag-${tag}`}
+                                  className="rounded-full border border-white/10 px-2 py-1"
+                                >
+                                  {tag}
+                                </span>
+                              )),
+                          )
+                      : null}
                   </div>
                 </label>
               </div>

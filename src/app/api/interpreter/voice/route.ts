@@ -69,12 +69,9 @@ async function listVoices() {
       ? data.voices
           .map((voice) => ({
             id: typeof voice.voice_id === "string" ? voice.voice_id : "",
-            label:
-              typeof voice.name === "string"
-                ? voice.name
-                : typeof voice.labels?.accent === "string"
-                  ? voice.labels.accent
-                  : "",
+            label: typeof voice.name === "string" ? voice.name : "",
+            gender: typeof voice.labels?.gender === "string" ? voice.labels.gender : "",
+            accent: typeof voice.labels?.accent === "string" ? voice.labels.accent : "",
           }))
           .filter((voice) => voice.id && voice.label)
       : [];
