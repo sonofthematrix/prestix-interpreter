@@ -481,11 +481,20 @@ function buildProviderResolution(): ProviderResolution {
   const localProviderRequested =
     process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "ollama" ||
     process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "local" ||
-    Boolean(process.env.OLLAMA_BASE_URL);
+    Boolean(process.env.OLLAMA_BASE_URL) ||
+    Boolean(process.env.OLLAMA_HOST) ||
+    Boolean(process.env.OLLAMA_TRANSLATION_MODEL);
 
   if (localProviderRequested) {
-    const baseUrl = (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/+$/, "");
-    const model = process.env.OLLAMA_MODEL || "llama3.1";
+    const baseUrl = (
+      process.env.OLLAMA_BASE_URL ||
+      process.env.OLLAMA_HOST ||
+      "http://localhost:11434"
+    ).replace(/\/+$/, "");
+    const model =
+      process.env.OLLAMA_TRANSLATION_MODEL ||
+      process.env.OLLAMA_MODEL ||
+      "llama3.1";
     providers.push({
       provider: "local",
       model,
@@ -500,7 +509,7 @@ function buildProviderResolution(): ProviderResolution {
     });
   } else {
     fallbackChainTried.push(
-      "provider skipped: local missing OLLAMA_BASE_URL/PRESTIX_SANDBOX_TEXT_PROVIDER",
+      "provider skipped: local missing OLLAMA_BASE_URL/OLLAMA_HOST/PRESTIX_SANDBOX_TEXT_PROVIDER",
     );
   }
 

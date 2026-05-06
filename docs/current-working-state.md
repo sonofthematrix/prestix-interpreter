@@ -17,7 +17,7 @@ The current rule is: preserve the working interpreter and improve it one roadmap
 - Main interpreter page: `src/app/page.tsx`
 - Typed input creates conversation entries and queues translation.
 - Browser SpeechRecognition is wired for speech input.
-- Browser speechSynthesis is wired for spoken output.
+- Spoken output now prefers ElevenLabs server-side TTS when configured and falls back to browser speechSynthesis.
 - LIVE and STORY capture modes exist.
 - Speech transcript buffering exists.
 - Manual buffer flush exists.
@@ -53,10 +53,11 @@ Provider routing is internal. Users should not get a model picker.
 
 Current provider router order, when configured:
 
-1. Tokenizin-compatible OpenAI endpoint
-2. DeepSeek
-3. OpenAI
+1. OpenAI
+2. Gemini
+3. DeepSeek
 4. Local/Ollama
+5. Tokenizin-compatible endpoint
 
 The app may expose non-secret runtime metadata such as provider, model name, fallback status, learning match count, and learning types used.
 
@@ -73,6 +74,7 @@ Never expose:
 - This directory does not currently appear to be a git repository from the working path; `git status` fails with `not a git repository`.
 - Existing docs mention repo-wide type-check errors outside interpreter changes. Do not treat unrelated type-check failures as part of an interpreter phase unless the task explicitly asks for it.
 - Browser SpeechRecognition support depends on the browser. Unsupported browsers should stay non-fatal and show a clear error.
+- ElevenLabs voice requires env configuration. Without `ELEVENLABS_API_KEY` plus a voice id, the app intentionally falls back to browser speech synthesis.
 - Real automatic speaker diarization is not implemented. Browser SpeechRecognition alone is not enough for reliable diarization.
 - Conversation persistence is browser localStorage, not server/database storage.
 - Learning persistence is JSON-backed at `data/interpreter-learning.json`, not database-backed.

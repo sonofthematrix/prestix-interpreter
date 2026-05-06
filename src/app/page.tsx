@@ -245,6 +245,61 @@ function outputLanguage(mode: InterpreterMode): string {
   return mode === "id-en" ? "en-US" : "id-ID";
 }
 
+function splitSpeechChunks(text: string): string[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return [];
+  }
+
+  const sentenceChunks = normalized
+    .split(/(?<=[.!?])\s+/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  if (sentenceChunks.length === 0) {
+    return [normalized];
+  }
+
+  const chunks: string[] = [];
+
+  for (const sentence of sentenceChunks) {
+    if (sentence.length <= 220) {
+      chunks.push(sentence);
+      continue;
+    }
+
+    const clauseChunks = sentence
+      .split(/(?<=[,;:])\s+/)
+      .map((chunk) => chunk.trim())
+      .filter(Boolean);
+
+    if (clauseChunks.length === 0) {
+      chunks.push(sentence);
+      continue;
+    }
+
+    let currentChunk = "";
+
+    for (const clause of clauseChunks) {
+      const nextChunk = currentChunk ? `${currentChunk} ${clause}` : clause;
+
+      if (nextChunk.length > 220 && currentChunk) {
+        chunks.push(currentChunk);
+        currentChunk = clause;
+        continue;
+      }
+
+      currentChunk = nextChunk;
+    }
+
+    if (currentChunk) {
+      chunks.push(currentChunk);
+    }
+  }
+
+  return chunks;
+}
+
 function getBufferWindowMs(captureMode: CaptureMode): number {
   return captureMode === "live" ? liveBufferWindowMs : storyBufferWindowMs;
 }
@@ -445,6 +500,8 @@ export default function InterpreterPage() {
   const translationQueueRef = useRef<string[]>([]);
   const isTranslatorRunningRef = useRef(false);
   const processTranslationQueueRef = useRef<() => void>(() => {});
+  const audioPlaybackRef = useRef<HTMLAudioElement | null>(null);
+  const audioObjectUrlRef = useRef<string | null>(null);
 
   const clearRecognitionRestartTimer = useCallback(() => {
     if (restartTimerRef.current !== null) {
@@ -457,6 +514,19 @@ export default function InterpreterPage() {
     if (transcriptBufferTimerRef.current !== null) {
       clearTimeout(transcriptBufferTimerRef.current);
       transcriptBufferTimerRef.current = null;
+    }
+  }, []);
+
+  const stopAudioPlayback = useCallback(() => {
+    if (audioPlaybackRef.current !== null) {
+      audioPlaybackRef.current.pause();
+      audioPlaybackRef.current.src = "";
+      audioPlaybackRef.current = null;
+    }
+
+    if (audioObjectUrlRef.current !== null) {
+      URL.revokeObjectURL(audioObjectUrlRef.current);
+      audioObjectUrlRef.current = null;
     }
   }, []);
 
@@ -998,6 +1068,85 @@ export default function InterpreterPage() {
     enableSpeechRecognition();
   }, [addSpeechDebug, createConversationSegment, enableSpeechRecognition, input]);
 
+  const playElevenLabsSpeech = useCallback(
+    async (
+      text: string,
+      detectedMode: InterpreterMode,
+    ): Promise<"ended" | "error" | "timeout" | "skipped"> => {
+      stopAudioPlayback();
+
+      let response: Response;
+
+      try {
+        response = await fetch("/api/interpreter/voice", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            mode: detectedMode,
+            text,
+          }),
+        });
+      } catch (requestError) {
+        addSpeechDebug("elevenlabs error", getErrorMessage(requestError));
+        return "error";
+      }
+
+      if (response.status === 204) {
+        addSpeechDebug("elevenlabs skipped", "not configured");
+        return "skipped";
+      }
+
+      if (!response.ok) {
+        const errorData = await readInterpreterJson(response);
+        const message =
+          readResponseString(errorData, "error") ||
+          `ElevenLabs request failed with status ${response.status}.`;
+        addSpeechDebug("elevenlabs error", message);
+        return "error";
+      }
+
+      const audioBlob = await response.blob();
+      if (audioBlob.size === 0) {
+        addSpeechDebug("elevenlabs error", "empty audio response");
+        return "error";
+      }
+
+      const objectUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(objectUrl);
+      audioObjectUrlRef.current = objectUrl;
+      audioPlaybackRef.current = audio;
+
+      const playbackPromise = new Promise<"ended" | "error">((resolve) => {
+        audio.onended = () => {
+          resolve("ended");
+        };
+
+        audio.onerror = () => {
+          resolve("error");
+        };
+
+        void audio.play().catch(() => {
+          resolve("error");
+        });
+      });
+
+      const playbackResult = await resolveWithTimeout(
+        playbackPromise,
+        speechOutputTimeoutMs,
+        "timeout",
+      );
+
+      if (playbackResult !== "ended") {
+        stopAudioPlayback();
+      }
+
+      return playbackResult;
+    },
+    [addSpeechDebug, stopAudioPlayback],
+  );
+
   const speakText = useCallback(
     async (text: string, detectedMode: InterpreterMode) => {
       if (typeof window === "undefined") {
@@ -1006,16 +1155,9 @@ export default function InterpreterPage() {
 
       addSpeechDebug("speech output started", outputLanguage(detectedMode));
 
-      if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
-        setError("Speech synthesis is not supported in this browser.");
-        setRuntimeState("error", "speech synthesis unsupported");
-        addSpeechDebug("speech output error", "speech synthesis unsupported");
-        addSpeechDebug("speech output done", "unsupported");
-        return;
-      }
-
       speakingRef.current = true;
       let result: "ended" | "error" | "timeout" = "timeout";
+      const speechChunks = splitSpeechChunks(text);
 
       try {
         if (recognitionRunningRef.current || isListeningRef.current || isStartingRef.current) {
@@ -1024,30 +1166,53 @@ export default function InterpreterPage() {
         }
 
         setRuntimeState("speaking", "translated");
-        window.speechSynthesis.cancel();
+        addSpeechDebug("speech chunk count", String(speechChunks.length || 1));
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = outputLanguage(detectedMode);
-        utterance.rate = 0.98;
+        for (const [chunkIndex, chunkText] of (speechChunks.length > 0 ? speechChunks : [text]).entries()) {
+          addSpeechDebug("speech chunk start", `${chunkIndex + 1}/${speechChunks.length || 1}`);
+          result = await playElevenLabsSpeech(chunkText, detectedMode);
 
-        const speechPromise = new Promise<"ended" | "error">((resolve) => {
-          utterance.onstart = () => {
-            setRuntimeState("speaking", "speech output onstart");
-          };
+          if (result === "skipped") {
+            if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+              setError("Speech synthesis is not supported in this browser.");
+              setRuntimeState("error", "speech synthesis unsupported");
+              addSpeechDebug("speech output error", "speech synthesis unsupported");
+              addSpeechDebug("speech output done", "unsupported");
+              return;
+            }
 
-          utterance.onend = () => {
-            resolve("ended");
-          };
+            window.speechSynthesis.cancel();
 
-          utterance.onerror = () => {
-            addSpeechDebug("speech output error", "speech synthesis error");
-            resolve("error");
-          };
+            const utterance = new SpeechSynthesisUtterance(chunkText);
+            utterance.lang = outputLanguage(detectedMode);
+            utterance.rate = 0.98;
 
-          window.speechSynthesis.speak(utterance);
-        });
+            const speechPromise = new Promise<"ended" | "error">((resolve) => {
+              utterance.onstart = () => {
+                setRuntimeState("speaking", "speech output onstart");
+              };
 
-        result = await resolveWithTimeout(speechPromise, speechOutputTimeoutMs, "timeout");
+              utterance.onend = () => {
+                resolve("ended");
+              };
+
+              utterance.onerror = () => {
+                addSpeechDebug("speech output error", "speech synthesis error");
+                resolve("error");
+              };
+
+              window.speechSynthesis.speak(utterance);
+            });
+
+            result = await resolveWithTimeout(speechPromise, speechOutputTimeoutMs, "timeout");
+          } else {
+            addSpeechDebug("speech output provider", "elevenlabs");
+          }
+
+          if (result !== "ended") {
+            break;
+          }
+        }
       } catch (speechError) {
         result = "error";
         addSpeechDebug("speech output error", getErrorMessage(speechError));
@@ -1055,6 +1220,7 @@ export default function InterpreterPage() {
         speakingRef.current = false;
 
         if (result === "timeout") {
+          stopAudioPlayback();
           window.speechSynthesis.cancel();
           setRuntimeState(
             shouldKeepListeningRef.current ? "listening" : "idle",
@@ -1101,9 +1267,11 @@ export default function InterpreterPage() {
     [
       addSpeechDebug,
       clearRecognitionRestartTimer,
+      playElevenLabsSpeech,
       safeStartRecognition,
       safeStopRecognition,
       setRuntimeState,
+      stopAudioPlayback,
     ],
   );
 
@@ -1385,12 +1553,13 @@ export default function InterpreterPage() {
       }
       translationQueueRef.current = [];
       safeStopRecognition("unmount");
+      stopAudioPlayback();
 
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [safeStopRecognition]);
+  }, [safeStopRecognition, stopAudioPlayback]);
 
   const displayStatus: InterpreterStatus =
     status === "READY" && isListening ? "LISTENING" : status;
