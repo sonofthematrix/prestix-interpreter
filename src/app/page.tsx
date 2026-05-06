@@ -34,9 +34,17 @@ type VoiceOverrides = {
   en: string;
   id: string;
 };
+type VoicePreset = {
+  id: string;
+  label: string;
+};
 type VoicePresetBank = {
-  en: string[];
-  id: string[];
+  en: VoicePreset[];
+  id: VoicePreset[];
+};
+type ElevenLabsVoiceOption = {
+  id: string;
+  label: string;
 };
 type ConversationLogEntry = {
   id: string;
@@ -167,8 +175,16 @@ const conversationLogStorageKey = "prestix-interpreter-conversation-log";
 const voiceOverridesStorageKey = "prestix-interpreter-voice-overrides";
 const voicePresetBankStorageKey = "prestix-interpreter-voice-preset-bank";
 const emptyVoicePresetBank: VoicePresetBank = {
-  en: ["", "", ""],
-  id: ["", "", ""],
+  en: [
+    { id: "", label: "" },
+    { id: "", label: "" },
+    { id: "", label: "" },
+  ],
+  id: [
+    { id: "", label: "" },
+    { id: "", label: "" },
+    { id: "", label: "" },
+  ],
 };
 const runtimeStatusMap: Record<RuntimeState, InterpreterStatus> = {
   idle: "READY",
@@ -465,14 +481,26 @@ function normalizeVoicePresetBank(value: unknown): VoicePresetBank {
   }
 
   const record = value as Record<string, unknown>;
-  const normalizeSlots = (slots: unknown): string[] => {
+  const normalizeSlots = (slots: unknown): VoicePreset[] => {
     if (!Array.isArray(slots)) {
-      return ["", "", ""];
+      return emptyVoicePresetBank.en;
     }
 
     return [0, 1, 2].map((index) => {
       const slot = slots[index];
-      return typeof slot === "string" ? slot : "";
+      if (typeof slot === "string") {
+        return { id: slot, label: "" };
+      }
+
+      if (typeof slot === "object" && slot !== null) {
+        const slotRecord = slot as Record<string, unknown>;
+        return {
+          id: typeof slotRecord.id === "string" ? slotRecord.id : "",
+          label: typeof slotRecord.label === "string" ? slotRecord.label : "",
+        };
+      }
+
+      return { id: "", label: "" };
     });
   };
 
@@ -524,6 +552,8 @@ export default function InterpreterPage() {
   const [activeSpeaker, setActiveSpeaker] = useState<SpeakerId>("unknown");
   const [voiceOverrides, setVoiceOverrides] = useState<VoiceOverrides>({ en: "", id: "" });
   const [voicePresetBank, setVoicePresetBank] = useState<VoicePresetBank>(emptyVoicePresetBank);
+  const [voicePresetLabels, setVoicePresetLabels] = useState<VoiceOverrides>({ en: "", id: "" });
+  const [availableVoices, setAvailableVoices] = useState<ElevenLabsVoiceOption[]>([]);
   const [isTranslatorRunning, setIsTranslatorRunning] = useState(false);
   const [bufferLength, setBufferLength] = useState(0);
   const [recognitionRunning, setRecognitionRunning] = useState(false);
@@ -1199,6 +1229,19 @@ export default function InterpreterPage() {
     [addSpeechDebug, stopAudioPlayback, voiceOverrides.en, voiceOverrides.id],
   );
 
+  const testVoice = useCallback(
+    async (language: "en" | "id") => {
+      const sampleText =
+        language === "en"
+          ? "This is a Prestix Interpreter voice test."
+          : "Ini adalah tes suara Prestix Interpreter.";
+      const sampleMode: InterpreterMode = language === "en" ? "id-en" : "en-id";
+
+      await playElevenLabsSpeech(sampleText, sampleMode);
+    },
+    [playElevenLabsSpeech],
+  );
+
   const speakText = useCallback(
     async (text: string, detectedMode: InterpreterMode) => {
       if (typeof window === "undefined") {
@@ -1610,6 +1653,26 @@ export default function InterpreterPage() {
       return;
     }
 
+    void (async () => {
+      try {
+        const response = await fetch("/api/interpreter/voice?action=voices");
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { voices?: ElevenLabsVoiceOption[] };
+        setAvailableVoices(Array.isArray(data.voices) ? data.voices : []);
+      } catch {
+        setAvailableVoices([]);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     const handleManualFlush = (event: KeyboardEvent) => {
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
@@ -1786,16 +1849,16 @@ export default function InterpreterPage() {
                         onClick={() =>
                           setVoiceOverrides((current) => ({
                             ...current,
-                            en: preset,
+                            en: preset.id,
                           }))
                         }
                         className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
-                          preset
+                          preset.id
                             ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
                             : "border-white/5 bg-white/[0.02] text-white/20"
                         }`}
                       >
-                        P{index + 1}
+                        {preset.label || `P${index + 1}`}
                       </button>
                     ))}
                     <button
@@ -1803,7 +1866,13 @@ export default function InterpreterPage() {
                       onClick={() =>
                         setVoicePresetBank((current) => ({
                           ...current,
-                          en: [...current.en.slice(1), voiceOverrides.en.trim()],
+                          en: [
+                            ...current.en.slice(1),
+                            {
+                              id: voiceOverrides.en.trim(),
+                              label: voicePresetLabels.en.trim(),
+                            },
+                          ],
                         }))
                       }
                       className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
@@ -1822,7 +1891,47 @@ export default function InterpreterPage() {
                     >
                       clear
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => void testVoice("en")}
+                      className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-100 transition hover:border-sky-300/50"
+                    >
+                      test voice
+                    </button>
                   </div>
+                  <input
+                    type="text"
+                    value={voicePresetLabels.en}
+                    onChange={(event) =>
+                      setVoicePresetLabels((current) => ({
+                        ...current,
+                        en: event.target.value,
+                      }))
+                    }
+                    placeholder="preset label"
+                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                  />
+                  <select
+                    value=""
+                    onChange={(event) => {
+                      if (!event.target.value) {
+                        return;
+                      }
+
+                      setVoiceOverrides((current) => ({
+                        ...current,
+                        en: event.target.value,
+                      }));
+                    }}
+                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none focus:border-emerald-300/40"
+                  >
+                    <option value="">Pick ElevenLabs voice</option>
+                    {availableVoices.map((voice) => (
+                      <option key={`en-${voice.id}`} value={voice.id}>
+                        {voice.label}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="text"
                     value={voiceOverrides.en}
@@ -1852,16 +1961,16 @@ export default function InterpreterPage() {
                         onClick={() =>
                           setVoiceOverrides((current) => ({
                             ...current,
-                            id: preset,
+                            id: preset.id,
                           }))
                         }
                         className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
-                          preset
+                          preset.id
                             ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
                             : "border-white/5 bg-white/[0.02] text-white/20"
                         }`}
                       >
-                        P{index + 1}
+                        {preset.label || `P${index + 1}`}
                       </button>
                     ))}
                     <button
@@ -1869,7 +1978,13 @@ export default function InterpreterPage() {
                       onClick={() =>
                         setVoicePresetBank((current) => ({
                           ...current,
-                          id: [...current.id.slice(1), voiceOverrides.id.trim()],
+                          id: [
+                            ...current.id.slice(1),
+                            {
+                              id: voiceOverrides.id.trim(),
+                              label: voicePresetLabels.id.trim(),
+                            },
+                          ],
                         }))
                       }
                       className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
@@ -1888,7 +2003,47 @@ export default function InterpreterPage() {
                     >
                       clear
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => void testVoice("id")}
+                      className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-100 transition hover:border-sky-300/50"
+                    >
+                      test voice
+                    </button>
                   </div>
+                  <input
+                    type="text"
+                    value={voicePresetLabels.id}
+                    onChange={(event) =>
+                      setVoicePresetLabels((current) => ({
+                        ...current,
+                        id: event.target.value,
+                      }))
+                    }
+                    placeholder="preset label"
+                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                  />
+                  <select
+                    value=""
+                    onChange={(event) => {
+                      if (!event.target.value) {
+                        return;
+                      }
+
+                      setVoiceOverrides((current) => ({
+                        ...current,
+                        id: event.target.value,
+                      }));
+                    }}
+                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none focus:border-emerald-300/40"
+                  >
+                    <option value="">Pick ElevenLabs voice</option>
+                    {availableVoices.map((voice) => (
+                      <option key={`id-${voice.id}`} value={voice.id}>
+                        {voice.label}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="text"
                     value={voiceOverrides.id}

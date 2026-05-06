@@ -38,6 +38,63 @@ function errorResponse(error: string, status = 400) {
   return NextResponse.json({ error }, { status });
 }
 
+async function listVoices() {
+  const apiKey = process.env.ELEVENLABS_API_KEY || "";
+  if (!apiKey) {
+    return NextResponse.json({ voices: [] }, { status: 200 });
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, elevenLabsTimeoutMs);
+
+  try {
+    const response = await fetch("https://api.elevenlabs.io/v1/voices", {
+      headers: {
+        "xi-api-key": apiKey,
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      return NextResponse.json({ voices: [] }, { status: 200 });
+    }
+
+    const data = (await response.json()) as {
+      voices?: Array<{ voice_id?: string; name?: string; labels?: Record<string, string> }>;
+    };
+
+    const voices = Array.isArray(data.voices)
+      ? data.voices
+          .map((voice) => ({
+            id: typeof voice.voice_id === "string" ? voice.voice_id : "",
+            label:
+              typeof voice.name === "string"
+                ? voice.name
+                : typeof voice.labels?.accent === "string"
+                  ? voice.labels.accent
+                  : "",
+          }))
+          .filter((voice) => voice.id && voice.label)
+      : [];
+
+    return NextResponse.json({
+      voices,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.get("action") === "voices") {
+    return listVoices();
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(request: NextRequest) {
   let body: RequestBody;
 
