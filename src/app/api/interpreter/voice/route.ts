@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { shouldSkipElevenLabsError } from "@/lib/interpreter/elevenlabsError";
 
 type InterpreterMode = "id-en" | "en-id";
 
@@ -149,6 +150,9 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      if (shouldSkipElevenLabsError(errorText)) {
+        return new NextResponse(null, { status: 204 });
+      }
       return errorResponse(
         errorText || `ElevenLabs request failed with status ${response.status}.`,
         response.status,

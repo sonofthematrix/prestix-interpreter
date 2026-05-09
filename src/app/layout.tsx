@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Source_Sans_3 } from "next/font/google";
+import {
+  PRODUCT_METADATA_DESCRIPTION,
+  PRODUCT_METADATA_TITLE,
+} from "../lib/interpreter/branding";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -15,8 +19,8 @@ const sourceSans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "PRESTIX Interpreter",
-  description: "A simple English and Indonesian live interpreter.",
+  title: PRODUCT_METADATA_TITLE,
+  description: PRODUCT_METADATA_DESCRIPTION,
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "any" }],
   },

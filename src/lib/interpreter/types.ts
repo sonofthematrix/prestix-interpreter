@@ -1,4 +1,5 @@
 export type InterpreterMode = "id-en" | "en-id";
+export type SessionMode = "interpreter" | "assistant";
 
 export type InterpreterProvider = "tokenizin" | "gemini" | "deepseek" | "openai" | "local";
 
@@ -45,6 +46,7 @@ export type ConversationSegment = {
   timestamp: string;
   speaker: "speaker_a" | "speaker_b" | "unknown";
   source: "typed" | "speech";
+  sessionMode: SessionMode;
   mode: InterpreterMode;
   input: string;
   output?: string;
@@ -55,7 +57,12 @@ export type ConversationSegment = {
 };
 
 export type ChatMessage = {
-  role: "system" | "user";
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
+export type AssistantHistoryTurn = {
+  role: "user" | "assistant";
   content: string;
 };
 

@@ -1,6 +1,6 @@
 # Interpreter Current Working State
 
-- werkmap: `C:\Users\sonof\Downloads\rakus\prestix.app-main`
+- werkmap: `rakus/prestix interpreter` (lokale paden kunnen afwijken)
 - pagina laadt
 - typed input werkt
 - speech input werkt

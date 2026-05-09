@@ -1,12 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
+  createSpeechOutputQueue,
   readInterpreterResponseMetadata,
   resolveWithTimeout,
 } from "../lib/interpreter/clientRuntime";
+import { pickPreferredBrowserVoice } from "../lib/interpreter/browserVoice";
+import {
+  getStoredMicrophoneArmed,
+  shouldAutoArmBrowserSpeech,
+  shouldPersistMicrophoneArmed,
+  type BrowserMicrophonePermissionState,
+} from "../lib/interpreter/microphonePermission";
+import {
+  getStoredTranslatorEnabled,
+  getTranslatorButtonLabel,
+} from "../lib/interpreter/translatorToggle";
+import { PRODUCT_DISPLAY_NAME, PRODUCT_TAGLINE } from "../lib/interpreter/branding";
 
 type InterpreterMode = "id-en" | "en-id";
+type SessionMode = "interpreter" | "assistant";
 type InterpreterStatus = "READY" | "LISTENING" | "TRANSLATING" | "SPEAKING" | "ERROR";
 type RuntimeState =
   | "idle"
@@ -23,6 +37,7 @@ type SpeakerId = "speaker_a" | "speaker_b" | "unknown";
 type ConversationFilter = SpeakerId | "all";
 type CaptureMode = "live" | "story";
 type SpeechBufferStatus = "idle" | "collecting" | "flushing" | "queued";
+type SpeechInputEngine = "browser" | "local-whisper";
 type ConversationStatus = "pending" | "translating" | "translated" | "error";
 type ProviderInfo = {
   fallbackUsed: string;
@@ -54,6 +69,7 @@ type ConversationLogEntry = {
   timestamp: string;
   speaker: SpeakerId;
   source: "typed" | "speech";
+  sessionMode: SessionMode;
   mode: InterpreterMode;
   input: string;
   output?: string;
@@ -174,9 +190,15 @@ const liveBufferWindowMs = 650;
 const storyBufferWindowMs = 3500;
 const speechOutputTimeoutMs = 15000;
 const translationRequestTimeoutMs = 30000;
+const localTranscribeRequestTimeoutMs = 300000;
 const conversationLogStorageKey = "prestix-interpreter-conversation-log";
+const activeSpeakerStorageKey = "prestix-interpreter-active-speaker";
 const voiceOverridesStorageKey = "prestix-interpreter-voice-overrides";
 const voicePresetBankStorageKey = "prestix-interpreter-voice-preset-bank";
+const speechInputEngineStorageKey = "prestix-interpreter-speech-input-engine";
+const assistantRecognitionLangStorageKey = "prestix-interpreter-assistant-recognition-lang";
+const microphoneArmedStorageKey = "prestix-interpreter-browser-microphone-armed";
+const translatorEnabledStorageKey = "prestix-interpreter-translator-enabled";
 const emptyVoicePresetBank: VoicePresetBank = {
   en: [
     { id: "", label: "" },
@@ -233,6 +255,10 @@ function hasMarker(text: string, markers: string[]): boolean {
 function detectSourceLanguage(
   text: string,
   currentRecognitionLang?: RecognitionLang,
+  options?: {
+    lastDetectedSourceLang?: SourceLanguage;
+    sessionMode?: SessionMode;
+  },
 ): SourceLanguage {
   const normalized = text.toLowerCase();
   if (hasMarker(normalized, INDONESIAN_MARKERS)) {
@@ -241,6 +267,14 @@ function detectSourceLanguage(
 
   if (hasMarker(normalized, ENGLISH_MARKERS)) {
     return "en";
+  }
+
+  if (options?.sessionMode === "assistant") {
+    if (options.lastDetectedSourceLang === "id" || options.lastDetectedSourceLang === "en") {
+      return options.lastDetectedSourceLang;
+    }
+
+    return "unknown";
   }
 
   if (currentRecognitionLang === "id-ID") {
@@ -254,7 +288,14 @@ function detectSourceLanguage(
   return "unknown";
 }
 
-function modeFromSourceLang(sourceLang: SourceLanguage): InterpreterMode {
+function modeFromSourceLang(
+  sourceLang: SourceLanguage,
+  fallbackMode: InterpreterMode = "en-id",
+): InterpreterMode {
+  if (sourceLang === "unknown") {
+    return fallbackMode;
+  }
+
   return sourceLang === "id" ? "id-en" : "en-id";
 }
 
@@ -274,8 +315,55 @@ function modeLabel(mode: InterpreterMode): string {
   return mode === "id-en" ? "ID -> EN" : "EN -> ID";
 }
 
+function sessionModeLabel(sessionMode: SessionMode): string {
+  return sessionMode === "assistant" ? "assistant" : "translator";
+}
+
+function sessionStatusLabel(status: ConversationStatus, sessionMode: SessionMode): string {
+  if (sessionMode === "assistant") {
+    if (status === "pending") {
+      return "thinking";
+    }
+    if (status === "translating") {
+      return "replying";
+    }
+    if (status === "translated") {
+      return "replied";
+    }
+    return "error";
+  }
+
+  return status;
+}
+
+function conversationViewSubtitle(sessionMode: SessionMode): string {
+  return sessionMode === "assistant"
+    ? "primary conversation and interpreter view"
+    : "primary transcript and interpretation view";
+}
+
+function inputPanelLabel(sessionMode: SessionMode): string {
+  return sessionMode === "assistant" ? "you said" : "in";
+}
+
+function outputPanelLabel(sessionMode: SessionMode): string {
+  return sessionMode === "assistant" ? "prestix" : "out";
+}
+
+function outputModeForSession(mode: InterpreterMode, sessionMode: SessionMode): InterpreterMode {
+  if (sessionMode === "interpreter") {
+    return mode;
+  }
+
+  return mode === "id-en" ? "en-id" : "id-en";
+}
+
 function outputLanguage(mode: InterpreterMode): string {
   return mode === "id-en" ? "en-US" : "id-ID";
+}
+
+function recognitionLangLabel(lang: RecognitionLang): string {
+  return lang === "id-ID" ? "bahasa" : "english";
 }
 
 function splitSpeechChunks(text: string): string[] {
@@ -395,6 +483,10 @@ function isSpeakerId(value: unknown): value is SpeakerId {
   return value === "speaker_a" || value === "speaker_b" || value === "unknown";
 }
 
+function isSessionMode(value: unknown): value is SessionMode {
+  return value === "interpreter" || value === "assistant";
+}
+
 function isConversationLogEntry(value: unknown): value is ConversationLogEntry {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -406,6 +498,7 @@ function isConversationLogEntry(value: unknown): value is ConversationLogEntry {
     typeof entry.timestamp === "string" &&
     isSpeakerId(entry.speaker) &&
     (entry.source === "typed" || entry.source === "speech") &&
+    isSessionMode(entry.sessionMode) &&
     (entry.mode === "id-en" || entry.mode === "en-id") &&
     typeof entry.input === "string" &&
     (entry.output === undefined || typeof entry.output === "string") &&
@@ -451,6 +544,7 @@ function normalizeConversationLogEntry(value: unknown): ConversationLogEntry | n
     timestamp: entry.timestamp,
     speaker: entry.speaker,
     source: entry.source,
+    sessionMode: isSessionMode(entry.sessionMode) ? entry.sessionMode : "interpreter",
     mode: entry.mode,
     input: entry.input,
     output: typeof entry.output === "string" ? entry.output : undefined,
@@ -525,6 +619,18 @@ function speakerLabel(speaker: SpeakerId): string {
   return "Unknown";
 }
 
+function speakerShortLabel(speaker: SpeakerId): string {
+  if (speaker === "speaker_a") {
+    return "A";
+  }
+
+  if (speaker === "speaker_b") {
+    return "B";
+  }
+
+  return "?";
+}
+
 function formatVoiceTag(value?: string): string {
   return value ? value.replace(/_/g, " ").trim() : "";
 }
@@ -555,6 +661,7 @@ export default function InterpreterPage() {
   const [conversationLog, setConversationLog] = useState<ConversationLogEntry[]>([]);
   const [conversationFilter, setConversationFilter] = useState<ConversationFilter>("all");
   const [captureMode, setCaptureMode] = useState<CaptureMode>("live");
+  const [sessionMode, setSessionMode] = useState<SessionMode>("assistant");
   const [speechBufferStatus, setSpeechBufferStatus] = useState<SpeechBufferStatus>("idle");
   const [activeSpeaker, setActiveSpeaker] = useState<SpeakerId>("unknown");
   const [voiceOverrides, setVoiceOverrides] = useState<VoiceOverrides>({ en: "", id: "" });
@@ -563,9 +670,18 @@ export default function InterpreterPage() {
   const [availableVoices, setAvailableVoices] = useState<ElevenLabsVoiceOption[]>([]);
   const [speechOutputProvider, setSpeechOutputProvider] =
     useState<SpeechOutputProvider>("pending");
+  const [speechInputEngine, setSpeechInputEngine] =
+    useState<SpeechInputEngine>("browser");
+  const [assistantRecognitionLang, setAssistantRecognitionLang] =
+    useState<RecognitionLang>("id-ID");
+  const [translatorEnabled, setTranslatorEnabled] = useState(false);
+  const [browserMicrophonePermission, setBrowserMicrophonePermission] =
+    useState<BrowserMicrophonePermissionState>("unknown");
   const [isTranslatorRunning, setIsTranslatorRunning] = useState(false);
   const [bufferLength, setBufferLength] = useState(0);
   const [recognitionRunning, setRecognitionRunning] = useState(false);
+  const [isLocalRecording, setIsLocalRecording] = useState(false);
+  const [isLocalTranscribing, setIsLocalTranscribing] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionRunningRef = useRef(false);
@@ -578,20 +694,36 @@ export default function InterpreterPage() {
   const isListeningRef = useRef(false);
   const isStartingRef = useRef(false);
   const restartFailuresRef = useRef(0);
+  const hasAutoArmedBrowserSpeechRef = useRef(false);
   const speechFinalBufferRef = useRef<string[]>([]);
   const transcriptBufferTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechBufferFlushInProgressRef = useRef(false);
   const lastSpeechEventAtRef = useRef<number | null>(null);
   const captureModeRef = useRef<CaptureMode>("live");
+  const sessionModeRef = useRef<SessionMode>("assistant");
   const activeSpeakerRef = useRef<SpeakerId>("unknown");
+  const activeSpeakerLoadedRef = useRef(false);
   const unmountedRef = useRef(false);
   const conversationLogLoadedRef = useRef(false);
   const conversationLogRef = useRef<ConversationLogEntry[]>([]);
   const translationQueueRef = useRef<string[]>([]);
   const isTranslatorRunningRef = useRef(false);
   const processTranslationQueueRef = useRef<() => void>(() => {});
+  const speakTextRef = useRef<
+    (text: string, detectedMode: InterpreterMode, sessionMode: SessionMode) => Promise<void>
+  >(async () => {});
+  const speechOutputQueueRef = useRef(
+    createSpeechOutputQueue<{ text: string; mode: InterpreterMode; sessionMode: SessionMode }>({
+      speak: async (job) => {
+        await speakTextRef.current(job.text, job.mode, job.sessionMode);
+      },
+    }),
+  );
   const audioPlaybackRef = useRef<HTMLAudioElement | null>(null);
   const audioObjectUrlRef = useRef<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordedAudioChunksRef = useRef<Blob[]>([]);
 
   const clearRecognitionRestartTimer = useCallback(() => {
     if (restartTimerRef.current !== null) {
@@ -618,6 +750,24 @@ export default function InterpreterPage() {
       URL.revokeObjectURL(audioObjectUrlRef.current);
       audioObjectUrlRef.current = null;
     }
+  }, []);
+
+  const stopLocalRecordingStream = useCallback(() => {
+    if (mediaRecorderRef.current !== null) {
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.onerror = null;
+      mediaRecorderRef.current = null;
+    }
+
+    if (mediaStreamRef.current !== null) {
+      for (const track of mediaStreamRef.current.getTracks()) {
+        track.stop();
+      }
+      mediaStreamRef.current = null;
+    }
+
+    recordedAudioChunksRef.current = [];
   }, []);
 
   const addSpeechDebug = useCallback(
@@ -675,6 +825,7 @@ export default function InterpreterPage() {
 
   const clearConversationLog = useCallback(() => {
     translationQueueRef.current = [];
+    speechOutputQueueRef.current.clear();
     setQueueLength(0);
     setConversationLogSynced(() => []);
   }, [setConversationLogSynced]);
@@ -697,6 +848,19 @@ export default function InterpreterPage() {
     [addSpeechDebug],
   );
 
+  const updateSessionMode = useCallback(
+    (nextMode: SessionMode) => {
+      sessionModeRef.current = nextMode;
+      setSessionMode(nextMode);
+      addSpeechDebug("session mode changed", sessionModeLabel(nextMode).toUpperCase());
+    },
+    [addSpeechDebug],
+  );
+
+  useEffect(() => {
+    updateSessionMode(translatorEnabled ? "interpreter" : "assistant");
+  }, [translatorEnabled, updateSessionMode]);
+
   const enqueueTranslationEntry = useCallback(
     (entryId: string) => {
       translationQueueRef.current.push(entryId);
@@ -714,7 +878,6 @@ export default function InterpreterPage() {
     if (
       !recognition ||
       !shouldKeepListeningRef.current ||
-      speakingRef.current ||
       recognitionRunningRef.current ||
       isStartingRef.current
     ) {
@@ -747,6 +910,19 @@ export default function InterpreterPage() {
       setRuntimeState("error", `recognition start failed: ${reason}`);
     }
   }, [addSpeechDebug, clearRecognitionRestartTimer, setRuntimeState]);
+
+  const scheduleRecognitionRestart = useCallback(
+    (reason: string, delayMs = 400) => {
+      clearRecognitionRestartTimer();
+      restartTimerRef.current = window.setTimeout(() => {
+        restartTimerRef.current = null;
+        if (shouldKeepListeningRef.current && !unmountedRef.current) {
+          safeStartRecognition(reason);
+        }
+      }, delayMs);
+    },
+    [clearRecognitionRestartTimer, safeStartRecognition],
+  );
 
   const safeStopRecognition = useCallback((reason: string) => {
     const recognition = recognitionRef.current;
@@ -783,16 +959,39 @@ export default function InterpreterPage() {
 
       recognition.lang = lang;
       safeStopRecognition(reason);
-      clearRecognitionRestartTimer();
-      restartTimerRef.current = window.setTimeout(() => {
-        restartTimerRef.current = null;
-        if (shouldKeepListeningRef.current && !speakingRef.current && !unmountedRef.current) {
-          recognition.lang = recognitionLangRef.current;
-          safeStartRecognition(reason);
-        }
-      }, 450);
+      scheduleRecognitionRestart(reason, 450);
     },
-    [addSpeechDebug, clearRecognitionRestartTimer, safeStartRecognition, safeStopRecognition],
+    [addSpeechDebug, safeStopRecognition, scheduleRecognitionRestart],
+  );
+
+  const applyAssistantRecognitionLang = useCallback(
+    (nextLang: RecognitionLang, reason: string) => {
+      setAssistantRecognitionLang(nextLang);
+      setLastSpeechSwitchReason(reason);
+
+      if (sessionModeRef.current !== "assistant") {
+        return;
+      }
+
+      if (recognitionLangRef.current === nextLang) {
+        return;
+      }
+
+      if (
+        speechInputEngine === "browser" &&
+        shouldKeepListeningRef.current &&
+        (recognitionRunningRef.current || isStartingRef.current)
+      ) {
+        restartRecognitionWithLang(nextLang, reason);
+        return;
+      }
+
+      recognitionLangRef.current = nextLang;
+      setRecognitionLang(nextLang);
+      setMicHint(`Assistant mic set to ${recognitionLangLabel(nextLang)}.`);
+      addSpeechDebug("assistant mic language changed", recognitionLangLabel(nextLang));
+    },
+    [addSpeechDebug, restartRecognitionWithLang, speechInputEngine],
   );
 
   const createConversationSegment = useCallback(
@@ -808,7 +1007,23 @@ export default function InterpreterPage() {
         return null;
       }
 
-      const detectedMode = forcedMode ?? detectMode(trimmed);
+      const entrySessionMode: SessionMode = translatorEnabled ? "interpreter" : "assistant";
+      const resolvedSourceLang =
+        detectedSourceLang ??
+        detectSourceLanguage(trimmed, recognitionLangRef.current, {
+          sessionMode: entrySessionMode,
+          lastDetectedSourceLang: lastDetectedSourceLangRef.current,
+        });
+      const fallbackMode =
+        entrySessionMode === "assistant" && lastDetectedSourceLangRef.current === "id"
+          ? "id-en"
+          : "en-id";
+      const detectedMode = forcedMode ?? modeFromSourceLang(resolvedSourceLang, fallbackMode);
+
+      if (resolvedSourceLang === "id" || resolvedSourceLang === "en") {
+        lastDetectedSourceLangRef.current = resolvedSourceLang;
+      }
+
       const entryId = createConversationEntryId();
       const entry: ConversationLogEntry = {
         id: entryId,
@@ -819,6 +1034,7 @@ export default function InterpreterPage() {
         }),
         speaker: activeSpeakerRef.current,
         source,
+        sessionMode: entrySessionMode,
         mode: detectedMode,
         input: trimmed,
         status: "pending",
@@ -832,15 +1048,21 @@ export default function InterpreterPage() {
       setConversationLogSynced((currentLog) => [...currentLog, entry]);
       addSpeechDebug(
         "conversation entry created",
-        `${entryId} ${source} ${modeLabel(detectedMode)}`,
+        `${entryId} ${source} ${sessionModeLabel(entrySessionMode)} ${modeLabel(detectedMode)}`,
       );
+
       setRuntimeState("queued", `${queuedReason}: ${entryId}`);
       enqueueTranslationEntry(entryId);
 
-      if (source === "speech" && detectedSourceLang) {
+      if (
+        source === "speech" &&
+        resolvedSourceLang !== "unknown" &&
+        speechInputEngine === "browser" &&
+        entrySessionMode === "interpreter"
+      ) {
         restartRecognitionWithLang(
-          recognitionLangForSource(detectedSourceLang),
-          `next expected after ${detectedSourceLang}`,
+          recognitionLangForSource(resolvedSourceLang),
+          `next expected after ${resolvedSourceLang}`,
         );
       }
 
@@ -850,8 +1072,10 @@ export default function InterpreterPage() {
       addSpeechDebug,
       enqueueTranslationEntry,
       restartRecognitionWithLang,
+      speechInputEngine,
       setConversationLogSynced,
       setRuntimeState,
+      translatorEnabled,
     ],
   );
 
@@ -891,13 +1115,20 @@ export default function InterpreterPage() {
         );
         addSpeechDebug("buffer flushed", `${reason}: ${combinedText}`);
 
-        const detectedSourceLang = detectSourceLanguage(
-          combinedText,
-          recognitionLangRef.current,
-        );
-        const detectedMode = modeFromSourceLang(detectedSourceLang);
+        const currentSessionMode = sessionModeRef.current;
+        const detectedSourceLang = detectSourceLanguage(combinedText, recognitionLangRef.current, {
+          sessionMode: currentSessionMode,
+          lastDetectedSourceLang: lastDetectedSourceLangRef.current,
+        });
+        const fallbackMode =
+          currentSessionMode === "assistant" && lastDetectedSourceLangRef.current === "id"
+            ? "id-en"
+            : "en-id";
+        const detectedMode = modeFromSourceLang(detectedSourceLang, fallbackMode);
 
-        lastDetectedSourceLangRef.current = detectedSourceLang;
+        if (detectedSourceLang === "id" || detectedSourceLang === "en") {
+          lastDetectedSourceLangRef.current = detectedSourceLang;
+        }
         const entryId = createConversationSegment(
           combinedText,
           "speech",
@@ -928,8 +1159,240 @@ export default function InterpreterPage() {
     ],
   );
 
+  const scheduleSpeechBufferFlush = useCallback(
+    (reason: string) => {
+      if (speechFinalBufferRef.current.length === 0) {
+        return;
+      }
+
+      clearSpeechBufferTimer();
+      const now = Date.now();
+      const bufferWindowMs = getBufferWindowMs(captureModeRef.current);
+      const lastEventAt = lastSpeechEventAtRef.current ?? now;
+      const remainingDelayMs = Math.max(0, bufferWindowMs - Math.max(0, now - lastEventAt));
+
+      addSpeechDebug(
+        captureModeRef.current === "live" ? "live flush scheduled" : "story flush scheduled",
+        `${remainingDelayMs}ms (${reason})`,
+      );
+      transcriptBufferTimerRef.current = setTimeout(() => {
+        transcriptBufferTimerRef.current = null;
+        flushSpeechBuffer(reason);
+      }, remainingDelayMs);
+    },
+    [addSpeechDebug, clearSpeechBufferTimer, flushSpeechBuffer],
+  );
+
+  const transcribeLocalWhisperBlob = useCallback(
+    async (audioBlob: Blob) => {
+      setIsLocalTranscribing(true);
+      setSpeechBufferStatus("flushing");
+      setRuntimeState("buffering", "local whisper transcribing");
+      setLiveTranscript("Transcribing local clip...");
+      addSpeechDebug("local whisper upload", `${Math.round(audioBlob.size / 1024)}kb`);
+
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => {
+        controller.abort();
+      }, localTranscribeRequestTimeoutMs);
+
+      try {
+        const formData = new FormData();
+        formData.set("audio", audioBlob, "speech.webm");
+        formData.set("recognitionLang", recognitionLangRef.current);
+
+        const response = await fetch("/api/interpreter/transcribe", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
+        const data = (await response.json()) as {
+          error?: string;
+          language?: string;
+          text?: string;
+        };
+
+        const transcript = typeof data.text === "string" ? data.text.trim() : "";
+        const apiError = typeof data.error === "string" ? data.error : "";
+        const currentSessionMode = sessionModeRef.current;
+        const detectedSourceLang =
+          data.language === "id" || data.language === "en"
+            ? data.language
+            : detectSourceLanguage(transcript, recognitionLangRef.current, {
+                sessionMode: currentSessionMode,
+                lastDetectedSourceLang: lastDetectedSourceLangRef.current,
+              });
+        const fallbackMode =
+          currentSessionMode === "assistant" && lastDetectedSourceLangRef.current === "id"
+            ? "id-en"
+            : "en-id";
+
+        if (!response.ok || apiError || !transcript) {
+          throw new Error(apiError || "Local whisper returned no transcript.");
+        }
+
+        setSpeechConfidence(null);
+        setLiveTranscript(transcript);
+        addSpeechDebug("local whisper transcript", transcript);
+
+        if (detectedSourceLang === "id" || detectedSourceLang === "en") {
+          lastDetectedSourceLangRef.current = detectedSourceLang;
+        }
+
+        createConversationSegment(
+          transcript,
+          "speech",
+          modeFromSourceLang(detectedSourceLang, fallbackMode),
+          detectedSourceLang,
+          "local whisper",
+        );
+        setSpeechBufferStatus("idle");
+        setLiveTranscript("");
+      } catch (transcribeError) {
+        const message =
+          transcribeError instanceof DOMException && transcribeError.name === "AbortError"
+            ? "Local whisper request timed out."
+            : getErrorMessage(transcribeError);
+        setError(message);
+        setSpeechBufferStatus("idle");
+        setRuntimeState("error", `local whisper ${message}`);
+        setLiveTranscript("");
+        addSpeechDebug("local whisper error", message);
+      } finally {
+        window.clearTimeout(timeout);
+        setIsLocalTranscribing(false);
+      }
+    },
+    [addSpeechDebug, createConversationSegment, setRuntimeState],
+  );
+
+  const stopLocalWhisperRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) {
+      return;
+    }
+
+    setLiveTranscript("Uploading local clip...");
+    setSpeechBufferStatus("flushing");
+    addSpeechDebug("local whisper stop", "manual");
+
+    if (recorder.state !== "inactive") {
+      recorder.stop();
+    }
+  }, [addSpeechDebug]);
+
+  const startLocalWhisperRecording = useCallback(async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Local whisper recording is not supported in this browser.");
+      setRuntimeState("error", "local whisper unsupported");
+      return;
+    }
+
+    if (isLocalTranscribing) {
+      return;
+    }
+
+    setError("");
+    shouldKeepListeningRef.current = false;
+    clearRecognitionRestartTimer();
+    safeStopRecognition("switched to local whisper record");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const preferredMimeTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+      ];
+      const supportedMimeType =
+        preferredMimeTypes.find(
+          (mimeType) => typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(mimeType),
+        ) || "";
+      const recorder = supportedMimeType
+        ? new MediaRecorder(stream, { mimeType: supportedMimeType })
+        : new MediaRecorder(stream);
+
+      mediaStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      recordedAudioChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedAudioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onerror = () => {
+        setIsLocalRecording(false);
+        setSpeechBufferStatus("idle");
+        setError("Local whisper recording failed.");
+        setRuntimeState("error", "local whisper recorder error");
+        stopLocalRecordingStream();
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(recordedAudioChunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        });
+
+        setIsLocalRecording(false);
+        stopLocalRecordingStream();
+
+        if (audioBlob.size === 0) {
+          setSpeechBufferStatus("idle");
+          setLiveTranscript("");
+          setRuntimeState("idle", "local whisper empty clip");
+          addSpeechDebug("local whisper empty", "0kb");
+          return;
+        }
+
+        void transcribeLocalWhisperBlob(audioBlob);
+      };
+
+      recorder.start();
+      setIsLocalRecording(true);
+      setSpeechBufferStatus("collecting");
+      setRuntimeState("buffering", "local whisper recording");
+      setLiveTranscript("Recording local clip...");
+      setMicHint("Local Whisper mode: click stop to transcribe the clip.");
+      addSpeechDebug("local whisper start", supportedMimeType || "default");
+    } catch (recordingError) {
+      stopLocalRecordingStream();
+      setIsLocalRecording(false);
+      setSpeechBufferStatus("idle");
+      setError(getErrorMessage(recordingError));
+      setRuntimeState("error", "local whisper getUserMedia");
+    }
+  }, [
+    addSpeechDebug,
+    clearRecognitionRestartTimer,
+    isLocalTranscribing,
+    safeStopRecognition,
+    setRuntimeState,
+    stopLocalRecordingStream,
+    transcribeLocalWhisperBlob,
+  ]);
+
+  const toggleLocalWhisperRecording = useCallback(() => {
+    if (isLocalRecording) {
+      stopLocalWhisperRecording();
+      return;
+    }
+
+    void startLocalWhisperRecording();
+  }, [isLocalRecording, startLocalWhisperRecording, stopLocalWhisperRecording]);
+
   const enableSpeechRecognition = useCallback(() => {
     if (typeof window === "undefined") {
+      return;
+    }
+
+    if (speechInputEngine !== "browser") {
+      setMicHint("Local Whisper mode uses push to talk.");
       return;
     }
 
@@ -958,6 +1421,13 @@ export default function InterpreterPage() {
         recognitionRunningRef.current = true;
         isListeningRef.current = true;
         restartFailuresRef.current = 0;
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(
+            microphoneArmedStorageKey,
+            String(shouldPersistMicrophoneArmed("browser", "granted")),
+          );
+        }
+        setBrowserMicrophonePermission("granted");
         setRecognitionRunning(true);
         setIsListening(true);
         setRuntimeState("listening", "recognition onstart");
@@ -973,38 +1443,13 @@ export default function InterpreterPage() {
         addSpeechDebug("recognition end", "");
 
         if (speechFinalBufferRef.current.length > 0) {
-          clearSpeechBufferTimer();
-          transcriptBufferTimerRef.current = setTimeout(() => {
-            transcriptBufferTimerRef.current = null;
-            flushSpeechBuffer("recognition end");
-
-            if (
-              shouldKeepListeningRef.current &&
-              !speakingRef.current &&
-              !unmountedRef.current
-            ) {
-              clearRecognitionRestartTimer();
-              restartTimerRef.current = window.setTimeout(() => {
-                restartTimerRef.current = null;
-                safeStartRecognition("onend restart after buffer");
-              }, 400);
-            }
-          }, getBufferWindowMs(captureModeRef.current));
+          scheduleSpeechBufferFlush("recognition end");
+          scheduleRecognitionRestart("onend restart with buffered speech");
           return;
         }
 
-        if (
-          shouldKeepListeningRef.current &&
-          !speakingRef.current &&
-          !unmountedRef.current
-        ) {
-          clearRecognitionRestartTimer();
-          restartTimerRef.current = window.setTimeout(() => {
-            restartTimerRef.current = null;
-            if (shouldKeepListeningRef.current && !speakingRef.current) {
-              safeStartRecognition("onend restart");
-            }
-          }, 400);
+        if (shouldKeepListeningRef.current && !unmountedRef.current) {
+          scheduleRecognitionRestart("onend restart");
         }
       };
 
@@ -1022,18 +1467,10 @@ export default function InterpreterPage() {
           addSpeechDebug("no-speech ignored", "non-fatal");
 
           if (speechFinalBufferRef.current.length > 0) {
-            clearSpeechBufferTimer();
-            transcriptBufferTimerRef.current = setTimeout(() => {
-              transcriptBufferTimerRef.current = null;
-              flushSpeechBuffer("no-speech");
-            }, getBufferWindowMs(captureModeRef.current));
+            scheduleSpeechBufferFlush("no-speech");
           }
 
-          clearRecognitionRestartTimer();
-          restartTimerRef.current = window.setTimeout(() => {
-            restartTimerRef.current = null;
-            safeStartRecognition("no-speech restart");
-          }, 400);
+          scheduleRecognitionRestart("no-speech restart");
           return;
         }
 
@@ -1047,6 +1484,11 @@ export default function InterpreterPage() {
 
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
           shouldKeepListeningRef.current = false;
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(microphoneArmedStorageKey, "false");
+          }
+          hasAutoArmedBrowserSpeechRef.current = false;
+          setBrowserMicrophonePermission("denied");
           setError("Microphone permission denied.");
           setRuntimeState("error", event.error);
           setMicHint("Microphone permission denied.");
@@ -1117,19 +1559,9 @@ export default function InterpreterPage() {
           setLiveTranscript(
             [nextBufferedText, trimmedInterim].filter(Boolean).join(" "),
           );
-          const bufferWindowMs = getBufferWindowMs(captureModeRef.current);
           addSpeechDebug(`${captureModeRef.current} final buffered`, transcript);
           addSpeechDebug("speech final buffered", transcript);
-
-          clearSpeechBufferTimer();
-          addSpeechDebug(
-            captureModeRef.current === "live" ? "live flush scheduled" : "story flush scheduled",
-            `${bufferWindowMs}ms`,
-          );
-          transcriptBufferTimerRef.current = setTimeout(() => {
-            transcriptBufferTimerRef.current = null;
-            flushSpeechBuffer("timer");
-          }, bufferWindowMs);
+          scheduleSpeechBufferFlush("timer");
         }
       };
 
@@ -1139,13 +1571,51 @@ export default function InterpreterPage() {
     safeStartRecognition("enable speech recognition");
   }, [
     addSpeechDebug,
-    clearRecognitionRestartTimer,
-    clearSpeechBufferTimer,
-    flushSpeechBuffer,
-    restartRecognitionWithLang,
+    scheduleRecognitionRestart,
+    scheduleSpeechBufferFlush,
     safeStartRecognition,
+    speechInputEngine,
     setRuntimeState,
   ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedMicrophoneArmed = getStoredMicrophoneArmed(
+      window.localStorage.getItem(microphoneArmedStorageKey),
+    );
+
+    if (
+      !shouldAutoArmBrowserSpeech({
+        permissionState: browserMicrophonePermission,
+        speechInputEngine,
+        storedMicrophoneArmed,
+      })
+    ) {
+      hasAutoArmedBrowserSpeechRef.current = false;
+      return;
+    }
+
+    if (
+      hasAutoArmedBrowserSpeechRef.current ||
+      recognitionRunningRef.current ||
+      isStartingRef.current ||
+      shouldKeepListeningRef.current
+    ) {
+      return;
+    }
+
+    hasAutoArmedBrowserSpeechRef.current = true;
+    enableSpeechRecognition();
+  }, [browserMicrophonePermission, enableSpeechRecognition, speechInputEngine]);
+
+  const armSpeechInput = useCallback(() => {
+    if (speechInputEngine === "browser") {
+      enableSpeechRecognition();
+    }
+  }, [enableSpeechRecognition, speechInputEngine]);
 
   const submitTypedInput = useCallback(() => {
     const trimmed = input.trim();
@@ -1155,15 +1625,18 @@ export default function InterpreterPage() {
 
     addSpeechDebug("typed submit received", trimmed);
     createConversationSegment(trimmed, "typed", undefined, undefined, "typed input");
-    enableSpeechRecognition();
-  }, [addSpeechDebug, createConversationSegment, enableSpeechRecognition, input]);
+    armSpeechInput();
+  }, [addSpeechDebug, armSpeechInput, createConversationSegment, input]);
 
   const playElevenLabsSpeech = useCallback(
     async (
       text: string,
       detectedMode: InterpreterMode,
+      sessionMode: SessionMode,
     ): Promise<"ended" | "error" | "timeout" | "skipped"> => {
       stopAudioPlayback();
+
+      const speechMode = outputModeForSession(detectedMode, sessionMode);
 
       let response: Response;
 
@@ -1174,9 +1647,9 @@ export default function InterpreterPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            mode: detectedMode,
+            mode: speechMode,
             text,
-            voiceIdOverride: detectedMode === "id-en" ? voiceOverrides.en : voiceOverrides.id,
+            voiceIdOverride: speechMode === "id-en" ? voiceOverrides.en : voiceOverrides.id,
           }),
         });
       } catch (requestError) {
@@ -1223,10 +1696,10 @@ export default function InterpreterPage() {
         });
       });
 
-      const playbackResult = await resolveWithTimeout(
+      const playbackResult: "ended" | "error" | "timeout" = await resolveWithTimeout(
         playbackPromise,
         speechOutputTimeoutMs,
-        "timeout",
+        "timeout" as const,
       );
 
       if (playbackResult !== "ended") {
@@ -1242,42 +1715,38 @@ export default function InterpreterPage() {
     async (language: "en" | "id") => {
       const sampleText =
         language === "en"
-          ? "This is a Prestix Interpreter voice test."
-          : "Ini adalah tes suara Prestix Interpreter.";
+          ? "This is a Prestix Assistant voice test."
+          : "Ini adalah tes suara Prestix Assistant.";
       const sampleMode: InterpreterMode = language === "en" ? "id-en" : "en-id";
 
-      await playElevenLabsSpeech(sampleText, sampleMode);
+      await playElevenLabsSpeech(sampleText, sampleMode, "interpreter");
     },
     [playElevenLabsSpeech],
   );
 
   const speakText = useCallback(
-    async (text: string, detectedMode: InterpreterMode) => {
+    async (text: string, detectedMode: InterpreterMode, sessionMode: SessionMode) => {
       if (typeof window === "undefined") {
         return;
       }
 
-      addSpeechDebug("speech output started", outputLanguage(detectedMode));
+      const speechMode = outputModeForSession(detectedMode, sessionMode);
+      addSpeechDebug("speech output started", outputLanguage(speechMode));
 
       speakingRef.current = true;
-      let result: "ended" | "error" | "timeout" = "timeout";
+      let result: "ended" | "error" | "timeout" | "skipped" = "timeout";
       const speechChunks = splitSpeechChunks(text);
 
       try {
-        if (recognitionRunningRef.current || isListeningRef.current || isStartingRef.current) {
-          addSpeechDebug("recognition pause", "speech output");
-          safeStopRecognition("pause during speech output");
-        }
-
-        setRuntimeState("speaking", "translated");
         addSpeechDebug("speech chunk count", String(speechChunks.length || 1));
 
         for (const [chunkIndex, chunkText] of (speechChunks.length > 0 ? speechChunks : [text]).entries()) {
           addSpeechDebug("speech chunk start", `${chunkIndex + 1}/${speechChunks.length || 1}`);
-          result = await playElevenLabsSpeech(chunkText, detectedMode);
+          result = await playElevenLabsSpeech(chunkText, detectedMode, sessionMode);
 
           if (result === "skipped") {
             if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+              result = "error";
               setError("Speech synthesis is not supported in this browser.");
               setRuntimeState("error", "speech synthesis unsupported");
               setSpeechOutputProvider("unsupported");
@@ -1290,14 +1759,27 @@ export default function InterpreterPage() {
             setSpeechOutputProvider("browser");
 
             const utterance = new SpeechSynthesisUtterance(chunkText);
-            utterance.lang = outputLanguage(detectedMode);
+            utterance.lang = outputLanguage(speechMode);
             utterance.rate = 0.98;
 
-            const speechPromise = new Promise<"ended" | "error">((resolve) => {
-              utterance.onstart = () => {
-                setRuntimeState("speaking", "speech output onstart");
-              };
+            const browserVoices = window.speechSynthesis
+              .getVoices()
+              .map((voice) => ({
+                default: voice.default,
+                lang: voice.lang,
+                name: voice.name,
+                voice,
+              }));
+            const preferredVoice = pickPreferredBrowserVoice(
+              browserVoices,
+              utterance.lang,
+            );
+            if (preferredVoice?.voice) {
+              utterance.voice = preferredVoice.voice;
+              addSpeechDebug("speech output browser voice", preferredVoice.voice.name);
+            }
 
+            const speechPromise = new Promise<"ended" | "error">((resolve) => {
               utterance.onend = () => {
                 resolve("ended");
               };
@@ -1329,23 +1811,12 @@ export default function InterpreterPage() {
 
         if (result === "timeout") {
           stopAudioPlayback();
-          window.speechSynthesis.cancel();
-          setRuntimeState(
-            shouldKeepListeningRef.current ? "listening" : "idle",
-            "speech timeout",
-          );
+          if ("speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+          }
           addSpeechDebug("speech output error", "timeout 15000ms");
         } else if (result === "error") {
           setError("");
-          setRuntimeState(
-            shouldKeepListeningRef.current ? "listening" : "idle",
-            "speech output error",
-          );
-        } else {
-          setRuntimeState(
-            shouldKeepListeningRef.current ? "listening" : "idle",
-            "speech done",
-          );
         }
 
         addSpeechDebug(
@@ -1361,27 +1832,19 @@ export default function InterpreterPage() {
               : result === "error"
                 ? "after speech output error"
                 : "after speech output";
-          clearRecognitionRestartTimer();
-          await new Promise<void>((resolve) => {
-            restartTimerRef.current = window.setTimeout(() => {
-              restartTimerRef.current = null;
-              safeStartRecognition(restartReason);
-              resolve();
-            }, 400);
-          });
+          scheduleRecognitionRestart(restartReason);
         }
       }
     },
     [
       addSpeechDebug,
-      clearRecognitionRestartTimer,
       playElevenLabsSpeech,
-      safeStartRecognition,
-      safeStopRecognition,
-      setRuntimeState,
+      scheduleRecognitionRestart,
       stopAudioPlayback,
     ],
   );
+
+  speakTextRef.current = speakText;
 
   const processTranslationQueue = useCallback(() => {
     if (isTranslatorRunningRef.current) {
@@ -1390,7 +1853,7 @@ export default function InterpreterPage() {
 
     isTranslatorRunningRef.current = true;
     setIsTranslatorRunning(true);
-    addSpeechDebug("translator queue started", String(translationQueueRef.current.length));
+    addSpeechDebug("response queue started", String(translationQueueRef.current.length));
 
     void (async () => {
       try {
@@ -1413,6 +1876,27 @@ export default function InterpreterPage() {
             continue;
           }
 
+          // For assistant-mode entries, attach the recent translated assistant
+          // turns from the log so the LLM has multi-turn context. Interpreter
+          // entries stay stateless (one segment in, one translation out).
+          const assistantHistoryTurns =
+            entry.sessionMode === "assistant"
+              ? conversationLogRef.current
+                  .filter(
+                    (item) =>
+                      item.id !== entry.id &&
+                      item.sessionMode === "assistant" &&
+                      item.status === "translated" &&
+                      item.input &&
+                      item.output,
+                  )
+                  .slice(-8)
+                  .flatMap<{ role: "user" | "assistant"; content: string }>((item) => [
+                    { role: "user", content: item.input },
+                    { role: "assistant", content: item.output ?? "" },
+                  ])
+              : [];
+
           setConversationLogSynced((currentLog) =>
             currentLog.map((item) =>
               item.id === entryId
@@ -1425,9 +1909,9 @@ export default function InterpreterPage() {
             ),
           );
           setRuntimeState("translating", `entry ${entryId}`);
-          addSpeechDebug("translation started", entryId);
-          addSpeechDebug("translating entry id", entryId);
-          addSpeechDebug("translating", `${modeLabel(entry.mode)} ${entry.source}`);
+          addSpeechDebug("response started", entryId);
+          addSpeechDebug("processing entry id", entryId);
+          addSpeechDebug("processing", `${modeLabel(entry.mode)} ${entry.source}`);
 
           let translationTimeout: number | null = null;
 
@@ -1447,7 +1931,11 @@ export default function InterpreterPage() {
               body: JSON.stringify({
                 input: entry.input,
                 mode: entry.mode,
+                sessionMode: entry.sessionMode,
                 pathname: window.location.pathname,
+                ...(assistantHistoryTurns.length > 0
+                  ? { history: assistantHistoryTurns }
+                  : {}),
               }),
             });
             const data = await readInterpreterJson(response);
@@ -1517,10 +2005,15 @@ export default function InterpreterPage() {
             );
             setLastOutput(translatedText);
             addSpeechDebug("provider result", `${provider} / ${model} / fallback ${fallbackUsed}`);
-            addSpeechDebug("translation success entry id", entryId);
-            addSpeechDebug("translation done", entryId);
-            addSpeechDebug("translated", translatedText);
-            await speakText(translatedText, entry.mode);
+            addSpeechDebug("response success entry id", entryId);
+            addSpeechDebug("response done", entryId);
+            addSpeechDebug("response text", translatedText);
+            speechOutputQueueRef.current.enqueue({
+              text: translatedText,
+              mode: entry.mode,
+              sessionMode: entry.sessionMode,
+            });
+            addSpeechDebug("speech queued", entryId);
           } catch (translateError) {
             const message =
               translateError instanceof DOMException && translateError.name === "AbortError"
@@ -1539,9 +2032,9 @@ export default function InterpreterPage() {
             );
             setError(message);
             setRuntimeState("error", `entry ${entryId}: ${message}`);
-            addSpeechDebug("translation error entry id", entryId);
-            addSpeechDebug("translation error", message);
-            addSpeechDebug("translation done", `error ${entryId}`);
+            addSpeechDebug("response error entry id", entryId);
+            addSpeechDebug("response error", message);
+            addSpeechDebug("response done", `error ${entryId}`);
             addSpeechDebug("entry error", entryId);
           } finally {
             if (translationTimeout !== null) {
@@ -1563,19 +2056,18 @@ export default function InterpreterPage() {
 
         if (
           translationQueueRef.current.length === 0 &&
-          shouldKeepListeningRef.current &&
-          !speakingRef.current
+          shouldKeepListeningRef.current
         ) {
           setRuntimeState("listening", "queue finished");
           safeStartRecognition("queue finished");
         }
       }
     })();
-  }, [addSpeechDebug, safeStartRecognition, setConversationLogSynced, setRuntimeState, speakText]);
+  }, [addSpeechDebug, safeStartRecognition, setConversationLogSynced, setRuntimeState]);
 
   processTranslationQueueRef.current = processTranslationQueue;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -1610,6 +2102,232 @@ export default function InterpreterPage() {
       JSON.stringify(conversationLog.slice(-100)),
     );
   }, [conversationLog]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const storedActiveSpeaker = window.localStorage.getItem(activeSpeakerStorageKey);
+      if (!storedActiveSpeaker || !isSpeakerId(storedActiveSpeaker)) {
+        return;
+      }
+
+      activeSpeakerRef.current = storedActiveSpeaker;
+      setActiveSpeaker(storedActiveSpeaker);
+    } catch {
+      activeSpeakerRef.current = "unknown";
+      setActiveSpeaker("unknown");
+    } finally {
+      activeSpeakerLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !activeSpeakerLoadedRef.current) {
+      return;
+    }
+
+    window.localStorage.setItem(activeSpeakerStorageKey, activeSpeaker);
+  }, [activeSpeaker]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const storedSpeechInputEngine = window.localStorage.getItem(speechInputEngineStorageKey);
+      if (storedSpeechInputEngine === "browser" || storedSpeechInputEngine === "local-whisper") {
+        setSpeechInputEngine(storedSpeechInputEngine);
+      }
+    } catch {
+      setSpeechInputEngine("browser");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(speechInputEngineStorageKey, speechInputEngine);
+  }, [speechInputEngine]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const storedAssistantRecognitionLang = window.localStorage.getItem(
+        assistantRecognitionLangStorageKey,
+      );
+      if (storedAssistantRecognitionLang === "id-ID" || storedAssistantRecognitionLang === "en-US") {
+        setAssistantRecognitionLang(storedAssistantRecognitionLang);
+      }
+    } catch {
+      setAssistantRecognitionLang("id-ID");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(assistantRecognitionLangStorageKey, assistantRecognitionLang);
+  }, [assistantRecognitionLang]);
+
+  useEffect(() => {
+    if (sessionMode !== "assistant") {
+      return;
+    }
+
+    if (recognitionLangRef.current === assistantRecognitionLang) {
+      return;
+    }
+
+    if (
+      speechInputEngine === "browser" &&
+      shouldKeepListeningRef.current &&
+      (recognitionRunningRef.current || isStartingRef.current)
+    ) {
+      restartRecognitionWithLang(
+        assistantRecognitionLang,
+        `assistant preferred ${recognitionLangLabel(assistantRecognitionLang)}`,
+      );
+      return;
+    }
+
+    recognitionLangRef.current = assistantRecognitionLang;
+    setRecognitionLang(assistantRecognitionLang);
+    setLastSpeechSwitchReason(`assistant preferred ${recognitionLangLabel(assistantRecognitionLang)}`);
+  }, [assistantRecognitionLang, restartRecognitionWithLang, sessionMode, speechInputEngine]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || speechInputEngine !== "browser") {
+      return;
+    }
+
+    let cancelled = false;
+    let permissionStatus: PermissionStatus | null = null;
+
+    const applyPermissionState = (nextState: BrowserMicrophonePermissionState) => {
+      if (!cancelled) {
+        setBrowserMicrophonePermission(nextState);
+      }
+    };
+
+    if (!navigator.permissions?.query) {
+      const storedMicrophoneArmed = getStoredMicrophoneArmed(
+        window.localStorage.getItem(microphoneArmedStorageKey),
+      );
+      applyPermissionState(storedMicrophoneArmed ? "unknown" : "prompt");
+      return;
+    }
+
+    void navigator.permissions
+      .query({ name: "microphone" as PermissionName })
+      .then((status) => {
+        permissionStatus = status;
+
+        const syncPermissionState = () => {
+          const nextState =
+            status.state === "granted" || status.state === "prompt" || status.state === "denied"
+              ? status.state
+              : "unknown";
+          applyPermissionState(nextState);
+        };
+
+        syncPermissionState();
+        status.onchange = syncPermissionState;
+      })
+      .catch(() => {
+        const storedMicrophoneArmed = getStoredMicrophoneArmed(
+          window.localStorage.getItem(microphoneArmedStorageKey),
+        );
+        applyPermissionState(storedMicrophoneArmed ? "unknown" : "prompt");
+      });
+
+    return () => {
+      cancelled = true;
+      if (permissionStatus) {
+        permissionStatus.onchange = null;
+      }
+    };
+  }, [speechInputEngine]);
+
+  useEffect(() => {
+    if (speechInputEngine === "browser") {
+      if (browserMicrophonePermission === "granted") {
+        setMicHint(
+          recognitionRunning
+            ? `Microphone enabled. Listening (${recognitionLangRef.current}).`
+            : sessionMode === "assistant"
+              ? `Assistant mic ready (${recognitionLangLabel(assistantRecognitionLang)}).`
+              : "Microphone ready. Chrome permission granted — speech will auto-start.",
+        );
+      } else if (browserMicrophonePermission === "denied") {
+        setMicHint("Microphone permission denied.");
+      } else {
+        setMicHint(
+          sessionMode === "assistant"
+            ? `Click once to allow microphone. Assistant mic is set to ${recognitionLangLabel(assistantRecognitionLang)}.`
+            : "Click once to allow microphone. After that it stays armed.",
+        );
+      }
+      return;
+    }
+
+    shouldKeepListeningRef.current = false;
+    clearRecognitionRestartTimer();
+    clearSpeechBufferTimer();
+    safeStopRecognition("switched to local whisper");
+    speechFinalBufferRef.current = [];
+    setBufferLength(0);
+    setSpeechBufferStatus(isLocalRecording ? "collecting" : isLocalTranscribing ? "flushing" : "idle");
+    if (!isLocalRecording && !isLocalTranscribing) {
+      setLiveTranscript("");
+      setRuntimeState("idle", "local whisper armed");
+    }
+    setMicHint("Local Whisper mode: record a short clip, then transcribe.");
+  }, [
+    browserMicrophonePermission,
+    clearRecognitionRestartTimer,
+    clearSpeechBufferTimer,
+    assistantRecognitionLang,
+    isLocalRecording,
+    isLocalTranscribing,
+    recognitionRunning,
+    safeStopRecognition,
+    sessionMode,
+    setRuntimeState,
+    speechInputEngine,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      setTranslatorEnabled(
+        getStoredTranslatorEnabled(window.localStorage.getItem(translatorEnabledStorageKey)),
+      );
+    } catch {
+      setTranslatorEnabled(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(translatorEnabledStorageKey, String(translatorEnabled));
+  }, [translatorEnabled]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1746,14 +2464,16 @@ export default function InterpreterPage() {
         transcriptBufferTimerRef.current = null;
       }
       translationQueueRef.current = [];
+      speechOutputQueueRef.current.clear();
       safeStopRecognition("unmount");
       stopAudioPlayback();
+      stopLocalRecordingStream();
 
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [safeStopRecognition, stopAudioPlayback]);
+  }, [safeStopRecognition, stopAudioPlayback, stopLocalRecordingStream]);
 
   const displayStatus: InterpreterStatus =
     status === "READY" && isListening ? "LISTENING" : status;
@@ -1774,7 +2494,7 @@ export default function InterpreterPage() {
   return (
     <main
       className="relative flex min-h-screen flex-col overflow-hidden bg-zinc-950 text-white selection:bg-white/20"
-      onClick={enableSpeechRecognition}
+      onClick={armSpeechInput}
     >
       <video
         autoPlay
@@ -1796,10 +2516,13 @@ export default function InterpreterPage() {
         <div className="grid min-h-0 w-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2.2fr)_minmax(320px,0.8fr)] xl:grid-cols-[minmax(0,2.4fr)_minmax(360px,0.85fr)]">
           <div className="flex min-h-0 flex-col gap-4">
             <div className="order-2 shrink-0 rounded-[1rem] border border-white/10 bg-black/45 p-3 font-mono text-white/70 shadow-2xl shadow-black/35 ring-1 ring-white/5 backdrop-blur-xl">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="text-[11px] uppercase tracking-[0.42em] text-white/45">
-                    PRESTIX INTERPRETER
+                    {PRODUCT_DISPLAY_NAME}
+                  </div>
+                  <div className="mt-1 max-w-xl text-[11px] font-normal normal-case tracking-normal text-white/50">
+                    {PRODUCT_TAGLINE}
                   </div>
                   <div className="mt-1 text-xs text-white/45">{micHint}</div>
                 </div>
@@ -1808,333 +2531,7 @@ export default function InterpreterPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2 text-[10px] uppercase tracking-[0.16em] text-white/55 sm:grid-cols-2 xl:grid-cols-9">
-                <span>RUNTIME {runtimeState.toUpperCase()}</span>
-                <span>MODE {modeLabel(mode)}</span>
-                <span>SPEECH {recognitionLang}</span>
-                <span>CAPTURE {captureMode.toUpperCase()}</span>
-                <span>BUFFER {bufferLength}</span>
-                <span>QUEUE {queueLength}</span>
-                <span>RECOG {recognitionRunning ? "YES" : "NO"}</span>
-                <span>TRANSLATOR {isTranslatorRunning ? "RUNNING" : "IDLE"}</span>
-                <span>BUFFERING {speechBufferStatus.toUpperCase()}</span>
-                <span>VOICE OUT {speechOutputProvider.toUpperCase()}</span>
-              </div>
-
-              <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.7fr)]">
-                <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/50">
-                  <span>capture</span>
-                  {(["live", "story"] as CaptureMode[]).map((nextMode) => (
-                    <button
-                      key={nextMode}
-                      type="button"
-                      onClick={() => updateCaptureMode(nextMode)}
-                      className={`rounded-full border px-3 py-1.5 transition ${
-                        captureMode === nextMode
-                          ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
-                          : "border-white/10 bg-white/[0.03] text-white/45 hover:text-white/75"
-                      }`}
-                    >
-                      {nextMode}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => flushSpeechBuffer("manual")}
-                    className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/45 transition hover:border-emerald-300/30 hover:text-emerald-100"
-                  >
-                    Flush buffer now
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/50">
-                  <span>active</span>
-                  {(["unknown", "speaker_a", "speaker_b"] as SpeakerId[]).map((speaker) => (
-                    <button
-                      key={speaker}
-                      type="button"
-                      onClick={() => updateActiveSpeaker(speaker)}
-                      className={`rounded-full border px-3 py-1.5 transition ${
-                        activeSpeaker === speaker
-                          ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
-                          : "border-white/10 bg-white/[0.03] text-white/45 hover:text-white/75"
-                      }`}
-                    >
-                      {speakerLabel(speaker)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <label className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-                  <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
-                    voice EN
-                  </div>
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    {voicePresetBank.en.map((preset, index) => (
-                      <button
-                        key={`voice-en-preset-${index + 1}`}
-                        type="button"
-                        onClick={() =>
-                          setVoiceOverrides((current) => ({
-                            ...current,
-                            en: preset.id,
-                          }))
-                        }
-                        className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
-                          preset.id
-                            ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
-                            : "border-white/5 bg-white/[0.02] text-white/20"
-                        }`}
-                      >
-                        {preset.label || `P${index + 1}`}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVoicePresetBank((current) => ({
-                          ...current,
-                          en: [
-                            ...current.en.slice(1),
-                            {
-                              id: voiceOverrides.en.trim(),
-                              label: voicePresetLabels.en.trim(),
-                            },
-                          ],
-                        }))
-                      }
-                      className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
-                    >
-                      save current
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVoiceOverrides((current) => ({
-                          ...current,
-                          en: "",
-                        }))
-                      }
-                      className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/45 transition hover:text-white/75"
-                    >
-                      clear
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void testVoice("en")}
-                      className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-100 transition hover:border-sky-300/50"
-                    >
-                      test voice
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={voicePresetLabels.en}
-                    onChange={(event) =>
-                      setVoicePresetLabels((current) => ({
-                        ...current,
-                        en: event.target.value,
-                      }))
-                    }
-                    placeholder="preset label"
-                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
-                  />
-                  <select
-                    value=""
-                    onChange={(event) => {
-                      if (!event.target.value) {
-                        return;
-                      }
-
-                      setVoiceOverrides((current) => ({
-                        ...current,
-                        en: event.target.value,
-                      }));
-                    }}
-                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none focus:border-emerald-300/40"
-                  >
-                    <option value="">Pick ElevenLabs voice</option>
-                    {availableVoices.map((voice) => (
-                      <option key={`en-${voice.id}`} value={voice.id}>
-                        {voice.label}
-                        {voice.gender ? ` · ${formatVoiceTag(voice.gender)}` : ""}
-                        {voice.accent ? ` · ${formatVoiceTag(voice.accent)}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={voiceOverrides.en}
-                    onChange={(event) =>
-                      setVoiceOverrides((current) => ({
-                        ...current,
-                        en: event.target.value,
-                      }))
-                    }
-                    placeholder="default env voice"
-                    className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
-                  />
-                  <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
-                    used for ID -&gt; EN output
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-white/35">
-                    {voiceOverrides.en
-                      ? availableVoices
-                          .filter((voice) => voice.id === voiceOverrides.en)
-                          .flatMap((voice) =>
-                            [voice.gender, voice.accent]
-                              .map((tag) => formatVoiceTag(tag))
-                              .filter(Boolean)
-                              .map((tag) => (
-                                <span
-                                  key={`en-tag-${tag}`}
-                                  className="rounded-full border border-white/10 px-2 py-1"
-                                >
-                                  {tag}
-                                </span>
-                              )),
-                          )
-                      : null}
-                  </div>
-                </label>
-
-                <label className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-                  <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
-                    voice ID
-                  </div>
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    {voicePresetBank.id.map((preset, index) => (
-                      <button
-                        key={`voice-id-preset-${index + 1}`}
-                        type="button"
-                        onClick={() =>
-                          setVoiceOverrides((current) => ({
-                            ...current,
-                            id: preset.id,
-                          }))
-                        }
-                        className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
-                          preset.id
-                            ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
-                            : "border-white/5 bg-white/[0.02] text-white/20"
-                        }`}
-                      >
-                        {preset.label || `P${index + 1}`}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVoicePresetBank((current) => ({
-                          ...current,
-                          id: [
-                            ...current.id.slice(1),
-                            {
-                              id: voiceOverrides.id.trim(),
-                              label: voicePresetLabels.id.trim(),
-                            },
-                          ],
-                        }))
-                      }
-                      className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
-                    >
-                      save current
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVoiceOverrides((current) => ({
-                          ...current,
-                          id: "",
-                        }))
-                      }
-                      className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/45 transition hover:text-white/75"
-                    >
-                      clear
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void testVoice("id")}
-                      className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-100 transition hover:border-sky-300/50"
-                    >
-                      test voice
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={voicePresetLabels.id}
-                    onChange={(event) =>
-                      setVoicePresetLabels((current) => ({
-                        ...current,
-                        id: event.target.value,
-                      }))
-                    }
-                    placeholder="preset label"
-                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
-                  />
-                  <select
-                    value=""
-                    onChange={(event) => {
-                      if (!event.target.value) {
-                        return;
-                      }
-
-                      setVoiceOverrides((current) => ({
-                        ...current,
-                        id: event.target.value,
-                      }));
-                    }}
-                    className="mb-2 w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none focus:border-emerald-300/40"
-                  >
-                    <option value="">Pick ElevenLabs voice</option>
-                    {availableVoices.map((voice) => (
-                      <option key={`id-${voice.id}`} value={voice.id}>
-                        {voice.label}
-                        {voice.gender ? ` · ${formatVoiceTag(voice.gender)}` : ""}
-                        {voice.accent ? ` · ${formatVoiceTag(voice.accent)}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={voiceOverrides.id}
-                    onChange={(event) =>
-                      setVoiceOverrides((current) => ({
-                        ...current,
-                        id: event.target.value,
-                      }))
-                    }
-                    placeholder="default env voice"
-                    className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
-                  />
-                  <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
-                    used for EN -&gt; ID output
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-white/35">
-                    {voiceOverrides.id
-                      ? availableVoices
-                          .filter((voice) => voice.id === voiceOverrides.id)
-                          .flatMap((voice) =>
-                            [voice.gender, voice.accent]
-                              .map((tag) => formatVoiceTag(tag))
-                              .filter(Boolean)
-                              .map((tag) => (
-                                <span
-                                  key={`id-tag-${tag}`}
-                                  className="rounded-full border border-white/10 px-2 py-1"
-                                >
-                                  {tag}
-                                </span>
-                              )),
-                          )
-                      : null}
-                  </div>
-                </label>
-              </div>
-
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
                   <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
                     live input
@@ -2150,13 +2547,475 @@ export default function InterpreterPage() {
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
                   <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
-                    latest output
+                    {translatorEnabled ? "latest output" : "latest reply"}
                   </div>
                   <div className="min-h-10 whitespace-pre-wrap text-sm font-semibold leading-snug text-emerald-50 md:text-base">
-                    {lastOutput || "Awaiting translation..."}
+                    {lastOutput ||
+                      (translatorEnabled ? "Awaiting translation..." : "Awaiting assistant reply...")}
                   </div>
                 </div>
               </div>
+
+              <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.13em] text-white/42">
+                {[
+                  `runtime ${runtimeState}`,
+                  `session ${sessionModeLabel(sessionMode)}`,
+                  `direction ${modeLabel(mode)}`,
+                  `stt ${speechInputEngine}`,
+                  `speech ${recognitionLang}`,
+                  `capture ${captureMode}`,
+                  `buffer ${bufferLength}`,
+                  `queue ${queueLength}`,
+                  `recog ${recognitionRunning ? "yes" : "no"}`,
+                  `local rec ${isLocalRecording ? "yes" : isLocalTranscribing ? "tx" : "no"}`,
+                  `${translatorEnabled ? "translator" : "assistant"} ${isTranslatorRunning ? "running" : "idle"}`,
+                  `buffering ${speechBufferStatus}`,
+                  `voice ${speechOutputProvider}`,
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-3 grid gap-3 xl:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/35">
+                    capture mode
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(["live", "story"] as CaptureMode[]).map((nextMode) => (
+                      <button
+                        key={nextMode}
+                        type="button"
+                        aria-pressed={captureMode === nextMode}
+                        onClick={() => updateCaptureMode(nextMode)}
+                        className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+                          captureMode === nextMode
+                            ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
+                            : "border-white/10 bg-white/[0.03] text-white/45 hover:text-white/75"
+                        }`}
+                      >
+                        {nextMode}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => flushSpeechBuffer("manual")}
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-white/45 transition hover:border-emerald-300/30 hover:text-emerald-100"
+                    >
+                      Flush buffer
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/35">
+                    active speaker
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(["unknown", "speaker_a", "speaker_b"] as SpeakerId[]).map((speaker) => (
+                      <button
+                        key={speaker}
+                        type="button"
+                        aria-pressed={activeSpeaker === speaker}
+                        onClick={() => updateActiveSpeaker(speaker)}
+                        className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+                          activeSpeaker === speaker
+                            ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
+                            : "border-white/10 bg-white/[0.03] text-white/45 hover:text-white/75"
+                        }`}
+                      >
+                        {speakerLabel(speaker)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.14em] text-white/32">
+                    Alt+1 Speaker A, Alt+2 Speaker B, Alt+0 Unknown
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/35">
+                    speech input
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      ["browser", "browser"],
+                      ["local-whisper", "local whisper"],
+                    ] as const).map(([engineValue, label]) => (
+                      <button
+                        key={engineValue}
+                        type="button"
+                        aria-pressed={speechInputEngine === engineValue}
+                        onClick={() => setSpeechInputEngine(engineValue)}
+                        className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+                          speechInputEngine === engineValue
+                            ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
+                            : "border-white/10 bg-white/[0.03] text-white/45 hover:text-white/75"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleLocalWhisperRecording}
+                      disabled={speechInputEngine !== "local-whisper" || isLocalTranscribing}
+                      className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+                        speechInputEngine !== "local-whisper" || isLocalTranscribing
+                          ? "cursor-not-allowed border-white/5 bg-white/[0.02] text-white/20"
+                          : isLocalRecording
+                            ? "border-amber-300/40 bg-amber-300/10 text-amber-100"
+                            : "border-sky-300/35 bg-sky-300/10 text-sky-100 hover:border-sky-300/55"
+                      }`}
+                    >
+                      {isLocalTranscribing
+                        ? "transcribing..."
+                        : isLocalRecording
+                          ? "stop + transcribe"
+                          : "start local mic"}
+                    </button>
+                  </div>
+                  {speechInputEngine === "browser" && sessionMode === "assistant" ? (
+                    <>
+                      <div className="mt-3 text-[10px] uppercase tracking-[0.24em] text-white/35">
+                        assistant mic language
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {([
+                          ["id-ID", "bahasa"],
+                          ["en-US", "english"],
+                        ] as const).map(([langValue, label]) => (
+                          <button
+                            key={langValue}
+                            type="button"
+                            aria-pressed={assistantRecognitionLang === langValue}
+                            onClick={() =>
+                              applyAssistantRecognitionLang(
+                                langValue,
+                                `assistant manual ${recognitionLangLabel(langValue)}`,
+                              )
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+                              assistantRecognitionLang === langValue
+                                ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
+                                : "border-white/10 bg-white/[0.03] text-white/45 hover:text-white/75"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.14em] text-white/32">
+                    {speechInputEngine === "browser" && sessionMode === "assistant"
+                      ? `browser = hands free, local whisper = push to talk, assistant mic = ${recognitionLangLabel(assistantRecognitionLang)}`
+                      : "browser = hands free, local whisper = push to talk"}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/35">
+                    translator
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTranslatorEnabled((current) => !current)}
+                      className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+                        translatorEnabled
+                          ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
+                          : "border-amber-300/40 bg-amber-300/10 text-amber-100"
+                      }`}
+                    >
+                      {getTranslatorButtonLabel(translatorEnabled)}
+                    </button>
+                  </div>
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.14em] text-white/32">
+                    off = assistant conversation, on = translation + speech
+                  </div>
+                </div>
+              </div>
+
+              <details className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <summary className="cursor-pointer list-none text-[10px] uppercase tracking-[0.24em] text-white/45">
+                  voice routing and overrides
+                </summary>
+
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <label className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                    <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
+                      voice EN
+                    </div>
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {voicePresetBank.en.map((preset, index) => (
+                        <button
+                          key={`voice-en-preset-${index + 1}`}
+                          type="button"
+                          onClick={() =>
+                            setVoiceOverrides((current) => ({
+                              ...current,
+                              en: preset.id,
+                            }))
+                          }
+                          className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
+                            preset.id
+                              ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
+                              : "border-white/5 bg-white/[0.02] text-white/20"
+                          }`}
+                        >
+                          {preset.label || `P${index + 1}`}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVoicePresetBank((current) => ({
+                            ...current,
+                            en: [
+                              ...current.en.slice(1),
+                              {
+                                id: voiceOverrides.en.trim(),
+                                label: voicePresetLabels.en.trim(),
+                              },
+                            ],
+                          }))
+                        }
+                        className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
+                      >
+                        save current
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVoiceOverrides((current) => ({
+                            ...current,
+                            en: "",
+                          }))
+                        }
+                        className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/45 transition hover:text-white/75"
+                      >
+                        clear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void testVoice("en")}
+                        className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-100 transition hover:border-sky-300/50"
+                      >
+                        test voice
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={voicePresetLabels.en}
+                      onChange={(event) =>
+                        setVoicePresetLabels((current) => ({
+                          ...current,
+                          en: event.target.value,
+                        }))
+                      }
+                      placeholder="preset label"
+                      className="mb-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                    />
+                    <select
+                      value=""
+                      onChange={(event) => {
+                        if (!event.target.value) {
+                          return;
+                        }
+
+                        setVoiceOverrides((current) => ({
+                          ...current,
+                          en: event.target.value,
+                        }));
+                      }}
+                      className="mb-2 w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none focus:border-emerald-300/40"
+                    >
+                      <option value="">Pick ElevenLabs voice</option>
+                      {availableVoices.map((voice) => (
+                        <option key={`en-${voice.id}`} value={voice.id}>
+                          {voice.label}
+                          {voice.gender ? ` · ${formatVoiceTag(voice.gender)}` : ""}
+                          {voice.accent ? ` · ${formatVoiceTag(voice.accent)}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={voiceOverrides.en}
+                      onChange={(event) =>
+                        setVoiceOverrides((current) => ({
+                          ...current,
+                          en: event.target.value,
+                        }))
+                      }
+                      placeholder="default env voice"
+                      className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                    />
+                    <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
+                      used for ID -&gt; EN output
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-white/35">
+                      {voiceOverrides.en
+                        ? availableVoices
+                            .filter((voice) => voice.id === voiceOverrides.en)
+                            .flatMap((voice) =>
+                              [voice.gender, voice.accent]
+                                .map((tag) => formatVoiceTag(tag))
+                                .filter(Boolean)
+                                .map((tag) => (
+                                  <span
+                                    key={`en-tag-${tag}`}
+                                    className="rounded-full border border-white/10 px-2 py-1"
+                                  >
+                                    {tag}
+                                  </span>
+                                )),
+                            )
+                        : null}
+                    </div>
+                  </label>
+
+                  <label className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                    <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
+                      voice ID
+                    </div>
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {voicePresetBank.id.map((preset, index) => (
+                        <button
+                          key={`voice-id-preset-${index + 1}`}
+                          type="button"
+                          onClick={() =>
+                            setVoiceOverrides((current) => ({
+                              ...current,
+                              id: preset.id,
+                            }))
+                          }
+                          className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] transition ${
+                            preset.id
+                              ? "border-white/10 bg-white/[0.03] text-white/65 hover:text-emerald-100"
+                              : "border-white/5 bg-white/[0.02] text-white/20"
+                          }`}
+                        >
+                          {preset.label || `P${index + 1}`}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVoicePresetBank((current) => ({
+                            ...current,
+                            id: [
+                              ...current.id.slice(1),
+                              {
+                                id: voiceOverrides.id.trim(),
+                                label: voicePresetLabels.id.trim(),
+                              },
+                            ],
+                          }))
+                        }
+                        className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-300/50"
+                      >
+                        save current
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVoiceOverrides((current) => ({
+                            ...current,
+                            id: "",
+                          }))
+                        }
+                        className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/45 transition hover:text-white/75"
+                      >
+                        clear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void testVoice("id")}
+                        className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-100 transition hover:border-sky-300/50"
+                      >
+                        test voice
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={voicePresetLabels.id}
+                      onChange={(event) =>
+                        setVoicePresetLabels((current) => ({
+                          ...current,
+                          id: event.target.value,
+                        }))
+                      }
+                      placeholder="preset label"
+                      className="mb-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                    />
+                    <select
+                      value=""
+                      onChange={(event) => {
+                        if (!event.target.value) {
+                          return;
+                        }
+
+                        setVoiceOverrides((current) => ({
+                          ...current,
+                          id: event.target.value,
+                        }));
+                      }}
+                      className="mb-2 w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none focus:border-emerald-300/40"
+                    >
+                      <option value="">Pick ElevenLabs voice</option>
+                      {availableVoices.map((voice) => (
+                        <option key={`id-${voice.id}`} value={voice.id}>
+                          {voice.label}
+                          {voice.gender ? ` · ${formatVoiceTag(voice.gender)}` : ""}
+                          {voice.accent ? ` · ${formatVoiceTag(voice.accent)}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={voiceOverrides.id}
+                      onChange={(event) =>
+                        setVoiceOverrides((current) => ({
+                          ...current,
+                          id: event.target.value,
+                        }))
+                      }
+                      placeholder="default env voice"
+                      className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-300/40"
+                    />
+                    <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-white/35">
+                      used for EN -&gt; ID output
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-white/35">
+                      {voiceOverrides.id
+                        ? availableVoices
+                            .filter((voice) => voice.id === voiceOverrides.id)
+                            .flatMap((voice) =>
+                              [voice.gender, voice.accent]
+                                .map((tag) => formatVoiceTag(tag))
+                                .filter(Boolean)
+                                .map((tag) => (
+                                  <span
+                                    key={`id-tag-${tag}`}
+                                    className="rounded-full border border-white/10 px-2 py-1"
+                                  >
+                                    {tag}
+                                  </span>
+                                )),
+                            )
+                        : null}
+                    </div>
+                  </label>
+                </div>
+              </details>
 
               {error ? (
                 <div className="mt-3 rounded-2xl border border-red-400/40 bg-red-950/50 p-3 text-sm text-red-100">
@@ -2172,16 +3031,21 @@ export default function InterpreterPage() {
                     conversation log
                   </div>
                   <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-white/35">
-                    primary transcript and interpretation view
+                    {conversationViewSubtitle(sessionMode)}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={clearConversationLog}
-                  className="rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-white/45 transition hover:border-red-300/30 hover:text-red-100"
-                >
-                  clear
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100/75">
+                    active {speakerLabel(activeSpeaker)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearConversationLog}
+                    className="rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-white/45 transition hover:border-red-300/30 hover:text-red-100"
+                  >
+                    clear
+                  </button>
+                </div>
               </div>
 
               <div className="mb-4 flex flex-wrap gap-2">
@@ -2190,6 +3054,7 @@ export default function InterpreterPage() {
                     <button
                       key={filter}
                       type="button"
+                      aria-pressed={conversationFilter === filter}
                       onClick={() => setConversationFilter(filter)}
                       className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
                         conversationFilter === filter
@@ -2219,7 +3084,7 @@ export default function InterpreterPage() {
                             {speakerLabel(entry.speaker)}
                           </span>
                           <span className="rounded-full border border-white/10 px-2.5 py-1 text-white/65">
-                            {entry.status}
+                            {sessionStatusLabel(entry.status, entry.sessionMode)}
                           </span>
                           <span>{entry.source}</span>
                           <span>{modeLabel(entry.mode)}</span>
@@ -2239,18 +3104,24 @@ export default function InterpreterPage() {
                         <div className="grid gap-4 text-sm leading-relaxed md:grid-cols-2 md:text-base">
                           <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
                             <span className="text-[10px] uppercase tracking-[0.32em] text-white/35">
-                              IN
+                              {inputPanelLabel(entry.sessionMode)}
                             </span>
                             <div className="mt-2 whitespace-pre-wrap text-white/90">{entry.input}</div>
                           </div>
                           <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.06] p-4">
                             <span className="text-[10px] uppercase tracking-[0.32em] text-white/35">
-                              OUT
+                              {outputPanelLabel(entry.sessionMode)}
                             </span>
                             <div className="mt-2 whitespace-pre-wrap text-emerald-50">
                               {entry.status === "error"
-                                ? entry.error || "Translation failed."
-                                : entry.output || "waiting..."}
+                                ? entry.error ||
+                                  (entry.sessionMode === "assistant"
+                                    ? "Assistant reply failed."
+                                    : "Translation failed.")
+                                : entry.output ||
+                                  (entry.sessionMode === "assistant"
+                                    ? "waiting for reply..."
+                                    : "waiting...")}
                             </div>
                           </div>
                         </div>
@@ -2261,6 +3132,7 @@ export default function InterpreterPage() {
                               <button
                                 key={speaker}
                                 type="button"
+                                aria-pressed={entry.speaker === speaker}
                                 onClick={() => updateConversationSpeaker(entry.id, speaker)}
                                 className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] transition ${
                                   entry.speaker === speaker
@@ -2268,7 +3140,7 @@ export default function InterpreterPage() {
                                     : "border-white/10 bg-black/20 text-white/40 hover:text-white/75"
                                 }`}
                               >
-                                {speakerLabel(speaker)}
+                                {speakerShortLabel(speaker)} {speakerLabel(speaker)}
                               </button>
                             ),
                           )}
@@ -2304,16 +3176,22 @@ export default function InterpreterPage() {
                 runtime {runtimeState}
               </span>
               <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
+                stt {speechInputEngine}
+              </span>
+              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
                 queue {queueLength}
               </span>
               <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                translator {isTranslatorRunning ? "running" : "idle"}
+                {translatorEnabled ? "translator" : "assistant"} {isTranslatorRunning ? "running" : "idle"}
               </span>
               <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
                 buffer {bufferLength}
               </span>
               <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
                 recog {recognitionRunning ? "yes" : "no"}
+              </span>
+              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
+                local {isLocalRecording ? "recording" : isLocalTranscribing ? "transcribing" : "idle"}
               </span>
               <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
                 buffer state {speechBufferStatus}
@@ -2369,8 +3247,8 @@ export default function InterpreterPage() {
               flushSpeechBuffer("manual");
             }
           }}
-          onFocus={enableSpeechRecognition}
-          onClick={enableSpeechRecognition}
+          onFocus={armSpeechInput}
+          onClick={armSpeechInput}
           placeholder="Type here or speak..."
           className="h-20 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-5 font-mono text-2xl text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.07] md:h-24 md:px-7 md:text-3xl"
           aria-label="Interpreter input"

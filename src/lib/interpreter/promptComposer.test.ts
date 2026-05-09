@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  ASSISTANT_HISTORY_MAX_CONTENT_CHARS,
+  ASSISTANT_HISTORY_MAX_TURNS,
   cleanInterpreterOutput,
+  composeAssistantPrompt,
   composeInterpreterPrompt,
+  normalizeAssistantHistory,
   outputLooksTooLiteral,
   outputLooksWrongLanguage,
 } from "./promptComposer";
@@ -42,5 +46,79 @@ describe("interpreter prompt composer", () => {
     expect(messages[0]?.content).toContain("Output English only.");
     expect(messages[1]?.content).toContain("Glossary memory");
     expect(messages[2]?.content).toContain("Gua mau pesan kamar buat malam ini");
+  });
+});
+
+describe("assistant prompt composer with multi-turn history", () => {
+  it("returns the original three-message shape when no history is supplied", () => {
+    const messages = composeAssistantPrompt({
+      input: "What time is it?",
+      learningEntries: "",
+      mode: "en-id",
+    });
+
+    expect(messages.map((m) => m.role)).toEqual(["system", "user"]);
+    expect(messages[0]?.content).toContain("Prestix Assistant");
+    expect(messages[1]?.content).toBe("What time is it?");
+  });
+
+  it("inserts prior turns between learning context and current input", () => {
+    const messages = composeAssistantPrompt({
+      input: "And in Jakarta?",
+      learningEntries: "Style memory:\n1. Keep it casual.",
+      mode: "en-id",
+      history: [
+        { role: "user", content: "What time is it in London?" },
+        { role: "assistant", content: "Around 6pm." },
+      ],
+    });
+
+    expect(messages.map((m) => m.role)).toEqual([
+      "system",
+      "system",
+      "user",
+      "assistant",
+      "user",
+    ]);
+    expect(messages[1]?.content).toContain("Style memory");
+    expect(messages[2]?.content).toBe("What time is it in London?");
+    expect(messages[3]?.content).toBe("Around 6pm.");
+    expect(messages[4]?.content).toBe("And in Jakarta?");
+  });
+
+  it("normalizeAssistantHistory caps at the latest N turns", () => {
+    const turns = Array.from({ length: ASSISTANT_HISTORY_MAX_TURNS + 4 }, (_, index) => ({
+      role: index % 2 === 0 ? "user" : ("assistant" as const),
+      content: `turn ${index}`,
+    }));
+
+    const result = normalizeAssistantHistory(turns);
+    expect(result).toHaveLength(ASSISTANT_HISTORY_MAX_TURNS);
+    expect(result[result.length - 1]?.content).toBe(`turn ${turns.length - 1}`);
+  });
+
+  it("normalizeAssistantHistory rejects malformed entries and trims content", () => {
+    const oversized = "x".repeat(ASSISTANT_HISTORY_MAX_CONTENT_CHARS + 200);
+
+    const result = normalizeAssistantHistory([
+      null,
+      "not an object",
+      { role: "system", content: "should be ignored" },
+      { role: "user", content: "  " },
+      { role: "assistant", content: 123 },
+      { role: "user", content: "  hello  " },
+      { role: "assistant", content: oversized },
+    ]);
+
+    expect(result.map((turn) => turn.role)).toEqual(["user", "assistant"]);
+    expect(result[0]?.content).toBe("hello");
+    expect(result[1]?.content.length).toBe(ASSISTANT_HISTORY_MAX_CONTENT_CHARS);
+    expect(result[1]?.content.endsWith("…[truncated]")).toBe(true);
+  });
+
+  it("ignores history when normalize is given non-array input", () => {
+    expect(normalizeAssistantHistory(undefined)).toEqual([]);
+    expect(normalizeAssistantHistory(null)).toEqual([]);
+    expect(normalizeAssistantHistory("nope")).toEqual([]);
   });
 });

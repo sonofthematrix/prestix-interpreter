@@ -1,10 +1,13 @@
-Thought for 15sComplete Roadmap — Prestix Interpreter / RAKUS
+Complete Roadmap — Prestix Interpreter / RAKUS
 0. Definitieve Scope
 Werkmap:
-C:\Users\sonof\Downloads\rakus\prestix.app-main
+rakus/prestix interpreter (lokale clone-paden kunnen afwijken)
 Productdoel:
 Een simpele maar uitbreidbare EN/ID live vertolkpagina die:
 spraak of tekst opvangt→ gesprek segmenteert/logt→ juiste vertaalroute kiest→ natuurlijk vertaalt→ output toont→ output uitspreekt→ leert van correcties
+Strategische productvertakkingen (niet onder roadmap-fasen 1–11; alleen op expliciete opdracht):
+- Personal assistant: bredere agent/tools/sessies naast live-vertolking; apart specificeren voordat gebouwd wordt.
+- Marketplace: aanbod, vertrouwen, transacties rond tolken of gerelateerde diensten; apart specificeren voordat gebouwd wordt.
 Niet bouwen in deze fase:
 - geen full Prestix clone- geen admin/support/booking/payments- geen volledige Assistant Runtime port- geen user-facing model picker- geen dashboards from scratch- geen secrets tonen
 De Prestix SSoT beschrijft een grotere architectuur met één Assistant Runtime, modes, prompt-layers, memory, tool registry en role-gated tool execution. Voor deze interpreter gebruiken we die principes, maar porten we niet de volledige Prestix-runtime. 
@@ -188,5 +191,33 @@ Later
 11. echte diarization12. DB/auth/admin config13. export/reporting14. production deployment
 
 Codex Master Prompt Voor De Volgende Sessie
-Werk in:C:\Users\sonof\Downloads\rakus\prestix.app-mainGebruik deze roadmap als leidraad.Belangrijk:De app werkt. Niet opnieuw bouwen.Geen full Prestix clone.Geen UI redesign tenzij expliciet gevraagd.Geen secrets printen.Geen env values tonen.Huidige architectuur:- Prestix Interpreter one-page app- speech/text input- LIVE/STORY capture modes- segmenter/logger worker- translator queue worker- conversation log- flow log- speaker tagging- learning memory- internal provider/model routerTaken mogen alleen gericht zijn op één fase tegelijk.Bij elke wijziging:- behoud typed input- behoud speech input- behoud output visibility- behoud queue- behoud learning- behoud provider chain- run type-check of targeted check- rapporteer alleen changed files + testresultaat
+Werk in: rakus/prestix interpreter (lokale clone-paden kunnen afwijken)
+Gebruik deze roadmap als leidraad.
+Belangrijk:
+De app werkt. Niet opnieuw bouwen.
+Geen full Prestix clone.
+Geen UI redesign tenzij expliciet gevraagd.
+Geen secrets printen. Geen env values tonen.
+Geen personal assistant of marketplace tenzij expliciet gevraagd (zie scope bovenaan).
+Huidige architectuur:
+- Prestix Interpreter one-page app
+- speech/text input
+- LIVE/STORY capture modes
+- segmenter/logger worker
+- translator queue worker
+- conversation log
+- flow log
+- speaker tagging
+- learning memory
+- internal provider/model router
+Taken mogen alleen gericht zijn op één fase tegelijk.
+Bij elke wijziging:
+- behoud typed input
+- behoud speech input
+- behoud output visibility
+- behoud queue
+- behoud learning
+- behoud provider chain
+- run type-check of targeted check
+- rapporteer alleen changed files + testresultaat
 Dit is de complete roadmap. De sleutel is: niet meer herstarten. Vanaf nu alleen fase voor fase verbeteren.

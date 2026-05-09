@@ -2,16 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { jsonLearningStore } from "../../../lib/interpreter/learningStore";
 import {
   cleanInterpreterOutput,
+  composeAssistantPrompt,
   composeInterpreterPrompt,
+  normalizeAssistantHistory,
   outputLooksTooLiteral,
   outputLooksWrongLanguage,
 } from "../../../lib/interpreter/promptComposer";
 import { requestTranslation } from "../../../lib/interpreter/providerRouter";
-import type { InterpreterMode, InterpreterProvider, LearningType } from "../../../lib/interpreter/types";
+import type {
+  InterpreterMode,
+  InterpreterProvider,
+  LearningType,
+  SessionMode,
+} from "../../../lib/interpreter/types";
 
 type RequestBody = {
   input?: unknown;
   mode?: unknown;
+  sessionMode?: unknown;
+  history?: unknown;
 };
 
 type InterpreterResponsePayload = {
@@ -32,6 +41,10 @@ const interpreterRouteTimeoutMs = 30000;
 
 function isInterpreterMode(value: unknown): value is InterpreterMode {
   return value === "id-en" || value === "en-id";
+}
+
+function isSessionMode(value: unknown): value is SessionMode {
+  return value === "interpreter" || value === "assistant";
 }
 
 function errorPayload(
@@ -104,6 +117,7 @@ async function handleInterpreterPost(request: NextRequest, signal: AbortSignal) 
 
   const input = typeof body.input === "string" ? body.input.trim() : "";
   const mode = isInterpreterMode(body.mode) ? body.mode : null;
+  const sessionMode = isSessionMode(body.sessionMode) ? body.sessionMode : "interpreter";
 
   if (!input) {
     return NextResponse.json(errorPayload("Input is required."), { status: 400 });
@@ -114,19 +128,31 @@ async function handleInterpreterPost(request: NextRequest, signal: AbortSignal) 
   }
 
   const learningContext = await jsonLearningStore.listRelevant(input, mode);
+  // History is only honored for assistant-mode; interpreter-mode stays
+  // intentionally stateless (one segment in, one translation out).
+  const assistantHistory =
+    sessionMode === "assistant" ? normalizeAssistantHistory(body.history) : [];
   const buildMessages = (strict: boolean) =>
-    composeInterpreterPrompt({
-      input,
-      learningEntries: learningContext.context,
-      mode,
-      strict,
-    });
+    sessionMode === "assistant"
+      ? composeAssistantPrompt({
+          input,
+          learningEntries: learningContext.context,
+          mode,
+          history: assistantHistory,
+        })
+      : composeInterpreterPrompt({
+          input,
+          learningEntries: learningContext.context,
+          mode,
+          strict,
+        });
 
   let translation = await requestTranslation(buildMessages(false), { signal });
   let translatedText = cleanInterpreterOutput(translation.translatedText ?? "");
   let fallbackChainTried = translation.fallbackChainTried;
 
   if (
+    sessionMode === "interpreter" &&
     translatedText &&
     (outputLooksWrongLanguage(translatedText, mode) ||
       outputLooksTooLiteral(input, translatedText))

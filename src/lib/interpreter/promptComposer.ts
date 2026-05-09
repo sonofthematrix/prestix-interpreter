@@ -1,4 +1,54 @@
-import type { ChatMessage, InterpreterMode } from "./types";
+import { ASSISTANT_LLM_PRODUCT_NAME } from "./branding";
+import type { AssistantHistoryTurn, ChatMessage, InterpreterMode } from "./types";
+
+// Kept here so server + client can agree on the same caps. Server enforces them
+// authoritatively; client trims first to keep the request small.
+export const ASSISTANT_HISTORY_MAX_TURNS = 16;
+export const ASSISTANT_HISTORY_MAX_CONTENT_CHARS = 4000;
+
+function isAssistantHistoryRole(value: unknown): value is AssistantHistoryTurn["role"] {
+  return value === "user" || value === "assistant";
+}
+
+function clampContent(content: string): string {
+  if (content.length <= ASSISTANT_HISTORY_MAX_CONTENT_CHARS) {
+    return content;
+  }
+
+  const suffix = "…[truncated]";
+  return `${content.slice(0, ASSISTANT_HISTORY_MAX_CONTENT_CHARS - suffix.length)}${suffix}`;
+}
+
+// Defensive normalizer: tolerates anything but only emits well-typed turns,
+// drops empty messages, clamps oversized content, and keeps only the most
+// recent N turns so the prompt stays bounded.
+export function normalizeAssistantHistory(
+  raw: unknown,
+  maxTurns: number = ASSISTANT_HISTORY_MAX_TURNS,
+): AssistantHistoryTurn[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const cleaned: AssistantHistoryTurn[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+    const role = (item as { role?: unknown }).role;
+    const content = (item as { content?: unknown }).content;
+    if (!isAssistantHistoryRole(role) || typeof content !== "string") {
+      continue;
+    }
+    const trimmed = content.trim();
+    if (!trimmed) {
+      continue;
+    }
+    cleaned.push({ role, content: clampContent(trimmed) });
+  }
+
+  return cleaned.slice(-Math.max(0, maxTurns));
+}
 
 const translationStyle = "natural_interpreter";
 
@@ -203,6 +253,68 @@ export function composeInterpreterPrompt({
     {
       role: "user",
       content: `Interpret this text according to the direction. Return only the natural spoken interpretation:\n\n${input}`,
+    },
+  ];
+}
+
+function assistantSystemPrompt(mode: InterpreterMode): string {
+  if (mode === "id-en") {
+    return [
+      `You are ${ASSISTANT_LLM_PRODUCT_NAME}, a live voice AI assistant speaking with the user in Indonesian.`,
+      "You have a built-in English interpreter: only switch to interpreting when the user clearly asks for translation.",
+      "Reply in natural spoken Indonesian only.",
+      "Be direct, helpful, and conversational.",
+      "Keep answers concise unless the user clearly asks for depth.",
+      "Do not translate the user unless they explicitly ask for translation.",
+      "Do not explain your language choice.",
+      "Do not use markdown.",
+      "Do not wrap the output in quotes.",
+    ].join(" ");
+  }
+
+  return [
+    `You are ${ASSISTANT_LLM_PRODUCT_NAME}, a live voice AI assistant speaking with the user in English.`,
+    "You have a built-in Indonesian interpreter: only switch to interpreting when the user clearly asks for translation.",
+    "Reply in natural spoken English only.",
+    "Be direct, helpful, and conversational.",
+    "Keep answers concise unless the user clearly asks for depth.",
+    "Do not translate the user unless they explicitly ask for translation.",
+    "Do not explain your language choice.",
+    "Do not use markdown.",
+    "Do not wrap the output in quotes.",
+  ].join(" ");
+}
+
+export function composeAssistantPrompt({
+  input,
+  learningEntries,
+  mode,
+  history,
+}: {
+  input: string;
+  learningEntries: string;
+  mode: InterpreterMode;
+  history?: AssistantHistoryTurn[];
+}): ChatMessage[] {
+  const priorTurns = normalizeAssistantHistory(history ?? []);
+
+  return [
+    {
+      role: "system",
+      content: assistantSystemPrompt(mode),
+    },
+    ...(learningEntries
+      ? [
+          {
+            role: "system" as const,
+            content: learningEntries,
+          },
+        ]
+      : []),
+    ...priorTurns.map<ChatMessage>((turn) => ({ role: turn.role, content: turn.content })),
+    {
+      role: "user",
+      content: input,
     },
   ];
 }

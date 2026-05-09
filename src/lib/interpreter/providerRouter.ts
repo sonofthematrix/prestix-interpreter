@@ -113,6 +113,35 @@ function geminiTextFromMessages(messages: ChatMessage[], role: ChatMessage["role
     .join("\n\n");
 }
 
+// Gemini's `contents` API uses "user" and "model" roles. We map our internal
+// assistant role to "model" and skip system entries (those go via
+// `systemInstruction`). Adjacent same-role turns are merged so the API call
+// stays well-formed.
+function geminiContentsFromMessages(
+  messages: ChatMessage[],
+): Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> {
+  const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
+
+  for (const message of messages) {
+    if (message.role === "system") {
+      continue;
+    }
+    const trimmed = message.content.trim();
+    if (!trimmed) {
+      continue;
+    }
+    const role: "user" | "model" = message.role === "assistant" ? "model" : "user";
+    const last = contents[contents.length - 1];
+    if (last && last.role === role) {
+      last.parts.push({ text: trimmed });
+    } else {
+      contents.push({ role, parts: [{ text: trimmed }] });
+    }
+  }
+
+  return contents;
+}
+
 function asOpenAiCompatibleUrl(baseUrl: string): string {
   const trimmed = baseUrl.trim().replace(/\/+$/, "");
   if (trimmed.endsWith("/chat/completions")) {
@@ -329,7 +358,7 @@ async function requestGemini({
     model,
   )}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const systemText = geminiTextFromMessages(messages, "system");
-  const userText = geminiTextFromMessages(messages, "user");
+  const contents = geminiContentsFromMessages(messages);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -345,12 +374,7 @@ async function requestGemini({
             },
           }
         : {}),
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: userText }],
-        },
-      ],
+      contents,
     }),
   });
 
@@ -480,10 +504,7 @@ function buildProviderResolution(): ProviderResolution {
 
   const localProviderRequested =
     process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "ollama" ||
-    process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "local" ||
-    Boolean(process.env.OLLAMA_BASE_URL) ||
-    Boolean(process.env.OLLAMA_HOST) ||
-    Boolean(process.env.OLLAMA_TRANSLATION_MODEL);
+    process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "local";
 
   if (localProviderRequested) {
     const baseUrl = (
@@ -509,7 +530,7 @@ function buildProviderResolution(): ProviderResolution {
     });
   } else {
     fallbackChainTried.push(
-      "provider skipped: local missing OLLAMA_BASE_URL/OLLAMA_HOST/PRESTIX_SANDBOX_TEXT_PROVIDER",
+      "provider skipped: local not selected via PRESTIX_SANDBOX_TEXT_PROVIDER",
     );
   }
 
