@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { GET, POST } from "./route";
-import { createClient } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { NextRequest } from 'next/server';
+import { GET, POST } from './route';
+import { createClient } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
 describe("/api/promoter/links", () => {
   let mockDb: any;
@@ -36,7 +37,7 @@ describe("/api/promoter/links", () => {
     it("returns 401 when user is not authenticated", async () => {
       vi.mocked(getCurrentUser).mockResolvedValue(null);
 
-      const request = new Request("http://localhost:3000/api/promoter/links");
+      const request = new NextRequest('http://localhost:3000/api/promoter/links');
       const response = await GET(request);
 
       expect(response.status).toBe(401);
@@ -47,7 +48,7 @@ describe("/api/promoter/links", () => {
     it("returns 404 when promoter profile not found", async () => {
       mockDb.promoterProfile.findFirst.mockResolvedValue(null);
 
-      const request = new Request("http://localhost:3000/api/promoter/links");
+      const request = new NextRequest('http://localhost:3000/api/promoter/links');
       const response = await GET(request);
 
       expect(response.status).toBe(404);
@@ -73,7 +74,7 @@ describe("/api/promoter/links", () => {
       mockDb.promoterProfile.findFirst.mockResolvedValue(mockPromoter);
       mockDb.promoterMagicLink.findMany.mockResolvedValue(mockLinks);
 
-      const request = new Request("http://localhost:3000/api/promoter/links");
+      const request = new NextRequest('http://localhost:3000/api/promoter/links');
       const response = await GET(request);
 
       expect(response.status).toBe(200);
@@ -98,14 +99,14 @@ describe("/api/promoter/links", () => {
       mockDb.promoterProfile.findFirst.mockResolvedValue(mockPromoter);
       mockDb.promoterMagicLink.create.mockResolvedValue(newLink);
 
-      const request = new Request("http://localhost:3000/api/promoter/links", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const request = new NextRequest('http://localhost:3000/api/promoter/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          presetVenueId: "venue-123",
-          targetName: "John Doe",
-          targetEmail: "john@example.com"
-        })
+          presetVenueId: 'venue-123',
+          targetName: 'John Doe',
+          targetEmail: 'john@example.com',
+        }),
       });
 
       const response = await POST(request);
@@ -117,13 +118,13 @@ describe("/api/promoter/links", () => {
     });
 
     it("validates required fields", async () => {
-      const request = new Request("http://localhost:3000/api/promoter/links", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const request = new NextRequest('http://localhost:3000/api/promoter/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           // Missing required presetVenueId
-          targetName: "John Doe"
-        })
+          targetName: 'John Doe',
+        }),
       });
 
       const response = await POST(request);

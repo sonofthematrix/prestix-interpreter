@@ -11,7 +11,7 @@ export default defineConfig({
   testMatch: "**/*.spec.ts",
 
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:4318",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -33,8 +33,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "bun run dev",
-    url: "http://localhost:3000",
+    command: "npm run dev",
+    url: "http://localhost:4318",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

@@ -1,0 +1,32 @@
+{
+  "id": "prestix-agentix-04",
+  "seq": "04",
+  "title": "Add agent system prompt to promptComposer (composeAgentPrompt)",
+  "status": "completed",
+  "depends_on": ["01"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T11:59:00Z",
+  "completed_at": "2026-05-19T11:59:30Z",
+  "completion_summary": "Added agentSystemPrompt() function near assistantSystemPrompt, exported it. No modifications to composeUnifiedPrompt or composeInterpreterPrompt. TypeScript compiles clean, all 10 tests pass.",
+  "context_files": [
+    "src/lib/interpreter/types.ts (AgentStep, AgentPlan, AgentResult types for prompt context)",
+    "src/lib/interpreter/promptComposer.ts (lines 247-349: existing assistantSystemPrompt pattern)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/promptComposer.ts"
+  ],
+  "acceptance_criteria": [
+    "New function composeAgentPrompt exported from promptComposer.ts",
+    "Takes input, learningEntries, mode, history (same shape as composeUnifiedPrompt)",
+    "Returns ChatMessage[] with agent system prompt instructing step-by-step planning",
+    "Agent persona uses ASSISTANT_LLM_PRODUCT_NAME from branding.ts",
+    "System prompt instructs LLM to break complex requests into ordered steps",
+    "Does NOT modify composeUnifiedPrompt or composeInterpreterPrompt behavior",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/promptComposer.ts (modified: add composeAgentPrompt function)"
+  ]
+}

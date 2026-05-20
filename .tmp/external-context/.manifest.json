@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-05-19T00:00:00Z",
+  "libraries": {
+    "tanstack-react-query": {
+      "files": [
+        {
+          "filename": "install-imports.md",
+          "topic": "install and import guidance for Next.js App Router TypeScript",
+          "tech_stack": "Next.js 16 App Router",
+          "fetched": "2026-05-19T00:00:00Z",
+          "source": "Context7 API + npm registry"
+        }
+      ]
+    },
+    "react-hook-form": {
+      "files": [
+        {
+          "filename": "install-imports.md",
+          "topic": "install and import guidance for Next.js App Router TypeScript",
+          "tech_stack": "Next.js 16 App Router",
+          "fetched": "2026-05-19T00:00:00Z",
+          "source": "Context7 API + npm registry"
+        }
+      ]
+    },
+    "radix-ui-react-primitives": {
+      "files": [
+        {
+          "filename": "install-imports.md",
+          "topic": "install and import guidance for selected primitives",
+          "tech_stack": "Next.js 16 App Router",
+          "fetched": "2026-05-19T00:00:00Z",
+          "source": "Radix UI official docs + npm registry"
+        }
+      ]
+    }
+  }
+}

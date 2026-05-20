@@ -1,0 +1,37 @@
+{
+  "id": "prestix-agentix-11",
+  "seq": "11",
+  "title": "Integrate tool execution into agent-mode route",
+  "status": "completed",
+  "depends_on": ["09", "10"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Integrated tool execution into agent mode route: toolRegistry init with translateTool/rememberTool/recallTool, stepExecutor dispatches to toolExecutor when step.tool is set, error handling captures failures",
+  "context_files": [
+    "src/app/api/interpreter/route.ts (lines 108-242: existing agent mode branch; add tool execution loop)",
+    "src/lib/interpreter/types.ts (AgentStep.tool field now actionable)"
+  ],
+  "reference_files": [
+    "src/app/api/interpreter/route.ts",
+    "src/lib/interpreter/agentLoop.ts",
+    "src/lib/interpreter/toolExecutor.ts",
+    "src/lib/interpreter/toolRegistry.ts",
+    "src/lib/interpreter/tools/translateTool.ts",
+    "src/lib/interpreter/tools/memoryTool.ts"
+  ],
+  "acceptance_criteria": [
+    "Route initializes ToolRegistry with translateTool, rememberTool, recallTool on startup",
+    "In agent mode: after decomposition, each step with a tool field invokes toolExecutor",
+    "Tool results are attached to each step's result field",
+    "Steps without tool field are executed via LLM (existing behavior from Phase B)",
+    "Tool execution failures are captured in step.error and step.status='failed'",
+    "Existing sessionMode='assistant' and 'interpreter' behavior COMPLETELY unchanged",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/app/api/interpreter/route.ts (modified: add tool integration in agent branch)"
+  ]
+}

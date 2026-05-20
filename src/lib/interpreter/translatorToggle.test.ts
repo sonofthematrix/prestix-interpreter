@@ -19,7 +19,7 @@ describe("translator toggle helpers", () => {
   });
 
   it("returns a clear button label", () => {
-    expect(getTranslatorButtonLabel(true)).toBe("translator on");
-    expect(getTranslatorButtonLabel(false)).toBe("translator off");
+    expect(getTranslatorButtonLabel(true)).toBe("force translate");
+    expect(getTranslatorButtonLabel(false)).toBe("prestix");
   });
 });

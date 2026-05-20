@@ -1,0 +1,40 @@
+{
+  "id": "prestix-assistant-first-13",
+  "seq": "13",
+  "title": "Create ambientListener.ts — passive ambient listening foundation",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Created ambientListener.ts with AmbientListener class (start/stop/pause/resume lifecycle), feedTranscript pipeline, slang extraction via static+dynamic markers, pattern detection callbacks, flushMemory into learningStore via acceptAmbientEntry, privacy-first default OFF",
+  "depends_on": ["01", "02", "04"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "184-201",
+      "reason": "Ambient listening requirements: passive capture, memory extraction, configurability"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts",
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/conversationLearner.ts",
+    "src/lib/interpreter/languageMarkers.ts"
+  ],
+  "acceptance_criteria": [
+    "AmbientListener class with start()/stop()/pause()/resume() lifecycle methods",
+    "Collects ambient speech transcripts (NOT audio — transcript-only for privacy)",
+    "Extracts useful patterns via memory extraction pipeline",
+    "Configurable on/off with default OFF (privacy-first)",
+    "onPatternDetected() callback for slang/glossary/style patterns",
+    "Accepts ambient-derived entries into learningStore via acceptAmbientEntry()",
+    "No audio recording or storage — transcripts only, ephemeral",
+    "Imports only from allowed files (types.ts, learningStore.ts, conversationLearner.ts, languageMarkers.ts)",
+    "TypeScript compilation passes for ambientListener.ts"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/ambientListener.ts (new)"
+  ]
+}

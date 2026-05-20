@@ -1,4 +1,4 @@
-import { jsonLearningStore } from "./interpreter/learningStore";
+import { learningStore, jsonLearningStore } from "./interpreter/learningStore";
 import type {
   CorrectionMemory,
   GlossaryMemory,
@@ -17,7 +17,7 @@ export type InterpreterStyleMemory = StyleMemory;
 export type InterpreterLearningMemory = LearningEntry;
 export type InterpreterLearningContext = LearningContext;
 
-export { JsonLearningStore, jsonLearningStore } from "./interpreter/learningStore";
+export { JsonLearningStore, jsonLearningStore, learningStore } from "./interpreter/learningStore";
 
 export async function appendInterpreterLearningMemory(
   memory:
@@ -31,7 +31,7 @@ export async function appendInterpreterLearningMemory(
 export async function appendInterpreterCorrection(
   correction: Omit<CorrectionMemory, "createdAt" | "type">,
 ): Promise<CorrectionMemory> {
-  return jsonLearningStore.addCorrection(correction);
+  return learningStore.addCorrection(correction);
 }
 
 export async function getInterpreterLearningContext({
@@ -41,5 +41,5 @@ export async function getInterpreterLearningContext({
   input: string;
   mode: InterpreterMode;
 }): Promise<LearningContext> {
-  return jsonLearningStore.listRelevant(input, mode);
+  return learningStore.listRelevant(input, mode);
 }

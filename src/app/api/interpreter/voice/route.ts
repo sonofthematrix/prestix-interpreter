@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { shouldSkipElevenLabsError } from "@/lib/interpreter/elevenlabsError";
-
-type InterpreterMode = "id-en" | "en-id";
+import { resolveTtsFallbackProvider } from "@/lib/interpreter/voiceFallback";
+import { isInterpreterMode } from "@/lib/interpreter/typeGuards";
+import type { InterpreterMode } from "@/lib/interpreter/types";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 type RequestBody = {
   mode?: unknown;
@@ -19,20 +21,78 @@ const defaultVoiceSettings = {
   use_speaker_boost: true,
 };
 
-function isInterpreterMode(value: unknown): value is InterpreterMode {
-  return value === "id-en" || value === "en-id";
+function resolveOpenAiVoice(mode: InterpreterMode): string {
+  if (mode === "id-nl") {
+    return process.env.OPENAI_TTS_VOICE_NL || process.env.OPENAI_TTS_VOICE || "alloy";
+  }
+  if (mode === "id-en") {
+    return process.env.OPENAI_TTS_VOICE_EN || process.env.OPENAI_TTS_VOICE || "alloy";
+  }
+  return process.env.OPENAI_TTS_VOICE_ID || process.env.OPENAI_TTS_VOICE || "alloy";
 }
 
+async function requestOpenAiSpeech(text: string, mode: InterpreterMode): Promise<NextResponse> {
+  const apiKey = process.env.OPENAI_API_KEY || "";
+  if (!apiKey) {
+    return new NextResponse(null, { status: 204 });
+  }
+
+  const response = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts",
+      voice: resolveOpenAiVoice(mode),
+      input: text,
+      format: "mp3",
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return errorResponse(
+      errorText || `OpenAI TTS request failed with status ${response.status}.`,
+      response.status,
+    );
+  }
+
+  const audioBuffer = await response.arrayBuffer();
+  if (audioBuffer.byteLength === 0) {
+    return errorResponse("OpenAI TTS returned empty audio.", 502);
+  }
+
+  return new NextResponse(audioBuffer, {
+    status: 200,
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "audio/mpeg",
+    },
+  });
+}
+
+/** Target language for TTS: id-nl/id-en → European voice; nl-id/en-id → Indonesian voice */
 function resolveVoiceId(mode: InterpreterMode): string {
+  if (mode === "id-nl") {
+    // Dutch output only: prefer explicit NL voice; avoid EN fallback (wrong timbre) and accidental multilingual "default" voices.
+    return (
+      process.env.ELEVENLABS_VOICE_ID_NL?.trim() ||
+      process.env.ELEVENLABS_VOICE_ID?.trim() ||
+      ""
+    );
+  }
   if (mode === "id-en") {
     return process.env.ELEVENLABS_VOICE_ID_EN || process.env.ELEVENLABS_VOICE_ID || "";
   }
-
   return process.env.ELEVENLABS_VOICE_ID_ID || process.env.ELEVENLABS_VOICE_ID || "";
 }
 
 function resolveLanguageCode(mode: InterpreterMode): string {
-  return mode === "id-en" ? "en" : "id";
+  if (mode === "id-en") return "en";
+  if (mode === "id-nl") return "nl";
+  return "id";
 }
 
 function errorResponse(error: string, status = 400) {
@@ -94,6 +154,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(ip, 10, 60000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many TTS requests.", retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000) },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
   let body: RequestBody;
 
   try {
@@ -112,13 +181,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (!mode) {
-    return errorResponse("Mode must be id-en or en-id.");
+    return errorResponse("Mode must be nl-id, id-nl, en-id, or id-en.");
   }
 
   const apiKey = process.env.ELEVENLABS_API_KEY || "";
   const voiceId = voiceIdOverride || resolveVoiceId(mode);
+  const openAiApiKeyPresent = Boolean(process.env.OPENAI_API_KEY);
 
   if (!apiKey || !voiceId) {
+    if (openAiApiKeyPresent) {
+      return requestOpenAiSpeech(text, mode);
+    }
     return new NextResponse(null, { status: 204 });
   }
 
@@ -150,7 +223,14 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      if (shouldSkipElevenLabsError(errorText)) {
+      const fallbackProvider = resolveTtsFallbackProvider({
+        elevenLabsBlocked: shouldSkipElevenLabsError(errorText),
+        openAiApiKeyPresent,
+      });
+      if (fallbackProvider === "openai") {
+        return requestOpenAiSpeech(text, mode);
+      }
+      if (fallbackProvider === "none") {
         return new NextResponse(null, { status: 204 });
       }
       return errorResponse(

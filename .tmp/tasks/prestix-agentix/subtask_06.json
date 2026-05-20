@@ -1,0 +1,38 @@
+{
+  "id": "prestix-agentix-06",
+  "seq": "06",
+  "title": "Phase B tests: taskDecomposer, agentLoop, promptComposer, route agent mode",
+  "status": "pending",
+  "depends_on": ["05"],
+  "parallel": false,
+  "suggested_agent": "TestEngineer",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/promptComposer.test.ts (existing test patterns: Vitest, describe/it/expect)",
+    "src/lib/interpreter/learningStore.test.ts (existing test patterns for interpreter modules)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/taskDecomposer.ts",
+    "src/lib/interpreter/agentLoop.ts",
+    "src/lib/interpreter/promptComposer.ts",
+    "src/app/api/interpreter/route.ts"
+  ],
+  "acceptance_criteria": [
+    "taskDecomposer.test.ts: tests decompose for multi-step, single-step, and empty inputs",
+    "agentLoop.test.ts: tests sequential execution, state transitions, partial results on failure",
+    "promptComposer.test.ts extended: composeAgentPrompt returns correct roles and content",
+    "route.test.ts extended: POST with sessionMode='agent' triggers agent path",
+    "route.test.ts extended: POST with sessionMode='assistant' still works as before",
+    "All 19+ existing test files remain green (run: npx vitest --run src/lib/interpreter)",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/taskDecomposer.test.ts (new)",
+    "src/lib/interpreter/agentLoop.test.ts (new)",
+    "src/lib/interpreter/promptComposer.test.ts (modified: add agent prompt tests)",
+    "src/app/api/interpreter/route.test.ts (new or modified: add agent mode tests)"
+  ]
+}

@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { pickPreferredBrowserVoice } from "./browserVoice";
 
 describe("browser voice picker", () => {
-  it("prefers male-coded English voices when available", () => {
+  it("prefers the same-language default voice before robotic name heuristics", () => {
     const voice = pickPreferredBrowserVoice(
       [
-        { name: "Google UK English Female", lang: "en-GB", default: false },
         { name: "Google UK English Male", lang: "en-GB", default: false },
+        { name: "Google US English", lang: "en-US", default: true },
       ],
       "en-US",
     );
 
-    expect(voice?.name).toBe("Google UK English Male");
+    expect(voice?.name).toBe("Google US English");
   });
 
   it("prefers Indonesian voices for Indonesian output", () => {
@@ -37,5 +37,17 @@ describe("browser voice picker", () => {
     );
 
     expect(voice?.name).toBe("Google US English");
+  });
+
+  it("returns null when no voice matches target language (avoid French for Dutch TTS)", () => {
+    const voice = pickPreferredBrowserVoice(
+      [
+        { name: "Thomas", lang: "fr-FR", default: true },
+        { name: "Amélie", lang: "fr-FR", default: false },
+      ],
+      "nl-NL",
+    );
+
+    expect(voice).toBeNull();
   });
 });

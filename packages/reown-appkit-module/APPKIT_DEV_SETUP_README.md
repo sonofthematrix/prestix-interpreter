@@ -27,7 +27,7 @@ This is the **production** project ID, which is configured for production domain
 In your new Reown project, add these domains:
 - `http://localhost:3000`
 - `http://127.0.0.1:3000`
-- `http://localhost:3001` (if using different port)
+- `http://localhost:4318` (if using different port)
 - Any Vercel preview domains you use for testing
 
 ### Step 3: Update Environment

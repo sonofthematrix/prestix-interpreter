@@ -1,5 +1,7 @@
 import { ASSISTANT_LLM_PRODUCT_NAME } from "./branding";
 import type { AssistantHistoryTurn, ChatMessage, InterpreterMode } from "./types";
+import { DUTCH_MARKERS, ENGLISH_MARKERS, getDynamicMarkers, hasMarker, INDONESIAN_MARKERS } from "./languageMarkers";
+import { toolRegistry } from './toolRegistry';
 
 // Kept here so server + client can agree on the same caps. Server enforces them
 // authoritatively; client trims first to keep the request small.
@@ -52,54 +54,6 @@ export function normalizeAssistantHistory(
 
 const translationStyle = "natural_interpreter";
 
-const INDONESIAN_MARKERS = [
-  "gua",
-  "gue",
-  "gw",
-  "lu",
-  "lo",
-  "nih",
-  "dong",
-  "aja",
-  "kalau",
-  "jadi",
-  "mampus",
-  "ajak",
-  "saya",
-  "kamu",
-  "mereka",
-  "tidak",
-  "mau",
-  "kamar",
-  "malam",
-  "untuk",
-  "dengan",
-  "dari",
-  "ke",
-  "ini",
-  "itu",
-];
-
-const ENGLISH_MARKERS = [
-  "the",
-  "and",
-  "or",
-  "to",
-  "for",
-  "with",
-  "this",
-  "that",
-  "they",
-  "you",
-  "want",
-  "book",
-  "room",
-  "tonight",
-  "understand",
-  "don't",
-  "do not",
-];
-
 function systemPrompt(mode: InterpreterMode, style: string): string {
   const sharedRules = [
     `Translation style: ${style}.`,
@@ -113,10 +67,11 @@ function systemPrompt(mode: InterpreterMode, style: string): string {
     "Do not wrap the output in quotes.",
   ];
 
-  if (mode === "id-en") {
+  if (mode === "id-nl" || mode === "id-en") {
+    const targetLang = mode === "id-nl" ? "Dutch" : "English";
     return [
-      "You are a live Indonesian-to-English interpreter.",
-      "Interpret the user's meaning naturally into spoken English.",
+      `You are a live Indonesian-to-${targetLang} interpreter.`,
+      `Interpret the user's meaning naturally into spoken ${targetLang}.`,
       "Preserve meaning, intent, tone, and speaking style.",
       "Understand Indonesian street language and slang:",
       "gua/gue/gw = I/me;",
@@ -127,15 +82,18 @@ function systemPrompt(mode: InterpreterMode, style: string): string {
       "mampus = we're screwed, damn, or dead depending on context;",
       "ajak = invite or ask to come along.",
       "Do not normalize Indonesian into Indonesian.",
-      "Do not translate literally if natural English would phrase it differently.",
-      "Output English only.",
+      `Do not translate literally if natural ${targetLang} would phrase it differently.`,
+      `Output ${targetLang} only.`,
       ...sharedRules,
     ].join(" ");
   }
 
+  // nl-id or en-id: source European language → Indonesian
+  const sourceLang = mode === "nl-id" ? "Dutch" : "English";
   return [
-    "You are a live English-to-Indonesian interpreter.",
-    "Interpret the user's meaning into natural spoken Indonesian.",
+    `You are a live ${sourceLang}-to-Indonesian interpreter.`,
+    `Interpret the user's meaning into natural spoken Indonesian.`,
+    `The speaker is communicating with local Indonesian people; sound natural for daily use.`,
     "Use ordinary, natural Indonesian speech.",
     "Do not sound overly formal unless the input is formal.",
     "Do not translate literally if natural Indonesian would phrase it differently.",
@@ -145,29 +103,25 @@ function systemPrompt(mode: InterpreterMode, style: string): string {
 }
 
 function strictSystemPrompt(mode: InterpreterMode, style: string): string {
-  if (mode === "id-en") {
+  if (mode === "id-nl" || mode === "id-en") {
+    const targetLang = mode === "id-nl" ? "Dutch" : "English";
     return [
       systemPrompt(mode, style),
       "Your previous answer was still Indonesian or too literal.",
-      "Interpret the meaning into natural spoken English only.",
+      `Interpret the meaning into natural spoken ${targetLang} only.`,
       "Do not paraphrase in the same language.",
       "Interpret the full meaning into the target language naturally.",
     ].join(" ");
   }
 
+  const sourceLang = mode === "nl-id" ? "Dutch" : "English";
   return [
     systemPrompt(mode, style),
-    "Your previous answer was still English or too literal.",
+    `Your previous answer was still ${sourceLang} or too literal.`,
     "Interpret the meaning into natural spoken Indonesian only.",
     "Do not paraphrase in the same language.",
     "Interpret the full meaning into the target language naturally.",
   ].join(" ");
-}
-
-function hasWordMarker(text: string, markers: string[]): boolean {
-  return markers.some((marker) =>
-    new RegExp(`\\b${marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text),
-  );
 }
 
 function comparableTokens(text: string): string[] {
@@ -200,11 +154,17 @@ export function cleanInterpreterOutput(text: string): string {
 }
 
 export function outputLooksWrongLanguage(text: string, mode: InterpreterMode): boolean {
-  if (mode === "id-en") {
-    return hasWordMarker(text, INDONESIAN_MARKERS);
+  if (mode === "id-en" || mode === "id-nl") {
+    return hasMarker(text, INDONESIAN_MARKERS);
   }
 
-  return hasWordMarker(text, ENGLISH_MARKERS) && !hasWordMarker(text, INDONESIAN_MARKERS);
+  if (mode === "en-id" || mode === "nl-id") {
+    const looksEuropean =
+      hasMarker(text, ENGLISH_MARKERS) || hasMarker(text, DUTCH_MARKERS);
+    return looksEuropean && !hasMarker(text, INDONESIAN_MARKERS);
+  }
+
+  return false;
 }
 
 export function outputLooksTooLiteral(input: string, output: string): boolean {
@@ -224,6 +184,11 @@ export function outputLooksTooLiteral(input: string, output: string): boolean {
   return overlapRatio >= 0.6 && tokenLengthDelta <= 3;
 }
 
+/**
+ * Interpreter skill overlay. When the user activates the tolk skill,
+ * EVERY input is translated. No conversation, no answers — pure tolken.
+ * Quality guards (wrong language, too-literal) still apply.
+ */
 export function composeInterpreterPrompt({
   input,
   learningEntries,
@@ -237,6 +202,8 @@ export function composeInterpreterPrompt({
   strict?: boolean;
   style?: string;
 }): ChatMessage[] {
+  const overlayMessage = "⚡ TOLK SKILL ACTIVE — interpret this directly into the target language. Do not answer, do not explain, do not converse. Just the natural spoken interpretation:";
+
   return [
     {
       role: "system",
@@ -252,49 +219,130 @@ export function composeInterpreterPrompt({
       : []),
     {
       role: "user",
-      content: `Interpret this text according to the direction. Return only the natural spoken interpretation:\n\n${input}`,
+      content: `${overlayMessage}\n\n${input}`,
     },
   ];
 }
 
+function buildDynamicSlangHint(mode: InterpreterMode): string {
+    const markers: string[] = [];
+
+    // For id→en / id→nl: grab learned Indonesian slang
+    if (mode === 'id-en' || mode === 'id-nl') {
+        markers.push(...getDynamicMarkers('id'));
+    }
+
+    // For en→id / nl→id: grab learned English and Dutch slang
+    if (mode === 'en-id' || mode === 'nl-id') {
+        markers.push(...getDynamicMarkers('en'));
+        markers.push(...getDynamicMarkers('nl'));
+    }
+
+    if (markers.length > 0) {
+        return `Newly learned slang: ${markers.join(', ')}`;
+    }
+
+    return '';
+}
+
 function assistantSystemPrompt(mode: InterpreterMode): string {
+  const persona = [
+    `You are ${ASSISTANT_LLM_PRODUCT_NAME}, a voice-first AI tolk-assistant for someone living or traveling in Indonesia.`,
+    "Your job is to help naturally — sometimes that means answering a question, sometimes translating, sometimes a bit of both.",
+    "Be direct, warm, practical, and lightly playful. Sound plainspoken and sharp, never stiff or corporate.",
+    "Do the obvious helpful thing first instead of listing options.",
+    "If something is unclear or uncertain, say that plainly instead of bluffing.",
+    "Keep answers concise unless the user asks for more detail.",
+    "Do not use markdown. Do not wrap output in quotes.",
+  ];
+
+  const translationSkill = [
+    "",
+    "TRANSLATION SKILL (always available):",
+    "Understand Indonesian street language and slang: gua/gue/gw = I/me, lu/lo = you, nih = emphasis, dong = soft insistence, aja = just/simply, mampus = screwed/damn, ajak = invite.",
+    "- If the user says something in one language, respond naturally in the other — like a human tolk would.",
+    "- If the user asks for a translation (\"translate...\", \"hoe zeg je...\", \"apa artinya...\"), give exactly the translation — not a conversation.",
+    "- If the user is clearly just talking, respond conversationally.",
+    "- Prefer natural spoken phrasing over word-for-word translation.",
+    "- Preserve names, numbers, times, places, prices, emotion, and intent.",
+  ];
+
+  const dynamicSlang = buildDynamicSlangHint(mode);
+  const translationWithDynamics = dynamicSlang
+      ? [...translationSkill, dynamicSlang]
+      : translationSkill;
+
   if (mode === "id-en") {
     return [
-      `You are ${ASSISTANT_LLM_PRODUCT_NAME}, a live voice AI assistant speaking with the user in Indonesian.`,
-      "You have a built-in English interpreter: only switch to interpreting when the user clearly asks for translation.",
-      "Reply in natural spoken Indonesian only.",
-      "Be direct, helpful, and conversational.",
-      "Keep answers concise unless the user clearly asks for depth.",
-      "Do not translate the user unless they explicitly ask for translation.",
-      "Do not explain your language choice.",
-      "Do not use markdown.",
-      "Do not wrap the output in quotes.",
+      ...persona,
+      'Reply in natural spoken English only.',
+      ...translationWithDynamics,
+      "When translating ID→EN: interpret naturally into spoken English. Do not paraphrase back into Indonesian.",
     ].join(" ");
   }
 
+  if (mode === "id-nl") {
+    return [
+      ...persona,
+      'Reply in natural spoken Dutch (Nederlands) only.',
+      ...translationWithDynamics,
+      "When translating ID→NL: interpret naturally into spoken Dutch. Do not paraphrase back into Indonesian.",
+    ].join(" ");
+  }
+
+  if (mode === "en-id") {
+    return [
+      ...persona,
+      'Reply in natural spoken Indonesian only.',
+      ...translationWithDynamics,
+      "When translating EN→ID: make it sound local, clear, and easy to say out loud. Use ordinary Indonesian, not overly formal.",
+    ].join(" ");
+  }
+
+  // nl-id
   return [
-    `You are ${ASSISTANT_LLM_PRODUCT_NAME}, a live voice AI assistant speaking with the user in English.`,
-    "You have a built-in Indonesian interpreter: only switch to interpreting when the user clearly asks for translation.",
-    "Reply in natural spoken English only.",
-    "Be direct, helpful, and conversational.",
-    "Keep answers concise unless the user clearly asks for depth.",
-    "Do not translate the user unless they explicitly ask for translation.",
-    "Do not explain your language choice.",
-    "Do not use markdown.",
-    "Do not wrap the output in quotes.",
+    ...persona,
+    'Reply in natural spoken Indonesian only.',
+    ...translationWithDynamics,
+    "When translating NL→ID: make it sound local, clear, and easy to say out loud. Use ordinary Indonesian, not overly formal.",
   ].join(" ");
 }
 
-export function composeAssistantPrompt({
+function agentSystemPrompt(mode: InterpreterMode): string {
+    const toolDescriptions = toolRegistry.getAllDescriptions();
+
+    const basePrompt = [
+        `You are Prestix, a voice-first AI assistant with agent capabilities.`,
+        'You can break down complex requests into steps and execute them sequentially using available tools.',
+        'Plan your approach: think about what steps are needed, then execute them one at a time.',
+        'Be transparent about your reasoning when helpful.',
+        'If a step fails, explain what went wrong and suggest alternatives.',
+        'Keep responses concise and actionable.',
+        'Do not use markdown. Do not wrap output in quotes.',
+        `Current language pair: ${mode}`,
+    ];
+
+    if (toolDescriptions) {
+        basePrompt.push('', 'AVAILABLE TOOLS:', toolDescriptions);
+    }
+
+    return basePrompt.join(' ');
+}
+
+/**
+ * Unified assistant + tolk prompt. This is the DEFAULT mode.
+ * The assistant naturally handles both conversation and translation based on context.
+ */
+export function composeUnifiedPrompt({
   input,
   learningEntries,
-  mode,
   history,
+  mode,
 }: {
   input: string;
   learningEntries: string;
-  mode: InterpreterMode;
   history?: AssistantHistoryTurn[];
+  mode: InterpreterMode;
 }): ChatMessage[] {
   const priorTurns = normalizeAssistantHistory(history ?? []);
 
@@ -318,3 +366,7 @@ export function composeAssistantPrompt({
     },
   ];
 }
+
+// Legacy alias — routes still reference this. Remove after Phase 1 migration.
+export { composeUnifiedPrompt as composeAssistantPrompt };
+export { agentSystemPrompt };

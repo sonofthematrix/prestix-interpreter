@@ -1,0 +1,31 @@
+{
+  "id": "prestix-agentix-08",
+  "seq": "08",
+  "title": "Create ToolRegistry: tool registration, listing, description generation",
+  "status": "pending",
+  "depends_on": ["07"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/types.ts (ToolDefinition, ToolResult types from subtask 07)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "ToolRegistry class with private Map<string, ToolDefinition>",
+    "register(tool: ToolDefinition): void — adds tool to registry",
+    "get(name: string): ToolDefinition | undefined — retrieves by name",
+    "list(): ToolDefinition[] — returns all registered tools",
+    "getAllDescriptions(): string — generates formatted text listing all tool names, descriptions, and parameters",
+    "Duplicate registration (same name) overwrites previous tool",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/toolRegistry.ts (new)"
+  ]
+}

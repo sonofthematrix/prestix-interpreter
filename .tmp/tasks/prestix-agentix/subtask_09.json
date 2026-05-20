@@ -1,0 +1,38 @@
+{
+  "id": "prestix-agentix-09",
+  "seq": "09",
+  "title": "Create translateTool and memoryTool implementations",
+  "status": "completed",
+  "depends_on": ["08"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Created translateTool.ts (translate tool) and memoryTool.ts (remember/recall tools) as ToolDefinition exports, following Phase A MVP placeholder pattern",
+  "context_files": [
+    "src/lib/interpreter/types.ts (ToolDefinition, ToolResult types)",
+    "src/lib/interpreter/promptComposer.ts (lines 1-70: existing translation prompt composition to wrap)",
+    "src/lib/interpreter/learningStore.ts (lines 1-30,369-397: JsonLearningStore for remember tool)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/providerRouter.ts",
+    "src/lib/interpreter/promptComposer.ts",
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/toolRegistry.ts"
+  ],
+  "acceptance_criteria": [
+    "translateTool.ts exports createTranslateTool(): ToolDefinition",
+    "translateTool wraps existing interpreter (reuses providerRouter + composeInterpreterPrompt)",
+    "translateTool accepts params: { text, sourceLang, targetLang }",
+    "memoryTool.ts exports createRememberTool() and createRecallTool(): ToolDefinition[]",
+    "remember uses jsonLearningStore.addGlossary or addCorrection to persist",
+    "recall uses jsonLearningStore.listRelevant to retrieve matching memories",
+    "All tools follow ToolDefinition interface exactly",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/tools/translateTool.ts (new)",
+    "src/lib/interpreter/tools/memoryTool.ts (new)"
+  ]
+}

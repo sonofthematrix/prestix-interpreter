@@ -1,0 +1,37 @@
+{
+  "id": "prestix-assistant-first-11",
+  "seq": "11",
+  "title": "Update assistantUx placeholders for assistant-first identity",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Updated getIdleOutputPlaceholder to assistant-first: removed sessionMode check, unified placeholders. browser/elevenlabs -> Tap mic, unsupported -> Voice unsupported, default -> Prestix is ready. Tests updated (7 tests, 12 assertions all pass).",
+  "depends_on": ["01", "05"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "90-92,130-156",
+      "reason": "Current assistantUx structure and assistant-first placeholder requirements"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/assistantUx.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "getIdleOutputPlaceholder() returns 'Tap handsfree mic and start talking.' for ALL session modes when voice available",
+    "Returns 'Voice output unsupported in this browser.' when speechOutputProvider is 'unsupported'",
+    "Returns 'Prestix is ready.' when speechOutputProvider is 'pending' (not 'Awaiting assistant reply...')",
+    "Removes sessionMode check — replacement text is mode-agnostic",
+    "assistantUx.test.ts updated to match new expected placeholders",
+    "resolveSendNowAction and shouldUseBrowserTtsFallback unchanged",
+    "All other existing tests still pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/assistantUx.ts (updated)",
+    "src/lib/interpreter/assistantUx.test.ts (updated)"
+  ]
+}

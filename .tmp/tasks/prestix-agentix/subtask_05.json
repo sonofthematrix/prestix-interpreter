@@ -1,0 +1,37 @@
+{
+  "id": "prestix-agentix-05",
+  "seq": "05",
+  "title": "Add agent mode handling to interpreter route",
+  "status": "completed",
+  "depends_on": ["03", "04"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Added agent mode branch to interpreter API route with AgentLoop integration. Extended InterpreterResponsePayload with agentPlan/agentSteps. Updated isSessionMode guard for agent and autonomous modes.",
+  "context_files": [
+    "src/app/api/interpreter/route.ts (lines 108-242: existing POST handler; add sessionMode='agent' branch)",
+    "src/lib/interpreter/types.ts (SessionMode now includes 'agent')"
+  ],
+  "reference_files": [
+    "src/app/api/interpreter/route.ts",
+    "src/lib/interpreter/agentLoop.ts",
+    "src/lib/interpreter/taskDecomposer.ts",
+    "src/lib/interpreter/promptComposer.ts"
+  ],
+  "acceptance_criteria": [
+    "Route recognizes sessionMode='agent' (via isSessionMode which now accepts 'agent')",
+    "When sessionMode='agent': creates AgentLoop, calls execute(input, mode)",
+    "Returns InterpreterResponsePayload extended with plan and step results",
+    "When sessionMode='assistant' or 'interpreter': existing behavior UNCHANGED",
+    "New agent-mode response includes translatedText (final output), plan (AgentPlan), completedSteps",
+    "Agent mode respects existing rate limiting, timeout, and error handling",
+    "Does NOT modify providerRouter, guardrails, or any DO-NOT-TOUCH files",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/app/api/interpreter/route.ts (modified: add agent mode branch)",
+    "src/lib/interpreter/types.ts (possibly extended: InterpreterResponsePayload)"
+  ]
+}

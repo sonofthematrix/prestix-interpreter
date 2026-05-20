@@ -41,11 +41,18 @@ export function UsersListExample() {
   if (isLoading) return <div>Loading users...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
+  const typedUsers = (users ?? []) as Array<{
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    role?: string | null;
+  }>;
+
   return (
     <div>
       <h2>Users</h2>
       <ul>
-        {users?.map((user) => (
+        {typedUsers.map((user) => (
           <li key={user.id}>
             {user.name} ({user.email}) - {user.role}
           </li>
@@ -136,6 +143,10 @@ export function UpdateVenueExample({ venueId }: { venueId: string }) {
 export function VenuesInfiniteList() {
   const client = useClientQueries(schema);
   const PAGE_SIZE = 20;
+  type VenueListItem = {
+    id: string;
+    name?: string | null;
+  };
 
   const fetchArgs = {
     where: {
@@ -152,7 +163,7 @@ export function VenuesInfiniteList() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     client.venueProfile.useInfiniteFindMany(fetchArgs as any, {
-      getNextPageParam: (lastPage, pages) => {
+      getNextPageParam: (lastPage: VenueListItem[], pages: VenueListItem[][]) => {
         if (lastPage.length < PAGE_SIZE) {
           return undefined;
         }
@@ -166,7 +177,7 @@ export function VenuesInfiniteList() {
 
   return (
     <div>
-      {data?.pages.map((page, i) => (
+      {(data?.pages as VenueListItem[][] | undefined)?.map((page, i) => (
         <div key={i}>
           {page.map((venue) => (
             <div key={venue.id}>{venue.name}</div>

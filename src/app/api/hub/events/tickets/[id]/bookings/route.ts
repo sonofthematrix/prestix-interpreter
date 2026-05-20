@@ -107,12 +107,12 @@ export async function GET(
 
     // Calculate summary statistics
     const totalBookings = bookings.length;
-    const confirmedBookings = bookings.filter(b => ['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(b.status)).length;
-    const totalRevenue = bookings.reduce((sum, b) => sum + Number(b.totalAmount), 0);
-    const paidBookings = bookings.filter(b => b.payment?.status === 'COMPLETED').length;
+    const confirmedBookings = bookings.filter((b: Record<string, unknown>) => ['CONFIRMED', 'CHECKED_IN', 'COMPLETED'].includes(b.status as string)).length;
+    const totalRevenue = bookings.reduce((sum: number, b: Record<string, unknown>) => sum + Number(b.totalAmount), 0);
+    const paidBookings = bookings.filter((b: Record<string, unknown>) => (b.payment as Record<string, unknown> | undefined)?.status === 'COMPLETED').length;
     const paidRevenue = bookings
-      .filter(b => b.payment?.status === 'COMPLETED')
-      .reduce((sum, b) => sum + Number(b.totalAmount), 0);
+      .filter((b: Record<string, unknown>) => (b.payment as Record<string, unknown> | undefined)?.status === 'COMPLETED')
+      .reduce((sum: number, b: Record<string, unknown>) => sum + Number(b.totalAmount), 0);
 
     const summary = {
       totalBookings,
@@ -132,7 +132,7 @@ export async function GET(
           venue: ticket.venue
         },
         summary,
-        bookings: bookings.map(booking => ({
+        bookings: bookings.map((booking: Record<string, unknown>) => ({
           id: booking.id,
           bookingNumber: booking.bookingNumber,
           status: booking.status,

@@ -723,6 +723,10 @@ model User {
   roleAgreements        RoleAgreement[]
   subscriptions        Subscription[]
 
+  // ── Agent System ───────────────────────────────────────────────────────────
+  agentSessions        AgentSession[]
+  learningMemories     LearningMemory[]
+
   // ── Access Control ────────────────────────────────────────────────────────
   @@allow('create', true)
   @@allow('read',   auth() != null && (auth().id == id || auth().role == PLATFORM_ADMIN))
@@ -3336,6 +3340,127 @@ model PlatformDailyMetrics {
 
   @@index([date])
   @@map("platform_daily_metrics")
+}
+
+// ============================================================================
+// ██████████  AGENT SYSTEM  ██████████
+// Agentic AI assistant — sessions, conversation history, procedure memory,
+// and persistent learning storage (replaces JSON-file learning store).
+// ============================================================================
+
+/// Long-running agent conversation session (voice, text, or headless).
+model AgentSession {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionMode String   @default("assistant") // "interpreter" | "assistant" | "agent"
+  title       String?                       // Auto-generated summary for session list
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  segments    AgentConversationSegment[]
+  procedures  AgentProcedure[]
+
+  @@allow('create', true)
+  @@allow('read',   auth() != null && (userId == null || auth().id == userId || auth().role == PLATFORM_ADMIN))
+  @@allow('update', auth() != null && (userId == null || auth().id == userId || auth().role == PLATFORM_ADMIN))
+  @@allow('delete', auth() != null && auth().role == PLATFORM_ADMIN)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("agent_sessions")
+}
+
+/// Single exchange within an agent session: input → provider → output.
+model AgentConversationSegment {
+  id              String   @id @default(cuid())
+  sessionId       String
+  session         AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  speaker         String        // "user" | "assistant" | "system" | "tool"
+  input           String        @db.Text
+  output          String?       @db.Text
+  provider        String?       // LLM provider that generated the response
+  model           String?       // Model name
+  fallbackUsed    Boolean       @default(false)
+  fallbackChain   Json?
+  learningMatches Int          @default(0)
+  status          String        @default("completed") // "pending" | "translating" | "translated" | "error"
+  error           String?       @db.Text
+  metadata        Json?
+
+  createdAt       DateTime      @default(now())
+
+  @@allow('create', true)
+  @@allow('read',   auth() != null)
+  @@allow('update', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth() != null && auth().role == PLATFORM_ADMIN)
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("agent_conversation_segments")
+}
+
+/// Reusable multi-step procedure learned by the agent from successful executions.
+model AgentProcedure {
+  id              String   @id @default(cuid())
+  sessionId       String?
+  session         AgentSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  name            String        // Short label (e.g. "Check venue availability")
+  description     String        @db.Text // What the procedure does
+  steps           Json          // Array of { action, params, expectedOutput, dependsOn }
+  status          String        @default("draft") // "draft" | "ready" | "running" | "completed" | "failed"
+  successCount    Int           @default(0)
+  failureCount    Int           @default(0)
+  lastExecutedAt  DateTime?
+  metadata        Json?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@allow('create', true)
+  @@allow('read',   auth() != null)
+  @@allow('update', auth() != null && auth().role == PLATFORM_ADMIN)
+  @@allow('delete', auth() != null && auth().role == PLATFORM_ADMIN)
+
+  @@index([name])
+  @@index([status])
+  @@index([createdAt])
+  @@map("agent_procedures")
+}
+
+/// Persistent learning memory — corrections, glossary terms, style rules, and
+/// semantic embeddings. Replaces the flat JSON file `data/interpreter-learning.json`.
+model LearningMemory {
+  id              String   @id @default(cuid())
+  type            String        // "correction" | "glossary" | "style" | "procedure" | "preference"
+  mode            String        // "nl-id" | "id-nl" | "en-id" | "id-en" | "agent"
+  term            String?       // Glossary term
+  meaning         String?       @db.Text // Glossary definition
+  sourceText      String?       @db.Text // Original input (correction)
+  wrongOutput     String?       @db.Text // Bad translation (correction)
+  correctedOutput String?       @db.Text // Fixed translation (correction)
+  rule            String?       @db.Text // Style / behavior rule
+  payload         Json?         // Flexible payload for new memory types
+  embedding       Json?         // 384-dim vector for semantic similarity search
+  note            String?       // Optional explanatory note
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime      @default(now())
+
+  @@allow('create', true)
+  @@allow('read',   auth() != null)
+  @@allow('update', auth() != null && (userId == null || auth().id == userId || auth().role == PLATFORM_ADMIN))
+  @@allow('delete', auth() != null && (userId == null || auth().id == userId || auth().role == PLATFORM_ADMIN))
+
+  @@index([type])
+  @@index([mode])
+  @@index([term])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("learning_memories")
 }
 
 // ============================================================================

@@ -1,0 +1,43 @@
+{
+  "id": "prestix-agentix-13",
+  "seq": "13",
+  "title": "Phase A tests: toolRegistry, translateTool, memoryTool, toolExecutor, route integration",
+  "status": "pending",
+  "depends_on": ["11", "12"],
+  "parallel": false,
+  "suggested_agent": "TestEngineer",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/promptComposer.test.ts (existing test patterns for prompt composition assertions)",
+    "src/lib/interpreter/agentLoop.test.ts (Phase B test patterns to follow)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/toolRegistry.ts",
+    "src/lib/interpreter/tools/translateTool.ts",
+    "src/lib/interpreter/tools/memoryTool.ts",
+    "src/lib/interpreter/toolExecutor.ts",
+    "src/lib/interpreter/promptComposer.ts",
+    "src/app/api/interpreter/route.ts"
+  ],
+  "acceptance_criteria": [
+    "toolRegistry.test.ts: tests register, get, list, getAllDescriptions, duplicate overwrite",
+    "translateTool.test.ts: tests tool definition shape, execute with valid/invalid params",
+    "memoryTool.test.ts: tests remember stores data, recall retrieves relevant data",
+    "toolExecutor.test.ts: tests successful execution, missing tool, tool throws",
+    "promptComposer.test.ts extended: composeAgentPrompt with toolDescriptions includes tools section",
+    "route.test.ts extended: agent mode tool execution produces step results with tool outputs",
+    "All existing 19+ test files remain green",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/toolRegistry.test.ts (new)",
+    "src/lib/interpreter/tools/translateTool.test.ts (new)",
+    "src/lib/interpreter/tools/memoryTool.test.ts (new)",
+    "src/lib/interpreter/toolExecutor.test.ts (new)",
+    "src/lib/interpreter/promptComposer.test.ts (modified)",
+    "src/app/api/interpreter/route.test.ts (modified)"
+  ]
+}

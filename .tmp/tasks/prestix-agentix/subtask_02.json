@@ -1,0 +1,33 @@
+{
+  "id": "prestix-agentix-02",
+  "seq": "02",
+  "title": "Create TaskDecomposer: LLM-based input → task step plan",
+  "status": "completed",
+  "depends_on": ["01"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Created TaskDecomposer with keyword-based decomposition (Phase B MVP). 4 Dutch/English multi-step patterns. Handles single-step and empty input gracefully.",
+  "context_files": [
+    "src/lib/interpreter/types.ts (TaskStep, TaskPlan types defined in subtask 01)",
+    "src/lib/interpreter/promptComposer.ts (lines 1-70,247-308: existing system prompt composition patterns)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/providerRouter.ts",
+    "src/lib/interpreter/promptComposer.ts"
+  ],
+  "acceptance_criteria": [
+    "TaskDecomposer class exports decompose(input, mode): Promise<TaskPlan>",
+    "decompose uses LLM (via providerRouter) to break input into ordered TaskStep[]",
+    "Returns TaskPlan with originalInput, steps, currentStepIndex=0",
+    "Each step has unique id, description, optional tool name, status='pending'",
+    "Handles single-step inputs (returns 1-step plan) gracefully",
+    "Handles empty/whitespace input (returns empty steps array)",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/taskDecomposer.ts (new)"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "prestix-assistant-first",
+  "name": "Prestix Assistant-First Refactor + Conversation Learning",
+  "status": "active",
+  "objective": "Transform Prestix from dual-mode UX into one unified assistant with live interpreter as a capability, conversation learning, and ambient listening foundation — without rewriting core files.",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "reason": "Full architecture context, file constraints, and validation requirements"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts",
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/promptComposer.ts",
+    "src/lib/interpreter/languageMarkers.ts",
+    "src/lib/interpreter/translatorToggle.ts",
+    "src/lib/interpreter/assistantUx.ts",
+    "src/lib/interpreter/voiceDock.ts",
+    "src/lib/interpreter/voicePresence.ts",
+    "src/lib/interpreter/branding.ts",
+    "src/lib/interpreter/typeGuards.ts",
+    "src/hooks/interpreter/useInterpreterSession.ts",
+    "src/app/api/interpreter/route.ts",
+    "src/app/voice/page.tsx"
+  ],
+  "exit_criteria": [
+    "All 53+ existing tests pass (13 test files, zero regressions)",
+    "TypeScript compilation passes for all interpreter files (tsc --noEmit)",
+    "New test files cover conversationLearner, enhanced learningStore, ambientListener, dynamic languageMarkers",
+    "Dual-mode UX replaced with single assistant identity — no 'two modules' feeling",
+    "translatorEnabled repurposed as 'force translate' override, not separate mode",
+    "Conversation learning pipeline detects slang, captures corrections, scores confidence",
+    "API route feeds learning back from successful translations",
+    "Ambient listener foundation exists as passive capture module"
+  ],
+  "subtask_count": 15,
+  "completed_count": 0,
+  "created_at": "2026-05-19T00:00:00Z"
+}

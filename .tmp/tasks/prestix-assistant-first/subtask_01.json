@@ -1,0 +1,29 @@
+{
+  "id": "prestix-assistant-first-01",
+  "seq": "01",
+  "title": "Add new types for conversation learning, ambient memory, and learning feedback",
+  "status": "pending",
+  "depends_on": [],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "64-75",
+      "reason": "Current types.ts structure and LearningEntry types to extend"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "New types (ConversationMemory, ConfidenceScore, AmbientMemory, SlangDetection, SuggestedLearning, LearningFeedback) are added to types.ts",
+    "No existing types, interfaces, or exports are removed or broken",
+    "LearningStore interface is extended with new optional methods (suggestMemory, autoCapture, acceptAmbientEntry)",
+    "TypeScript compiles without errors for types.ts (npm exec tsc -- --noEmit src/lib/interpreter/types.ts)",
+    "All existing tests importing types.ts still pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/types.ts (extended)"
+  ]
+}

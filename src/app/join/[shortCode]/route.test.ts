@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { GET } from "./route";
-import { createClient } from "@/lib/db";
-import { getSystemUser } from "@/lib/utils/system-user";
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { NextRequest } from 'next/server';
+import { GET } from './route';
+import { createClient } from '@/lib/db';
+import { getSystemUser } from '@/lib/utils/system-user';
 
 describe("/join/[shortCode]", () => {
   let mockDb: any;
@@ -39,7 +40,7 @@ describe("/join/[shortCode]", () => {
     it("redirects to home when link not found", async () => {
       mockDb.promoterMagicLink.findFirst.mockResolvedValue(null);
 
-      const request = new Request("http://localhost:3000/join/PX-ABC123");
+      const request = new NextRequest('http://localhost:3000/join/PX-ABC123');
       const response = await GET(request, { params: { shortCode: "PX-ABC123" } });
 
       expect(response.status).toBe(302);
@@ -60,12 +61,12 @@ describe("/join/[shortCode]", () => {
       mockDb.promoterReferral.findFirst.mockResolvedValue(null);
       mockDb.promoterReferral.upsert.mockResolvedValue({ id: "referral-123" });
 
-      const request = new Request("http://localhost:3000/join/PX-ABC123", {
+      const request = new NextRequest('http://localhost:3000/join/PX-ABC123', {
         headers: {
-          "user-agent": "Mozilla/5.0",
-          "x-forwarded-for": "192.168.1.1",
-          "referer": "https://facebook.com"
-        }
+          'user-agent': 'Mozilla/5.0',
+          'x-forwarded-for': '192.168.1.1',
+          referer: 'https://facebook.com',
+        },
       });
 
       const response = await GET(request, { params: { shortCode: "PX-ABC123" } });
@@ -94,7 +95,7 @@ describe("/join/[shortCode]", () => {
 
       mockDb.promoterMagicLink.findFirst.mockResolvedValue(mockLink);
 
-      const request = new Request("http://localhost:3000/join/PX-ABC123");
+      const request = new NextRequest('http://localhost:3000/join/PX-ABC123');
       const response = await GET(request, { params: { shortCode: "PX-ABC123" } });
 
       expect(response.status).toBe(302);
@@ -115,7 +116,7 @@ describe("/join/[shortCode]", () => {
       mockDb.promoterReferral.findFirst.mockResolvedValue(null);
       mockDb.promoterReferral.upsert.mockResolvedValue({ id: "referral-123" });
 
-      const request = new Request("http://localhost:3000/join/PX-ABC123");
+      const request = new NextRequest('http://localhost:3000/join/PX-ABC123');
       await GET(request, { params: { shortCode: "PX-ABC123" } });
 
       expect(mockDb.promoterReferral.upsert).toHaveBeenCalledWith({

@@ -1,0 +1,36 @@
+{
+  "id": "prestix-agentix-01",
+  "seq": "01",
+  "title": "Add AgentStep/AgentPlan/AgentResult types + extend SessionMode",
+  "status": "pending",
+  "depends_on": [],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/types.ts (lines 1-10: existing SessionMode and type patterns to extend)",
+    "src/lib/interpreter/typeGuards.ts (lines 1-11: existing isSessionMode guard to extend for 'agent')"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "SessionMode type includes 'agent' alongside existing 'assistant' and 'interpreter'",
+    "isSessionMode() type guard in typeGuards.ts recognizes 'agent'",
+    "AgentStep type exported: id, description, tool?, status (pending|running|completed|failed), result?, error?",
+    "AgentPlan type exported: input, steps, currentStep, totalSteps",
+    "AgentResult type exported: plan, finalOutput, completedSteps",
+    "AgentLoopState type exported: plan, completedSteps, status (planning|executing|completed|failed)",
+    "AgentLoopResult type exported: plan, finalOutput, completedSteps, status",
+    "TaskStep type exported: id, description, tool?, status (pending|running|completed|failed), result?",
+    "TaskPlan type exported: originalInput, steps, currentStepIndex",
+    "TypeScript compiles with no errors: npx tsc --noEmit"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/types.ts (modified: add 6 types)",
+    "src/lib/interpreter/typeGuards.ts (modified: extend isSessionMode)"
+  ]
+}

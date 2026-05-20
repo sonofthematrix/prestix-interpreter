@@ -1,0 +1,32 @@
+{
+  "id": "prestix-agentix-12",
+  "seq": "12",
+  "title": "Inject tool descriptions into agent prompt (composeAgentPrompt upgrade)",
+  "status": "pending",
+  "depends_on": ["08"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/promptComposer.ts (composeAgentPrompt from subtask 04; add tool descriptions section)",
+    "src/lib/interpreter/toolRegistry.ts (getAllDescriptions() format)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/promptComposer.ts",
+    "src/lib/interpreter/toolRegistry.ts"
+  ],
+  "acceptance_criteria": [
+    "composeAgentPrompt accepts optional toolDescriptions: string parameter",
+    "When toolDescriptions provided, appends 'AVAILABLE TOOLS:' section to system prompt",
+    "Tool descriptions instruct LLM to reference tool names in step planning",
+    "LLM instructed to output steps with tool: 'translate', 'remember', 'recall' where applicable",
+    "composeAgentPrompt works without toolDescriptions (backward compatible with Phase B)",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/promptComposer.ts (modified: upgrade composeAgentPrompt)"
+  ]
+}

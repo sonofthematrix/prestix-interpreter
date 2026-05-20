@@ -1,0 +1,43 @@
+{
+  "id": "prestix-agentix-19",
+  "seq": "19",
+  "title": "Phase C tests: autonomousAgent, proactiveEngine, route autonomous mode, upgraded agentLoop",
+  "status": "pending",
+  "depends_on": ["17", "18"],
+  "parallel": false,
+  "suggested_agent": "TestEngineer",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/agentLoop.test.ts (Phase B agentLoop test patterns; extend for autonomous callbacks)",
+    "src/lib/interpreter/promptComposer.test.ts (existing Vitest test patterns)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/autonomousAgent.ts",
+    "src/lib/interpreter/proactiveEngine.ts",
+    "src/lib/interpreter/agentLoop.ts",
+    "src/app/api/interpreter/route.ts"
+  ],
+  "acceptance_criteria": [
+    "autonomousAgent.test.ts: tests full plan→execute→observe→adjust loop",
+    "autonomousAgent.test.ts: tests max iteration guard (no infinite loops)",
+    "autonomousAgent.test.ts: tests adjust generates modified plan on observation.needsAdjustment",
+    "proactiveEngine.test.ts: tests suggestions generated from recentInputs, learningContext",
+    "proactiveEngine.test.ts: tests confidence filtering, max 5 results, sorting",
+    "proactiveEngine.test.ts: tests empty context returns empty array",
+    "agentLoop.test.ts extended: tests autonomous callbacks (observe, adjust hooks)",
+    "agentLoop.test.ts extended: existing Phase B behavior unchanged without callbacks",
+    "route.test.ts extended: POST with sessionMode='autonomous' returns observations + suggestions",
+    "route.test.ts extended: POST with sessionMode='agent' still works unchanged",
+    "All existing 19+ test files remain green",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/autonomousAgent.test.ts (new)",
+    "src/lib/interpreter/proactiveEngine.test.ts (new)",
+    "src/lib/interpreter/agentLoop.test.ts (modified: add autonomous callback tests)",
+    "src/app/api/interpreter/route.test.ts (modified: add autonomous mode tests)"
+  ]
+}

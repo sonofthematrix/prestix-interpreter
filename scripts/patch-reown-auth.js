@@ -15,6 +15,16 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+function isMainModule() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return fileURLToPath(import.meta.url) === path.resolve(entry);
+  } catch {
+    return false;
+  }
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -37,7 +47,7 @@ const alreadyPatchedPattern = /const apiUrl\s*=\s*\([^)]*window\.location[^)]*\)
  */
 function patchNodeModulesReownAuth() {
   if (!fs.existsSync(REOWN_AUTH_JS)) {
-    console.warn('⚠️  node_modules ReownAuthentication.js not found, skipping (run bun install first)');
+    console.warn('⚠️  node_modules ReownAuthentication.js not found, skipping (run npm install first)');
     return;
   }
 
@@ -141,7 +151,7 @@ function patchPackagesReownAuth() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule()) {
   patchReownAuthentication();
 }
 

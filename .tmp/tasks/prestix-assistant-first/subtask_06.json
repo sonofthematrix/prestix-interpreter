@@ -1,0 +1,33 @@
+{
+  "id": "prestix-assistant-first-06",
+  "seq": "06",
+  "title": "Update promptComposer to inject enhanced learning context from learner and dynamic markers",
+  "status": "pending",
+  "depends_on": ["01", "02", "03"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "51-56,166-179",
+      "reason": "Current promptComposer structure and learning injection requirements"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/promptComposer.ts",
+    "src/lib/interpreter/languageMarkers.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "composeUnifiedPrompt() imports and injects dynamic markers from getDynamicMarkers()",
+    "Slang detection hints added to learning context section: 'Newly learned: X = Y'",
+    "composeInterpreterPrompt() kept as-is for force-translate mode",
+    "assistantSystemPrompt() includes dynamic slang markers in translation skill section",
+    "Existing function signatures unchanged",
+    "All existing promptComposer tests (10 tests) still pass",
+    "TypeScript compilation passes"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/promptComposer.ts (enhanced)"
+  ]
+}

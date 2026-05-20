@@ -65,7 +65,7 @@ try {
 
   // Run patch scripts if they exist
   const patchTokenUtil = runScript('patch-tokenutil.js', 'node scripts/patch-tokenutil.js');
-  const patchReownAuth = runScript('patch-reown-auth.js', 'bun scripts/patch-reown-auth.js');
+  const patchReownAuth = runScript('patch-reown-auth.js', 'node scripts/patch-reown-auth.js');
   runScript('patch-phosphor-wallet.js', 'node scripts/patch-phosphor-wallet.js');
 
   if (!patchTokenUtil && !patchReownAuth) {

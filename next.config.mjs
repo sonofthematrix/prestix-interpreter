@@ -27,7 +27,13 @@ function resolveMultiformatsPath() {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
+  // Monorepo/sandbox: pin tracing + silence "multiple lockfiles" / Turbopack+webpack mismatch (Next 16 defaults to Turbopack for build).
+  outputFileTracingRoot: path.join(__dirname),
+  turbopack: {},
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  reactStrictMode: false, // TODO Phase 1: enable after voice SPA decomposition
+  // TODO: Remove these three lines once all type errors are resolved.
+  // Run `bun run type-check` to see current errors.
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -70,6 +76,10 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  async redirects() {
+    // Root `/` serves the Prestix control room (`src/app/page.tsx`). Legacy full voice UI: `/voice`.
+    return [];
   },
   async rewrites() {
     return [

@@ -1,0 +1,46 @@
+{
+  "id": "prestix-assistant-first-12",
+  "seq": "12",
+  "title": "Refactor voice/page.tsx — remove dual-mode UX, add learning confirmation UI",
+  "status": "pending",
+  "depends_on": ["01", "05", "06", "07", "08", "09", "10", "11"],
+  "parallel": false,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "130-182",
+      "reason": "Complete UX refactor requirements and learning confirmation UI specs"
+    },
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "1-13,21-23",
+      "reason": "Project overview and architecture principle: extending not rewriting"
+    }
+  ],
+  "reference_files": [
+    "src/app/voice/page.tsx",
+    "src/lib/interpreter/translatorToggle.ts",
+    "src/lib/interpreter/voiceDock.ts",
+    "src/lib/interpreter/voicePresence.ts",
+    "src/lib/interpreter/assistantUx.ts",
+    "src/hooks/interpreter/useInterpreterSession.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "Dual-mode toggle labels replaced: 'force translate' vs 'prestix' (single identity)",
+    "Mode section in control panel uses updated translatorToggle labels",
+    "Voice dock, voice presence, assistantUx imports use updated unified copy",
+    "sessionModeLabel calls in page.tsx reflect new semantics",
+    "sessionStatusLabel/inputPanelLabel/outputPanelLabel/conversationViewSubtitle use assistant-first framing",
+    "Learning confirmation UI added: after successful translation, show 'Did Prestix get this right?' with confirm/reject buttons",
+    "Learning feedback sent to API via confirmLearning field in request body",
+    "translatorEnabled toggle remains functional as 'force translate' override",
+    "No core behavior changes — only UX label changes + learning UI addition",
+    "TypeScript compilation passes for page.tsx",
+    "All existing Playwright e2e tests still pass or are updated for new labels"
+  ],
+  "deliverables": [
+    "src/app/voice/page.tsx (refactored)"
+  ]
+}

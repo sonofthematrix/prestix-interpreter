@@ -1,0 +1,30 @@
+{
+  "id": "prestix-agentix-07",
+  "seq": "07",
+  "title": "Add ToolDefinition, ToolResult types + extend SessionMode for tools",
+  "status": "pending",
+  "depends_on": ["06"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/types.ts (existing type patterns; add tool types alongside existing Agent* types)",
+    "src/lib/interpreter/typeGuards.ts (existing guard pattern if new guards needed)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "ToolDefinition type exported: name, description, parameters (Record<string, {type, description, required}>), execute function",
+    "ToolResult type exported: success (boolean), output (string), error? (string)",
+    "ToolName union type exported: 'translate' | 'search' | 'summarize' | 'explain' | 'remember' | 'recall'",
+    "Existing types remain unchanged",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/types.ts (modified: add 3 tool types)"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "prestix-assistant-first-14",
+  "seq": "14",
+  "title": "Integrate ambient listening toggle + privacy indicator into voice/page.tsx",
+  "status": "pending",
+  "depends_on": ["12", "13"],
+  "parallel": false,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "184-201",
+      "reason": "Ambient listening UI requirements: toggle, privacy indicator, configurable on/off"
+    }
+  ],
+  "reference_files": [
+    "src/app/voice/page.tsx",
+    "src/lib/interpreter/ambientListener.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "Ambient listening toggle added to voice surface control panel (default OFF)",
+    "Privacy indicator visible when ambient listening is active (e.g., '🔴 ambient learning active')",
+    "AmbientListener instance created on mount, destroyed on unmount",
+    "Toggle persists preference to localStorage key 'prestix-ambient-listening-enabled'",
+    "Toggle button styled consistently with existing mode/recognition/lang controls",
+    "Does NOT auto-start speech recognition for ambient capture (manual user activation only)",
+    "Does NOT modify any Phase 2 UX refactor changes — strictly additive",
+    "TypeScript compilation passes for page.tsx"
+  ],
+  "deliverables": [
+    "src/app/voice/page.tsx (ambient integration)"
+  ]
+}

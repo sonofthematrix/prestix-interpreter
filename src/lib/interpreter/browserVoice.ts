@@ -57,9 +57,11 @@ export function pickPreferredBrowserVoice<T extends BrowserVoiceLike>(
     isLanguageMatch(voice.lang, normalizedTargetLang),
   );
 
-  const maleSameLanguage = sameLanguage.find((voice) => hasMaleMarker(voice.name));
-  if (maleSameLanguage) {
-    return maleSameLanguage.original;
+  const exactLanguageDefault = sameLanguage.find(
+    (voice) => voice.lang === normalizedTargetLang && voice.original.default,
+  );
+  if (exactLanguageDefault) {
+    return exactLanguageDefault.original;
   }
 
   const defaultSameLanguage = sameLanguage.find((voice) => voice.original.default);
@@ -67,14 +69,16 @@ export function pickPreferredBrowserVoice<T extends BrowserVoiceLike>(
     return defaultSameLanguage.original;
   }
 
+  const maleSameLanguage = sameLanguage.find((voice) => hasMaleMarker(voice.name));
+  if (maleSameLanguage) {
+    return maleSameLanguage.original;
+  }
+
   if (sameLanguage.length > 0) {
     return sameLanguage[0].original;
   }
 
-  const maleAnyLanguage = normalizedVoices.find((voice) => hasMaleMarker(voice.name));
-  if (maleAnyLanguage) {
-    return maleAnyLanguage.original;
-  }
-
-  return voices[0] || null;
+  // No nl-NL / id-ID / … match: do NOT pick a random "male" or voices[0] — on fr-FR systems that reads Dutch with a French voice.
+  // Leave voice unset; the engine still respects SpeechSynthesisUtterance.lang.
+  return null;
 }

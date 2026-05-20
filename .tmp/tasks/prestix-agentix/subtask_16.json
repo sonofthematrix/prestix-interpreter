@@ -1,0 +1,36 @@
+{
+  "id": "prestix-agentix-16",
+  "seq": "16",
+  "title": "Create ProactiveEngine: context-aware suggestion generation",
+  "status": "pending",
+  "depends_on": ["14"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/types.ts (ProactiveSuggestion type from subtask 14)",
+    "src/lib/interpreter/learningStore.ts (lines 1-30,281-367: listRelevant for context-aware suggestions)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts",
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/conversationLearner.ts"
+  ],
+  "acceptance_criteria": [
+    "ProactiveEngine class exports generateSuggestions(context): Promise<ProactiveSuggestion[]>",
+    "Context parameter includes: recentInputs (string[]), learningContext (string), timeOfDay (string)",
+    "Generates suggestions from 4 sources: context, history, learning, ambient",
+    "Each suggestion has unique id, text, confidence score, and source tag",
+    "Suggestion text is user-facing and actionable",
+    "Confidence score filtered: only returns suggestions with confidence > 0.3",
+    "Returns max 5 suggestions, sorted by confidence descending",
+    "Handles empty context gracefully (returns empty array)",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/proactiveEngine.ts (new)"
+  ]
+}

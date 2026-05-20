@@ -1,0 +1,39 @@
+{
+  "id": "prestix-assistant-first-07",
+  "seq": "07",
+  "title": "Add learning feedback loop to interpreter API route",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Added learning feedback loop: conversationLearner.learnFromTurn for assistant mode, confirmLearning request body, learningSuggestions in response payload",
+  "depends_on": ["01", "02", "04", "06"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "42-50,176-183",
+      "reason": "Current API route structure and learning feedback loop requirements"
+    }
+  ],
+  "reference_files": [
+    "src/app/api/interpreter/route.ts",
+    "src/lib/interpreter/conversationLearner.ts",
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/promptComposer.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "After successful translation, route calls conversationLearner.learnFromTurn(input, output, mode)",
+    "Response payload includes learningSuggestions field with pending suggestions for user confirmation",
+    "Request body accepts optional confirmLearning field { id, accepted }",
+    "Confirmed learnings are wired back to learningStore via confirmSuggestion/rejectSuggestion",
+    "Existing route logic (tolk mode, quality guards, provider chain) unchanged",
+    "All existing route behavior preserved for non-learning requests",
+    "TypeScript compilation passes for route.ts"
+  ],
+  "deliverables": [
+    "src/app/api/interpreter/route.ts (enhanced)"
+  ]
+}

@@ -812,7 +812,7 @@ if (typeof window !== 'undefined') {
       // Suppress ChunkLoadError (webpack trying to load from wrong port - harmless)
       if (fullMessage.includes('ChunkLoadError') ||
           fullMessage.includes('Loading chunk') ||
-          (fullMessage.includes('ERR_CONNECTION_REFUSED') && fullMessage.includes('localhost:3001'))) {
+          (fullMessage.includes('ERR_CONNECTION_REFUSED') && fullMessage.includes('localhost:4318'))) {
         return;
       }
       

@@ -1,0 +1,34 @@
+{
+  "id": "prestix-agentix-18",
+  "seq": "18",
+  "title": "Upgrade AgentLoop for autonomous capabilities (observe + adjust hooks)",
+  "status": "pending",
+  "depends_on": ["15"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/agentLoop.ts (existing AgentLoop from subtask 03; add observe/adjust hooks)",
+    "src/lib/interpreter/types.ts (AgentObservation, AgentState types from subtask 14)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/agentLoop.ts",
+    "src/lib/interpreter/autonomousAgent.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "AgentLoop.execute accepts optional observeStep callback: (step, result) => Promise<AgentObservation>",
+    "AgentLoop.execute accepts optional adjustPlan callback: (observation) => Promise<AgentPlan>",
+    "When callbacks provided and observation.needsAdjustment: calls adjustPlan and continues with adjusted plan",
+    "When callbacks NOT provided: AgentLoop behaves exactly as in Phase B (backward compatible)",
+    "Existing AgentLoop tests from Phase B still pass unchanged",
+    "Upgraded loop tracks additional state: observations array, adjustment history",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/agentLoop.ts (modified: add optional observe/adjust callbacks)"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "prestix-agentix-03",
+  "seq": "03",
+  "title": "Create AgentLoop: sequential multi-step orchestrator",
+  "status": "pending",
+  "depends_on": ["02"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/types.ts (AgentLoopState, AgentLoopResult types from subtask 01)",
+    "src/lib/interpreter/promptComposer.ts (lines 247-349: prompt composition pattern for assistant)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/taskDecomposer.ts",
+    "src/lib/interpreter/providerRouter.ts"
+  ],
+  "acceptance_criteria": [
+    "AgentLoop class exports execute(input, mode): Promise<AgentLoopResult>",
+    "Uses TaskDecomposer to break input into plan",
+    "Executes each step sequentially, updating status fields",
+    "Returns AgentLoopResult with plan, finalOutput, completedSteps, status",
+    "Tracks state transitions: planning → executing → completed/failed",
+    "On step failure, marks step as failed and returns status='failed' with partial results",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/agentLoop.ts (new)"
+  ]
+}

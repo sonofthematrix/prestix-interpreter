@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jsonLearningStore } from "../../../../lib/interpreter/learningStore";
+import { learningStore } from "../../../../lib/interpreter/learningStore";
 import type { InterpreterMode } from "../../../../lib/interpreter/types";
 
 type FeedbackBody = {
@@ -17,9 +17,7 @@ type FeedbackBody = {
 
 export const dynamic = "force-dynamic";
 
-function isInterpreterMode(value: unknown): value is InterpreterMode {
-  return value === "id-en" || value === "en-id";
-}
+import { isInterpreterMode } from "../../../../lib/interpreter/typeGuards";
 
 function cleanString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -43,7 +41,10 @@ export async function POST(request: NextRequest) {
   const note = cleanString(body.note);
 
   if (!isInterpreterMode(body.mode)) {
-    return NextResponse.json({ saved: false, error: "Mode must be id-en or en-id." }, { status: 400 });
+    return NextResponse.json(
+      { saved: false, error: "Mode must be nl-id, id-nl, en-id, or id-en." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const memory = await jsonLearningStore.addGlossary({
+      const memory = await learningStore.addGlossary({
         term,
         meaning,
         mode: body.mode,
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const memory = await jsonLearningStore.addStyleRule({
+      const memory = await learningStore.addStyleRule({
         rule,
         mode: body.mode,
       });
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const memory = await jsonLearningStore.addCorrection({
+    const memory = await learningStore.addCorrection({
       sourceText,
       wrongOutput,
       correctedOutput,

@@ -237,6 +237,23 @@ export type BookingDispute = $ModelResult<$Schema, "BookingDispute">;
 export type VenueDailyMetrics = $ModelResult<$Schema, "VenueDailyMetrics">;
 export type PromoterDailyMetrics = $ModelResult<$Schema, "PromoterDailyMetrics">;
 export type PlatformDailyMetrics = $ModelResult<$Schema, "PlatformDailyMetrics">;
+/**
+ * Long-running agent conversation session (voice, text, or headless).
+ */
+export type AgentSession = $ModelResult<$Schema, "AgentSession">;
+/**
+ * Single exchange within an agent session: input → provider → output.
+ */
+export type AgentConversationSegment = $ModelResult<$Schema, "AgentConversationSegment">;
+/**
+ * Reusable multi-step procedure learned by the agent from successful executions.
+ */
+export type AgentProcedure = $ModelResult<$Schema, "AgentProcedure">;
+/**
+ * Persistent learning memory — corrections, glossary terms, style rules, and
+ * semantic embeddings. Replaces the flat JSON file `data/interpreter-learning.json`.
+ */
+export type LearningMemory = $ModelResult<$Schema, "LearningMemory">;
 export type AuditLog = $ModelResult<$Schema, "AuditLog">;
 export const PrestixUserRole = $schema.enums.PrestixUserRole.values;
 export type PrestixUserRole = (typeof PrestixUserRole)[keyof typeof PrestixUserRole];

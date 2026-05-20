@@ -4,9 +4,11 @@ import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "../../../../lib/rate-limit";
 
 const execFileAsync = promisify(execFile);
 const transcribeTimeoutMs = 300000;
+const maxAudioFileSizeBytes = 25 * 1024 * 1024; // 25 MB
 const scriptPath = join(process.cwd(), "scripts", "faster_whisper_transcribe.py");
 const pythonExecutable = process.env.FASTER_WHISPER_PYTHON || "python3";
 
@@ -30,6 +32,10 @@ function normalizeLanguageHint(value: FormDataEntryValue | null): string {
     return "en";
   }
 
+  if (value === "nl-NL") {
+    return "nl";
+  }
+
   return "";
 }
 
@@ -38,6 +44,15 @@ function errorResponse(error: string, status = 400) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(ip, 10, 60000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many transcription requests." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
   let formData: FormData;
 
   try {
@@ -55,6 +70,10 @@ export async function POST(request: NextRequest) {
 
   if (audioFile.size === 0) {
     return errorResponse("Audio file is empty.");
+  }
+
+  if (audioFile.size > maxAudioFileSizeBytes) {
+    return errorResponse(`Audio file exceeds ${maxAudioFileSizeBytes / (1024 * 1024)} MB limit.`);
   }
 
   const tempDir = await mkdtemp(join(tmpdir(), "prestix-whisper-"));

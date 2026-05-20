@@ -1,0 +1,32 @@
+{
+  "id": "prestix-assistant-first-03",
+  "seq": "03",
+  "title": "Add dynamic marker injection from learned slang into languageMarkers",
+  "status": "pending",
+  "depends_on": ["01"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "101-119,166-174",
+      "reason": "Current languageMarkers structure and dynamic marker injection requirements"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/languageMarkers.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "getDynamicMarkers(language) returns learned slang words as marker arrays",
+    "addDynamicMarker(word, language) adds a learned word to runtime-accessible markers",
+    "hasDynamicMarker(text, language) checks against both static and dynamic markers",
+    "Exported DYNAMIC_MARKERS constant is mutable and accessible to conversationLearner",
+    "Existing static marker arrays (INDONESIAN_MARKERS, ENGLISH_MARKERS, DUTCH_MARKERS) unchanged",
+    "Existing hasMarker() function still works identically for statics",
+    "All existing tests still pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/languageMarkers.ts (enhanced)"
+  ]
+}

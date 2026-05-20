@@ -1,0 +1,36 @@
+{
+  "id": "prestix-agentix-17",
+  "seq": "17",
+  "title": "Add autonomous endpoint/extension to interpreter route",
+  "status": "completed",
+  "depends_on": ["15", "16"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Added autonomous mode branch to interpreter route with AutonomousAgent integration and proactive suggestions",
+  "context_files": [
+    "src/app/api/interpreter/route.ts (lines 108-263: existing route with agent mode; add autonomous branch)",
+    "src/lib/interpreter/types.ts (SessionMode now includes 'autonomous')"
+  ],
+  "reference_files": [
+    "src/app/api/interpreter/route.ts",
+    "src/lib/interpreter/autonomousAgent.ts",
+    "src/lib/interpreter/proactiveEngine.ts",
+    "src/lib/interpreter/agentLoop.ts"
+  ],
+  "acceptance_criteria": [
+    "Route recognizes sessionMode='autonomous' (via isSessionMode now accepting 'autonomous')",
+    "When sessionMode='autonomous': creates AutonomousAgent, calls run(input, mode)",
+    "Returns full AutonomousAgentResult including plan, finalOutput, observations, adjustments",
+    "Response includes proactive suggestions (from ProactiveEngine) for next actions",
+    "Autonomous mode has same rate limiting, timeout, and error handling as other modes",
+    "sessionMode='assistant', 'interpreter', and 'agent' behavior COMPLETELY unchanged",
+    "Does NOT modify DO-NOT-TOUCH files",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/app/api/interpreter/route.ts (modified: add autonomous mode branch)"
+  ]
+}

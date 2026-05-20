@@ -187,7 +187,7 @@ async function scenarioStory(page) {
 
   translationCallCount = 0;
   await resetPage(page);
-  await page.getByRole("button", { name: /^story$/i }).click();
+  await page.getByRole("button", { name: /^long story$/i }).click();
 
   await page.evaluate((input) => {
     window.__mockSpeech.emitResult([{ isFinal: true, transcript: input }]);
@@ -229,7 +229,7 @@ async function scenarioQueue(page) {
 
   translationCallCount = 0;
   await resetPage(page);
-  await page.getByRole("button", { name: /^live$/i }).click();
+  await page.getByRole("button", { name: /^short phrases$/i }).click();
 
   await page.evaluate((input) => {
     window.__mockSpeech.emitResult([{ isFinal: true, transcript: input }]);

@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kandor Optimized Core · cinematic operational control room</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="hud-mode">
+    <div class="shell">
+      <header class="topbar hud-topbar">
+        <span class="hud-topbar-sweep" aria-hidden="true"></span>
+        <div class="brand-stack hud-brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span class="brand-mark-pulse"></span>
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" focusable="false">
+              <polygon points="16,2 28,9 28,23 16,30 4,23 4,9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+              <polygon class="brand-mark-inner" points="16,8 23,12 23,20 16,24 9,20 9,12" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" opacity="0.6"/>
+              <line x1="16" y1="2" x2="16" y2="8" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+              <line x1="28" y1="9" x2="23" y2="12" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+              <line x1="4" y1="9" x2="9" y2="12" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-wordmark brand-wordmark--single">
+              <span class="brand-line-1">Kandor Optimized Core</span>
+              <span class="brand-version">v0.1</span>
+              <span class="brand-eee-chip" aria-label="Build stamp">3EEE</span>
+            </h1>
+            <p class="brand-subtitle brand-subtitle--tagline">
+              <span class="brand-tagline-cursor" aria-hidden="true"></span>
+              cinematic operational control room
+            </p>
+          </div>
+        </div>
+        <div class="hud-clock" id="hud-clock" aria-label="Operational HUD clock">
+          <span class="visually-hidden" id="updated-pill" aria-label="Last dashboard refresh time">--</span>
+          <div class="hud-clock-display" aria-hidden="true">
+            <span class="hud-clock-segment hud-clock-segment--hrs">
+              <span class="hud-clock-digit" data-clock="hrs">00</span>
+              <span class="hud-clock-tick">HRS</span>
+            </span>
+            <span class="hud-clock-colon" aria-hidden="true">:</span>
+            <span class="hud-clock-segment hud-clock-segment--min">
+              <span class="hud-clock-digit" data-clock="min">00</span>
+              <span class="hud-clock-tick">MIN</span>
+            </span>
+            <span class="hud-clock-colon" aria-hidden="true">:</span>
+            <span class="hud-clock-segment hud-clock-segment--sec">
+              <span class="hud-clock-digit" data-clock="sec">00</span>
+              <span class="hud-clock-tick">SEC</span>
+            </span>
+            <span class="hud-clock-colon hud-clock-colon--small" aria-hidden="true">:</span>
+            <span class="hud-clock-segment hud-clock-segment--ms">
+              <span class="hud-clock-digit hud-clock-digit--small" data-clock="ms">000</span>
+              <span class="hud-clock-tick">MS</span>
+            </span>
+          </div>
+        </div>
+        <div class="hud-tile-cluster" aria-label="Dashboard status controls">
+          <article class="hud-tile" data-status-tile="authority">
+            <span class="hud-tile-label">
+              <span class="hud-tile-icon" aria-hidden="true">⛒</span>AUTHORITY
+            </span>
+            <span class="pill status-chip" id="live-pill" role="status" aria-live="polite">LIVE BLOCKED</span>
+            <span class="hud-tile-sub">read-only mode</span>
+          </article>
+          <article class="hud-tile" data-status-tile="feed">
+            <span class="hud-tile-label">
+              <span class="hud-tile-icon" aria-hidden="true">≣</span>INDEXED FEED
+            </span>
+            <span class="pill status-chip" id="feed-pill" role="status" aria-live="polite">DEGRADED</span>
+            <span class="hud-tile-sub" id="feed-sub">awaiting probe</span>
+          </article>
+          <article class="hud-tile hud-tile--system" data-status-tile="system">
+            <div class="hud-tile-system-head">
+              <span class="hud-tile-label">SYSTEM STATUS</span>
+              <strong class="hud-tile-system-state" id="system-status-value">OPERATIONAL</strong>
+            </div>
+            <svg class="hud-tile-sparkline" id="system-sparkline" viewBox="0 0 120 22" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <div class="hud-tile-refresh">
+              <span>LAST REFRESH</span>
+              <strong id="last-refresh-display">--:--:--</strong>
+              <span>UTC</span>
+            </div>
+          </article>
+          <button class="button hud-refresh-btn" id="refresh-button" type="button" aria-label="Refresh dashboard data" title="Refresh">
+            <span aria-hidden="true">↻</span>
+            <span class="visually-hidden">Refresh</span>
+          </button>
+        </div>
+      </header>
+
+      <nav class="tabs" aria-label="Views">
+        <button class="tab active" data-view="dashboard" type="button">Dashboard</button>
+        <button class="tab" data-view="queue" type="button">Queue</button>
+        <button class="tab" data-view="brief" type="button">Brief</button>
+        <button class="tab" data-view="replay" type="button">Replay</button>
+        <button class="tab" data-view="evidence" type="button">Evidence</button>
+        <button class="tab" data-view="controls" type="button">Controls</button>
+        <button class="tab" data-view="autonomy" type="button">Autonomy</button>
+        <button class="tab" data-view="learning" type="button">Learning</button>
+        <button class="tab" data-view="analysis" type="button">Analysis</button>
+      </nav>
+
+      <section class="cinematic-hero-row" aria-label="Review control room overview">
+        <section class="control-room-entrance hud-hero" aria-labelledby="entrance-title">
+          <div class="entrance-copy">
+            <p class="eyebrow">Kandor Optimized Core <span class="version-label">v0.1</span></p>
+            <h2 id="entrance-title" class="hud-hero-title">cinematic operational control room</h2>
+            <p class="entry-description">
+              Evidence-backed review surface for proposals, replay, venue health,
+              readiness checks, and manual oversight.
+            </p>
+            <div class="entry-route" aria-label="Dashboard review flow">
+              <span>READ-ONLY</span>
+              <span>ADVISORY-ONLY</span>
+              <span>MANUAL REVIEW</span>
+              <span>EVIDENCE FIRST</span>
+              <span class="entry-route--alert">NO EXECUTION</span>
+            </div>
+          </div>
+          <aside class="entrance-map hud-stat-grid" aria-label="Current dashboard boundary">
+            <div class="entry-stat" data-stat="authority">
+              <span><span class="entry-stat-icon" aria-hidden="true">⌬</span>AUTHORITY</span>
+              <strong id="entrance-live-state">LIVE BLOCKED</strong>
+            </div>
+            <div class="entry-stat" data-stat="feed">
+              <span><span class="entry-stat-icon" aria-hidden="true">≣</span>INDEXED FEED</span>
+              <strong id="entrance-feed-state">DEGRADED</strong>
+            </div>
+            <div class="entry-stat" data-stat="readiness">
+              <span>READINESS</span>
+              <strong id="entrance-readiness-state">12/12 CONTROLS</strong>
+            </div>
+            <div class="entry-stat" data-stat="analysis">
+              <span>ANALYSIS</span>
+              <strong id="entrance-analysis-state">ANALYSIS PASSED</strong>
+            </div>
+          </aside>
+        </section>
+        <aside class="health-stack" aria-label="System health overview">
+          <section class="health-panel" data-health="system">
+            <header class="health-panel-head">
+              <span class="health-panel-icon" aria-hidden="true">◆</span>
+              <h3>SYSTEM HEALTH</h3>
+            </header>
+            <ul class="health-rows" id="health-system-rows">
+              <li><span>Operational Integrity</span><strong class="health-status ok">PASSED</strong></li>
+              <li><span>Risk-Gate Integrity</span><strong class="health-status ok">PASSED</strong></li>
+              <li><span>Kill-Switch Guard</span><strong class="health-status warn">ARMED</strong></li>
+              <li><span>Evidence Integrity</span><strong class="health-status ok">PASSED</strong></li>
+              <li><span>Environment</span><strong class="health-status ok">OPERATIONAL</strong></li>
+            </ul>
+          </section>
+          <section class="health-panel" data-health="market">
+            <header class="health-panel-head">
+              <span class="health-panel-icon" aria-hidden="true">◇</span>
+              <h3>MARKET DIAGNOSTICS <em>(CURRENT)</em></h3>
+            </header>
+            <ul class="health-rows" id="health-market-rows">
+              <li><span>Network Status</span><strong class="health-status ok">HEALTHY</strong></li>
+              <li><span>Provider Latency</span><strong class="health-status ok">28<span class="health-unit">ms</span></strong></li>
+              <li><span>Venue Connectivity</span><strong class="health-status ok">HEALTHY</strong></li>
+              <li><span>Rate Limit Headroom</span><strong class="health-status ok">87<span class="health-unit">%</span></strong></li>
+              <li><span>Time Sync</span><strong class="health-status ok">LOCKED</strong></li>
+            </ul>
+          </section>
+          <section class="health-panel" data-health="feed">
+            <header class="health-panel-head">
+              <span class="health-panel-icon" aria-hidden="true">⌬</span>
+              <h3>INDEXED FEED HEALTH <em>(EVIDENCE)</em></h3>
+            </header>
+            <ul class="health-rows" id="health-feed-rows">
+              <li><span>Quality Status</span><strong class="health-status warn">DEGRADED</strong></li>
+              <li><span>Quality Errors</span><strong class="health-status warn">3</strong></li>
+              <li><span>Quality Warnings</span><strong class="health-status warn">7</strong></li>
+              <li><span>Staleness</span><strong class="health-status warn">2h 14m</strong></li>
+              <li><span>Last Ingest</span><strong class="health-status warn">12:25:02 AM</strong></li>
+            </ul>
+          </section>
+        </aside>
+      </section>
+
+      <main>
+        <section class="metric-strip hud-metric-strip" id="metric-strip" aria-live="polite"></section>
+        <section class="state-brief hud-state-brief" id="state-brief" aria-label="System state summary" aria-live="polite"></section>
+
+        <section class="cinematic-overview" aria-label="Algorithm understanding overview">
+          <article class="cinematic-card algo-status">
+            <header class="cinematic-card-head">
+              <span class="cinematic-card-eyebrow">ALGORITHM UNDERSTANDING</span>
+              <h3>STATUS</h3>
+            </header>
+            <div class="algo-status-body">
+              <svg class="algo-particle-wave" viewBox="0 0 240 100" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="algoWaveGrad" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%" stop-color="#3dff8a" stop-opacity="0"/>
+                    <stop offset="35%" stop-color="#3dff8a" stop-opacity="0.55"/>
+                    <stop offset="65%" stop-color="#3dff8a" stop-opacity="0.85"/>
+                    <stop offset="100%" stop-color="#dff8ff" stop-opacity="0.95"/>
+                  </linearGradient>
+                </defs>
+                <g id="algo-wave-particles" stroke="url(#algoWaveGrad)" stroke-width="1" stroke-linecap="round"></g>
+              </svg>
+              <strong class="algo-status-value good">OPERATIONAL</strong>
+            </div>
+          </article>
+          <article class="cinematic-card algo-stat">
+            <span class="cinematic-card-eyebrow">EVIDENCE IDS</span>
+            <strong class="algo-stat-value" id="overview-evidence-count">80</strong>
+            <span class="algo-stat-sub">TOTAL</span>
+          </article>
+          <article class="cinematic-card algo-stat">
+            <span class="cinematic-card-eyebrow">IMPLEMENTED CONTROLS</span>
+            <strong class="algo-stat-value good" id="overview-controls-value">12/12</strong>
+            <span class="algo-stat-sub">PASSED</span>
+          </article>
+          <article class="cinematic-card algo-stat algo-stat--coverage">
+            <span class="cinematic-card-eyebrow">COVERAGE READINESS</span>
+            <strong class="algo-stat-value good" id="overview-coverage-value">100%</strong>
+            <span class="algo-stat-sub">READY</span>
+            <div class="algo-coverage-ring" aria-hidden="true">
+              <svg viewBox="0 0 36 36" preserveAspectRatio="xMidYMid meet">
+                <circle class="algo-ring-track" cx="18" cy="18" r="16"></circle>
+                <circle class="algo-ring-fill" cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="100 100"></circle>
+              </svg>
+            </div>
+          </article>
+          <article class="cinematic-card algo-boundary">
+            <span class="cinematic-card-eyebrow">MODEL BOUNDARY</span>
+            <span class="algo-boundary-label">PROVIDER STATUS</span>
+            <strong class="algo-boundary-value good" id="overview-provider-value">OPERATIONAL</strong>
+            <div class="algo-boundary-shield" aria-hidden="true">
+              <svg viewBox="0 0 32 32">
+                <path d="M16 3 L28 8 V17 C28 23 22 28 16 30 C10 28 4 23 4 17 V8 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                <path d="M16 11 L22 14 V19 C22 22 19 25 16 26 C13 25 10 22 10 19 V14 Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" opacity="0.7"/>
+              </svg>
+            </div>
+          </article>
+        </section>
+
+        <section class="view active" id="view-dashboard" aria-labelledby="dashboard-title">
+          <div class="dashboard-grid" aria-label="Kandor Optimized Core v0.1 dashboard">
+            <section class="panel cockpit-span">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Kandor Optimized Core v0.1</p>
+                  <h2 id="dashboard-title">Read-Only Review Surface</h2>
+                </div>
+                <span class="tag good">advisory-only</span>
+              </div>
+              <div class="list compact" id="dashboard-boundary-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">01</p><h2>System Status</h2></div></div>
+              <div class="list compact" id="dashboard-system-status"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">02</p><h2>Analysis Control Plane</h2></div></div>
+              <div class="list compact" id="dashboard-analysis-plane"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">03</p><h2>Proposal Review Desk</h2></div></div>
+              <div class="list compact" id="dashboard-proposal-desk"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">04</p><h2>Evidence Bundle Viewer</h2></div></div>
+              <div class="list compact" id="dashboard-evidence-viewer"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">05</p><h2>Replay / Comparison Desk</h2></div></div>
+              <div class="list compact" id="dashboard-replay-desk"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">06</p><h2>Learning / Replay Insights</h2></div></div>
+              <div class="list compact" id="dashboard-learning-insights"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">07</p><h2>Exit Policy Desk</h2></div></div>
+              <div class="list compact" id="dashboard-exit-policy"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">08</p><h2>Paper Portfolio Desk</h2></div></div>
+              <div class="list compact" id="dashboard-paper-portfolio"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">09</p><h2>Live Readiness Desk</h2></div></div>
+              <div class="list compact" id="dashboard-live-readiness"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">10</p><h2>Feed / Venue Health</h2></div></div>
+              <div class="list compact" id="dashboard-feed-venue"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">11</p><h2>Kill-Switch Status</h2></div></div>
+              <div class="list compact" id="dashboard-kill-switch"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">12</p><h2>TCA / Reconciliation Desk</h2></div></div>
+              <div class="list compact" id="dashboard-tca-reconciliation"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-queue">
+          <div class="layout">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Review Queue</p>
+                  <h2>Evidence-Backed Candidates</h2>
+                </div>
+                <span class="count" id="candidate-count">0</span>
+              </div>
+              <div class="queue-tools" aria-label="Candidate queue controls">
+                <label>
+                  <span>Priority</span>
+                  <select id="candidate-priority-filter">
+                    <option value="all">All</option>
+                    <option value="high">High</option>
+                    <option value="standard">Standard</option>
+                    <option value="watch">Watch</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Sort</span>
+                  <select id="candidate-sort">
+                    <option value="rank">Rank</option>
+                    <option value="confidence">Confidence</option>
+                    <option value="symbol">Symbol</option>
+                    <option value="anomaly">Anomaly</option>
+                  </select>
+                </label>
+              </div>
+              <div class="list" id="candidate-list"></div>
+              <div class="subhead">
+                <div>
+                  <p class="eyebrow">Candidate Intelligence</p>
+                  <h3>Abstention Analytics</h3>
+                </div>
+                <span class="count" id="candidate-abstention-count">0</span>
+              </div>
+              <div class="queue-tools single" aria-label="Abstention controls">
+                <label>
+                  <span>Reason</span>
+                  <select id="abstention-filter">
+                    <option value="all">All</option>
+                    <option value="critical">Critical anomaly</option>
+                    <option value="feed">Feed health</option>
+                    <option value="confidence">Confidence</option>
+                    <option value="neutral">Neutral direction</option>
+                    <option value="missing">Missing data</option>
+                  </select>
+                </label>
+              </div>
+              <div class="list compact" id="candidate-abstention-list"></div>
+              <div class="subhead">
+                <div>
+                  <p class="eyebrow">Recorded Proposals</p>
+                  <h3>Queryable Queue</h3>
+                </div>
+                <span class="count" id="persisted-proposal-count">0</span>
+              </div>
+              <div class="queue-tools" aria-label="Recorded proposal controls">
+                <label>
+                  <span>Status</span>
+                  <select id="persisted-status-filter">
+                    <option value="all">All</option>
+                    <option value="review">Review</option>
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Sort</span>
+                  <select id="persisted-sort">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="symbol">Symbol</option>
+                    <option value="status">Status</option>
+                  </select>
+                </label>
+              </div>
+              <div class="list" id="persisted-proposal-list"></div>
+            </section>
+
+            <section class="panel detail-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Proposal</p>
+                  <h2 id="proposal-title">No Candidate</h2>
+                </div>
+                <span class="tag" id="proposal-confidence">--</span>
+              </div>
+
+              <dl class="detail-grid" id="proposal-detail"></dl>
+
+              <div class="section-block">
+                <h3>Risk Gate</h3>
+                <div class="list compact" id="proposal-risk"></div>
+              </div>
+
+              <div class="section-block">
+                <h3>Decision Timeline</h3>
+                <div class="timeline compact" id="proposal-timeline"></div>
+              </div>
+
+              <div class="section-block">
+                <h3>Manual Guidance</h3>
+                <div class="list compact" id="proposal-guidance"></div>
+              </div>
+
+              <div class="section-block">
+                <h3>Candidate Intelligence</h3>
+                <div class="list compact" id="proposal-intelligence"></div>
+              </div>
+
+              <div class="section-block">
+                <h3>Market Context</h3>
+                <div class="list compact" id="proposal-market"></div>
+              </div>
+
+              <div class="section-block">
+                <h3>Lifecycle</h3>
+                <div class="list compact" id="proposal-lifecycle"></div>
+              </div>
+
+              <div class="section-block">
+                <h3>Evidence Bundle</h3>
+                <div class="evidence-inline" id="proposal-evidence"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-brief">
+          <div class="brief-grid">
+            <section class="panel brief-hero">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Selected Proposal</p>
+                  <h2>Review Brief</h2>
+                </div>
+                <span class="tag" id="brief-status">--</span>
+              </div>
+              <div class="list compact" id="brief-summary-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Evidence</p>
+                  <h2>Requirement Map</h2>
+                </div>
+              </div>
+              <div class="list compact" id="brief-evidence-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Market</p>
+                  <h2>Readiness Context</h2>
+                </div>
+              </div>
+              <div class="list compact" id="brief-market-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Manual Review</p>
+                  <h2>Disposition Checklist</h2>
+                </div>
+              </div>
+              <div class="list compact" id="brief-disposition-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Replay</p>
+                  <h2>Context Pack</h2>
+                </div>
+              </div>
+              <div class="list compact" id="brief-replay-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-replay">
+          <div class="replay-grid">
+            <section class="panel replay-hero">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Replay</p>
+                  <h2>Workbench</h2>
+                </div>
+                <span class="tag" id="replay-workbench-status">--</span>
+              </div>
+              <div class="list compact" id="replay-workbench-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Causal Safety</p>
+                  <h2>Leakage Detail</h2>
+                </div>
+              </div>
+              <div class="list compact" id="replay-leakage-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Candidates</p>
+                  <h2>Replay Output</h2>
+                </div>
+              </div>
+              <div class="list compact" id="replay-candidate-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Baseline</p>
+                  <h2>Delta Review</h2>
+                </div>
+              </div>
+              <div class="list compact" id="replay-delta-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Labels</p>
+                  <h2>Calibration</h2>
+                </div>
+              </div>
+              <div class="list compact" id="replay-label-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-evidence">
+          <div class="layout">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Timeline</p>
+                  <h2>Latest Evidence</h2>
+                </div>
+                <span class="count" id="evidence-count">0</span>
+              </div>
+              <div class="timeline" id="evidence-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Replay</p>
+                  <h2>Metrics</h2>
+                </div>
+              </div>
+              <div class="metric-table" id="replay-metrics"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Replay</p>
+                  <h2>Latest Run</h2>
+                </div>
+              </div>
+              <div class="list compact" id="replay-run-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Review Trends</p>
+                  <h2>Historical Summary</h2>
+                </div>
+              </div>
+              <div class="list compact" id="review-trend-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Review Trends</p>
+                  <h2>Historical Intelligence</h2>
+                </div>
+                <span class="count" id="historical-intelligence-count">0</span>
+              </div>
+              <div class="queue-tools" aria-label="Historical intelligence filters">
+                <label>
+                  <span>Type</span>
+                  <select id="historical-kind-filter">
+                    <option value="all">All</option>
+                    <option value="candidate">Candidates</option>
+                    <option value="abstention">Abstentions</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Signal tier</span>
+                  <select id="historical-signal-tier-filter">
+                    <option value="all">All</option>
+                    <option value="high">High</option>
+                    <option value="standard">Standard</option>
+                    <option value="weak">Weak</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Priority</span>
+                  <select id="historical-review-priority-filter">
+                    <option value="all">All</option>
+                    <option value="high">High</option>
+                    <option value="standard">Standard</option>
+                    <option value="low">Low</option>
+                    <option value="watch">Watch</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="abstain">Abstain</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Abstention</span>
+                  <select id="historical-abstention-filter">
+                    <option value="all">All</option>
+                    <option value="market_anomaly_critical">Critical anomaly</option>
+                    <option value="confidence_below_candidate_threshold">Confidence</option>
+                    <option value="direction_neutral">Neutral direction</option>
+                    <option value="entry_reference_missing">Missing entry</option>
+                    <option value="symbol_missing">Missing symbol</option>
+                    <option value="feed_health_not_healthy">Feed health</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Direction</span>
+                  <select id="historical-direction-filter">
+                    <option value="all">All</option>
+                    <option value="long">Long</option>
+                    <option value="short">Short</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Confidence</span>
+                  <select id="historical-confidence-filter">
+                    <option value="all">All</option>
+                    <option value="high">High</option>
+                    <option value="standard">Standard</option>
+                    <option value="low">Low</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Source</span>
+                  <select id="historical-source-filter">
+                    <option value="all">All</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Anomaly</span>
+                  <select id="historical-anomaly-filter">
+                    <option value="all">All</option>
+                    <option value="none">None</option>
+                    <option value="warning">Warning</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </label>
+              </div>
+              <div class="list compact" id="historical-intelligence-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Replay</p>
+                  <h2>Baseline Comparison</h2>
+                </div>
+              </div>
+              <div class="list compact" id="replay-comparison-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Replay</p>
+                  <h2>Diagnostics</h2>
+                </div>
+              </div>
+              <div class="list compact" id="replay-diagnostic-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Feed Health</p>
+                  <h2>Latest Snapshots</h2>
+                </div>
+              </div>
+              <div class="list compact" id="feed-snapshot-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Feed Health</p>
+                  <h2>Trend Summary</h2>
+                </div>
+              </div>
+              <div class="list compact" id="feed-trend-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Feed Health</p>
+                  <h2>Degradation Drilldown</h2>
+                </div>
+              </div>
+              <div class="list compact" id="feed-degradation-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Market Context</p>
+                  <h2>Public + Sentiment</h2>
+                </div>
+              </div>
+              <div class="list compact" id="market-context-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Observer</p>
+                  <h2>Evidence Summary</h2>
+                </div>
+              </div>
+              <div class="list compact" id="observer-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Observer</p>
+                  <h2>Diagnostics Trend</h2>
+                </div>
+              </div>
+              <div class="list compact" id="observer-diagnostics-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-controls">
+          <div class="control-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Live Readiness</p>
+                  <h2>Controls</h2>
+                </div>
+              </div>
+              <div class="list compact" id="control-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Live Readiness</p>
+                  <h2>Readiness Gaps</h2>
+                </div>
+              </div>
+              <div class="list compact" id="control-gap-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Kill Switches</p>
+                  <h2>State</h2>
+                </div>
+              </div>
+              <div class="list compact" id="kill-switch-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Manual Close</p>
+                  <h2>Workflow</h2>
+                </div>
+              </div>
+              <div class="list compact" id="manual-close-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Manual Review</p>
+                  <h2>Disposition Kit</h2>
+                </div>
+              </div>
+              <div class="list compact" id="disposition-kit-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Position Sizing</p>
+                  <h2>Advisory Calculator</h2>
+                </div>
+              </div>
+              <div class="list compact" id="position-sizing-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Venue Status</p>
+                  <h2>Components</h2>
+                </div>
+              </div>
+              <div class="list compact" id="venue-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Venue Reliability</p>
+                  <h2>Evidence Model</h2>
+                </div>
+              </div>
+              <div class="list compact" id="venue-reliability-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Reconciliation</p>
+                  <h2>Checks</h2>
+                </div>
+              </div>
+              <div class="list compact" id="reconciliation-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-autonomy">
+          <div class="control-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Autonomy</p>
+                  <h2>Policy</h2>
+                </div>
+              </div>
+              <div class="list compact" id="autonomy-policy-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Autonomy</p>
+                  <h2>Latest Run</h2>
+                </div>
+              </div>
+              <div class="list compact" id="autonomy-run-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Paper</p>
+                  <h2>Shadow Portfolio</h2>
+                </div>
+              </div>
+              <div class="list compact" id="paper-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Promotion</p>
+                  <h2>Readiness</h2>
+                </div>
+              </div>
+              <div class="list compact" id="promotion-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Replay Labels</p>
+                  <h2>Coverage</h2>
+                </div>
+              </div>
+              <div class="list compact" id="label-coverage-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Query Index</p>
+                  <h2>Health</h2>
+                </div>
+              </div>
+              <div class="list compact" id="query-health-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-learning">
+          <div class="control-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Learning</p>
+                  <h2>Candidate Profile</h2>
+                </div>
+              </div>
+              <div class="list compact" id="learning-profile-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Learning</p>
+                  <h2>Latest Run</h2>
+                </div>
+              </div>
+              <div class="list compact" id="learning-run-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Validation</p>
+                  <h2>Baseline vs Challenger</h2>
+                </div>
+              </div>
+              <div class="list compact" id="learning-comparison-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Validation</p>
+                  <h2>Split Summary</h2>
+                </div>
+              </div>
+              <div class="list compact" id="learning-split-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Promotion</p>
+                  <h2>Advisory Report</h2>
+                </div>
+              </div>
+              <div class="list compact" id="learning-promotion-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-analysis">
+          <div class="control-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Algorithm Understanding</p>
+                  <h2>Status</h2>
+                </div>
+              </div>
+              <div class="list compact" id="analysis-status-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Model Boundary</p>
+                  <h2>Provider Status</h2>
+                </div>
+              </div>
+              <div class="list compact" id="model-boundary-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Model Boundary</p>
+                  <h2>Boundary Audit</h2>
+                </div>
+              </div>
+              <div class="list compact" id="boundary-audit-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Observer Memory</p>
+                  <h2>Memory Context</h2>
+                </div>
+              </div>
+              <div class="list compact" id="memory-context-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Observer Memory</p>
+                  <h2>Memory Retrieval</h2>
+                </div>
+              </div>
+              <div class="list compact" id="memory-retrieval-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Observer Memory</p>
+                  <h2>Memory Coverage</h2>
+                </div>
+              </div>
+              <div class="list compact" id="memory-coverage-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Observer Memory</p>
+                  <h2>Handoff Summary</h2>
+                </div>
+              </div>
+              <div class="list compact" id="handoff-summary-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Observer Memory</p>
+                  <h2>Thinking Summary</h2>
+                </div>
+              </div>
+              <div class="list compact" id="thinking-summary-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Algorithm Understanding</p>
+                  <h2>Analysis Drilldown</h2>
+                </div>
+              </div>
+              <div class="list compact" id="analysis-drilldown-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Algorithm Understanding</p>
+                  <h2>Verification</h2>
+                </div>
+              </div>
+              <div class="list compact" id="analysis-command-list"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+      <footer class="kandor-ribbon" aria-label="Kandor core branding">
+        <span class="kandor-ribbon-line"></span>
+        <span class="kandor-ribbon-bracket" aria-hidden="true">&gt;&gt;</span>
+        <span class="kandor-ribbon-text">Kandor Optimized Core</span>
+        <span class="kandor-ribbon-bracket" aria-hidden="true">&lt;&lt;</span>
+        <span class="kandor-ribbon-line"></span>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

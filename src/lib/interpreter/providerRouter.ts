@@ -303,11 +303,13 @@ async function requestOllama({
   messages,
   model,
   signal,
+  fallbackUsed = false,
 }: {
   endpoint: string;
   messages: ChatMessage[];
   model: string;
   signal: AbortSignal;
+  fallbackUsed?: boolean;
 }): Promise<TranslationResult> {
   const response = await fetch(endpoint, {
     method: "POST",
@@ -328,7 +330,7 @@ async function requestOllama({
       translatedText: null,
       provider: "local",
       model,
-      fallbackUsed: true,
+      fallbackUsed,
       failedStatus: response.status,
     };
   }
@@ -338,7 +340,7 @@ async function requestOllama({
     translatedText: extractOllamaText(payload),
     provider: "local",
     model,
-    fallbackUsed: true,
+    fallbackUsed,
     failedStatus: null,
   };
 }
@@ -348,11 +350,13 @@ async function requestGemini({
   messages,
   model,
   signal,
+  fallbackUsed = false,
 }: {
   apiKey: string;
   messages: ChatMessage[];
   model: string;
   signal: AbortSignal;
+  fallbackUsed?: boolean;
 }): Promise<TranslationResult> {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model,
@@ -383,7 +387,7 @@ async function requestGemini({
       translatedText: null,
       provider: "gemini",
       model,
-      fallbackUsed: true,
+      fallbackUsed,
       failedStatus: response.status,
     };
   }
@@ -393,7 +397,7 @@ async function requestGemini({
     translatedText: extractGeminiText(payload),
     provider: "gemini",
     model,
-    fallbackUsed: true,
+    fallbackUsed,
     failedStatus: null,
   };
 }
@@ -422,7 +426,7 @@ function parseOptionalHeaders(rawHeaders: string | undefined): Record<string, st
   }
 }
 
-function buildProviderResolution(): ProviderResolution {
+async function buildProviderResolution(): Promise<ProviderResolution> {
   const fallbackChainTried: string[] = ["provider resolution started"];
   const providers: TranslationProvider[] = [];
   const tokenizinApiKey = process.env.TOKENIZIN_API_KEY?.trim();
@@ -433,8 +437,36 @@ function buildProviderResolution(): ProviderResolution {
     process.env.TOKENIZIN_MODEL?.trim() ||
     "prestix-web-2.5";
 
+  const localGpuRequested = process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "local-gpu";
+  if (localGpuRequested) {
+    const fallbackUsed = providers.length > 0;
+    const { requestLocalGpu } = await import("./localGpuProvider");
+    const model =
+      process.env.PRESTIX_ASSISTANT_MODEL?.trim() ||
+      process.env.LM_STUDIO_MODEL?.trim() ||
+      process.env.LMSTUDIO_MODEL?.trim() ||
+      process.env.LOCAL_GPU_MODEL?.trim() ||
+      "lm-studio";
+    providers.push({
+      provider: "local-gpu",
+      model,
+      fallbackUsed,
+      translate: (messages, signal) =>
+        requestLocalGpu({
+          messages,
+          signal,
+          fallbackUsed,
+        }),
+    });
+  } else {
+    fallbackChainTried.push(
+      "provider skipped: local-gpu not selected via PRESTIX_SANDBOX_TEXT_PROVIDER",
+    );
+  }
+
   const openAiApiKey = process.env.OPENAI_API_KEY?.trim();
   if (openAiApiKey) {
+    const fallbackUsed = providers.length > 0;
     const model =
       process.env.PRESTIX_INTERPRETER_MODEL ||
       process.env.PRESTIX_INTERPRETED_CALL_TRANSLATE_MODEL ||
@@ -442,12 +474,12 @@ function buildProviderResolution(): ProviderResolution {
     providers.push({
       provider: "openai",
       model,
-      fallbackUsed: false,
+      fallbackUsed,
       translate: (messages, signal) =>
         requestOpenAiCompatible({
           apiKey: openAiApiKey,
           endpoint: "https://api.openai.com/v1/chat/completions",
-          fallbackUsed: false,
+          fallbackUsed,
           messages,
           model,
           provider: "openai",
@@ -460,6 +492,7 @@ function buildProviderResolution(): ProviderResolution {
 
   const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
   if (geminiApiKey) {
+    const fallbackUsed = providers.length > 0;
     const model =
       process.env.GEMINI_MODEL_FAST ||
       process.env.GEMINI_MODEL ||
@@ -467,13 +500,14 @@ function buildProviderResolution(): ProviderResolution {
     providers.push({
       provider: "gemini",
       model,
-      fallbackUsed: true,
+      fallbackUsed,
       translate: (messages, signal) =>
         requestGemini({
           apiKey: geminiApiKey,
           messages,
           model,
           signal,
+          fallbackUsed,
         }),
     });
   } else {
@@ -482,16 +516,17 @@ function buildProviderResolution(): ProviderResolution {
 
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY?.trim();
   if (deepseekApiKey) {
+    const fallbackUsed = providers.length > 0;
     const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
     providers.push({
       provider: "deepseek",
       model,
-      fallbackUsed: true,
+      fallbackUsed,
       translate: (messages, signal) =>
         requestOpenAiCompatible({
           apiKey: deepseekApiKey,
           endpoint: "https://api.deepseek.com/chat/completions",
-          fallbackUsed: true,
+          fallbackUsed,
           messages,
           model,
           provider: "deepseek",
@@ -507,6 +542,7 @@ function buildProviderResolution(): ProviderResolution {
     process.env.PRESTIX_SANDBOX_TEXT_PROVIDER === "local";
 
   if (localProviderRequested) {
+    const fallbackUsed = providers.length > 0;
     const baseUrl = (
       process.env.OLLAMA_BASE_URL ||
       process.env.OLLAMA_HOST ||
@@ -519,13 +555,14 @@ function buildProviderResolution(): ProviderResolution {
     providers.push({
       provider: "local",
       model,
-      fallbackUsed: true,
+      fallbackUsed,
       translate: (messages, signal) =>
         requestOllama({
           endpoint: `${baseUrl}/api/chat`,
           messages,
           model,
           signal,
+          fallbackUsed,
         }),
     });
   } else {
@@ -544,17 +581,18 @@ function buildProviderResolution(): ProviderResolution {
     tokenizinSkippedReason = "not_scoped_for_translation";
     fallbackChainTried.push("provider skipped: tokenizin safety not_scoped_for_translation");
   } else {
+    const fallbackUsed = providers.length > 0;
     const endpoint = asOpenAiCompatibleUrl(tokenizinBaseUrl);
     const headers = parseOptionalHeaders(process.env.TOKENIZIN_HEADERS);
     providers.push({
       provider: "tokenizin",
       model: tokenizinModel,
-      fallbackUsed: true,
+      fallbackUsed,
       translate: (messages, signal) =>
         requestOpenAiCompatible({
           apiKey: tokenizinApiKey,
           endpoint,
-          fallbackUsed: true,
+          fallbackUsed,
           headers,
           messages,
           model: tokenizinModel,
@@ -575,7 +613,7 @@ export async function requestTranslation(
   messages: ChatMessage[],
   options: { signal?: AbortSignal } = {},
 ): Promise<ProviderRouterResult> {
-  const { fallbackChainTried, providers, tokenizinSkippedReason } = buildProviderResolution();
+  const { fallbackChainTried, providers, tokenizinSkippedReason } = await buildProviderResolution();
   let lastFailure: TranslationResult | null = null;
 
   for (const provider of providers) {

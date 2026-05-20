@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "seed:party-girls": "tsx scripts/seed-party-girls-multi-venue.ts",
-    "kill": "lsof -ti:3000,3001,3000 | xargs -r kill -9 && bun dev",
+    "kill": "lsof -ti:3000,4318,3000 | xargs -r kill -9 && bun dev",
     "clean": "echo '🧹 Force cleaning project...' && pkill -f 'next|bun' 2>/dev/null || true && sleep 2 && rm -rf .next .next.old node_modules package-lock.json bun.lockb bun.lockb.backup yarn.lock 2>/dev/null || true && echo '🗑️ Clearing Bun cache...' && bun pm cache rm 2>/dev/null || true && echo '📦 Installing dependencies...' && (DISABLE_OPENCOLLECTIVE=1 bun install || (echo '⚠️ First install had errors; retrying...' && DISABLE_OPENCOLLECTIVE=1 bun install))",
     "postinstall": "node scripts/fix-appkit-wui-icon.js && bun scripts/patch-multiformats-bigint.js && node scripts/patch-reown-auth.js && node scripts/patch-viem-tsconfig.js",
     "docusaurus": "docusaurus",

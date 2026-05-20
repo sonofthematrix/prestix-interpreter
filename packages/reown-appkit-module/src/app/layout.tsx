@@ -1828,7 +1828,7 @@ export default async function RootLayout({
                   if (
                     message.includes('ChunkLoadError') ||
                     message.includes('Loading chunk') ||
-                    (message.includes('ERR_CONNECTION_REFUSED') && message.includes('localhost:3001'))
+                    (message.includes('ERR_CONNECTION_REFUSED') && message.includes('localhost:4318'))
                   ) {
                     // Webpack trying to load chunks from wrong port - harmless development issue
                     return;

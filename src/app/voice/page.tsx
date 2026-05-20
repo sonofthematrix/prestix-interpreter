@@ -1,7 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useSpeechDebug } from "../../hooks/interpreter/useSpeechDebug";
+import { useAudioPlayback } from "../../hooks/interpreter/useAudioPlayback";
+import { useInterpreterSession } from "../../hooks/interpreter/useInterpreterSession";
 import {
   createSpeechOutputQueue,
   readInterpreterResponseMetadata,
@@ -19,7 +21,6 @@ import {
   shouldQueueAssistantMicGreeting,
 } from "../../lib/interpreter/assistantGreeting";
 import {
-  getStoredTranslatorEnabled,
   getTranslatorButtonLabel,
 } from "../../lib/interpreter/translatorToggle";
 import {
@@ -27,14 +28,19 @@ import {
   PRODUCT_DISPLAY_NAME,
   PRODUCT_TAGLINE,
 } from "../../lib/interpreter/branding";
+import { getVoiceSurfaceIntro } from "../../lib/interpreter/uiEntry";
+import { getVoicePresenceCopy } from "../../lib/interpreter/voicePresence";
+import { getVoiceDockCopy } from "../../lib/interpreter/voiceDock";
 import {
   getIdleOutputPlaceholder,
   getStandbySpeechOutputProvider,
   resolveSendNowAction,
 } from "../../lib/interpreter/assistantUx";
-import type { InterpreterMode } from "../../lib/interpreter/types";
+import type { ConversationLogEntry, InterpreterMode, SessionMode, SuggestedLearning } from "../../lib/interpreter/types";
+import { hasMarker, INDONESIAN_MARKERS, ENGLISH_MARKERS, DUTCH_MARKERS } from "../../lib/interpreter/languageMarkers";
+import { isSessionMode } from "../../lib/interpreter/typeGuards";
+import { PrestixBabylonBackdrop } from "../../components/interpreter/PrestixBabylonBackdrop";
 
-type SessionMode = "interpreter" | "assistant";
 type InterpreterStatus = "READY" | "LISTENING" | "TRANSLATING" | "SPEAKING" | "ERROR";
 type RuntimeState =
   | "idle"
@@ -80,24 +86,6 @@ type ElevenLabsVoiceOption = {
   accent?: string;
 };
 type SpeechOutputProvider = "pending" | "elevenlabs" | "browser" | "unsupported" | "error";
-type ConversationLogEntry = {
-  id: string;
-  timestamp: string;
-  speaker: SpeakerId;
-  source: "typed" | "speech";
-  sessionMode: SessionMode;
-  mode: InterpreterMode;
-  input: string;
-  output?: string;
-  status: ConversationStatus;
-  provider?: string;
-  model?: string;
-  fallbackUsed?: boolean;
-  learningMatchesCount?: number;
-  learningTypesUsed?: string[];
-  error?: string;
-};
-
 type SpeechRecognitionErrorLike = {
   error: string;
 };
@@ -143,87 +131,6 @@ declare global {
   }
 }
 
-const INDONESIAN_MARKERS = [
-  "gua",
-  "gue",
-  "gw",
-  "lu",
-  "lo",
-  "nih",
-  "dong",
-  "aja",
-  "kalau",
-  "jadi",
-  "mampus",
-  "ajak",
-  "wali",
-  "saya",
-  "kamu",
-  "mereka",
-  "tidak",
-  "mau",
-  "kamar",
-  "malam",
-  "terima",
-  "kasih",
-  "apa",
-  "kenapa",
-  "bisa",
-  "boleh",
-  "ini",
-  "itu",
-  "dengan",
-  "untuk",
-  "ke",
-  "dari",
-];
-
-const ENGLISH_MARKERS = [
-  "i",
-  "you",
-  "we",
-  "they",
-  "he",
-  "she",
-  "want",
-  "book",
-  "room",
-  "tonight",
-  "understand",
-  "thanks",
-  "please",
-  "where",
-  "what",
-  "why",
-  "how",
-  "can",
-  "need",
-  "would",
-  "could",
-];
-
-const DUTCH_MARKERS = [
-  "het",
-  "een",
-  "niet",
-  "ik",
-  "je",
-  "jij",
-  "met",
-  "voor",
-  "naar",
-  "graag",
-  "alsjeblieft",
-  "bedankt",
-  "hoeveel",
-  "waar",
-  "wat",
-  "wie",
-  "kunnen",
-  "willen",
-  "nederlands",
-];
-
 const liveBufferWindowMs = 650;
 const storyBufferWindowMs = 3500;
 const speechOutputTimeoutMs = 15000;
@@ -236,7 +143,6 @@ const voicePresetBankStorageKey = "prestix-interpreter-voice-preset-bank";
 const speechInputEngineStorageKey = "prestix-interpreter-speech-input-engine";
 const assistantRecognitionLangStorageKey = "prestix-interpreter-assistant-recognition-lang";
 const microphoneArmedStorageKey = "prestix-interpreter-browser-microphone-armed";
-const translatorEnabledStorageKey = "prestix-interpreter-translator-enabled";
 const emptyVoicePresetBank: VoicePresetBank = {
   en: [
     { id: "", label: "" },
@@ -287,12 +193,6 @@ function transitionLooksConsistent(previous: RuntimeState, next: RuntimeState): 
     default:
       return false;
   }
-}
-
-function hasMarker(text: string, markers: string[]): boolean {
-  return markers.some((marker) =>
-    new RegExp(`\\b${marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text),
-  );
 }
 
 /** Assistant mode: default translation route when source language is still ambiguous */
@@ -407,7 +307,7 @@ function modeLabel(mode: InterpreterMode): string {
 }
 
 function sessionModeLabel(sessionMode: SessionMode): string {
-  return sessionMode === "assistant" ? "assistant" : "translator";
+  return sessionMode === "assistant" ? "prestix" : "force translate";
 }
 
 function sessionStatusLabel(status: ConversationStatus, sessionMode: SessionMode): string {
@@ -424,29 +324,38 @@ function sessionStatusLabel(status: ConversationStatus, sessionMode: SessionMode
     return "error";
   }
 
-  return status;
+  if (status === "pending") {
+    return "queued";
+  }
+  if (status === "translating") {
+    return "translating";
+  }
+  if (status === "translated") {
+    return "translated";
+  }
+  return "error";
 }
 
 function conversationViewSubtitle(sessionMode: SessionMode): string {
   return sessionMode === "assistant"
-    ? "primary conversation and interpreter view"
-    : "primary transcript and interpretation view";
+    ? "prestix conversation and interpreter view"
+    : "force translate transcript view";
 }
 
 function inputPanelLabel(sessionMode: SessionMode): string {
-  return sessionMode === "assistant" ? "you said" : "in";
+  return sessionMode === "assistant" ? "you said" : "source";
 }
 
 function outputPanelLabel(sessionMode: SessionMode): string {
-  return sessionMode === "assistant" ? "prestix" : "out";
+  return sessionMode === "assistant" ? "prestix" : "translation";
 }
 
 function outputModeForSession(mode: InterpreterMode, sessionMode: SessionMode): InterpreterMode {
   if (sessionMode === "interpreter") {
     return mode;
   }
-  // Assistent antwoordt in het Nederlands (zelfde als control room /api + TTS id-nl)
-  return "id-nl";
+
+  return mode;
 }
 
 function outputLanguage(mode: InterpreterMode): string {
@@ -588,10 +497,6 @@ function createConversationEntryId(): string {
 
 function isSpeakerId(value: unknown): value is SpeakerId {
   return value === "speaker_a" || value === "speaker_b" || value === "unknown";
-}
-
-function isSessionMode(value: unknown): value is SessionMode {
-  return value === "interpreter" || value === "assistant";
 }
 
 function isConversationLogEntry(value: unknown): value is ConversationLogEntry {
@@ -765,7 +670,6 @@ export default function InterpreterPage() {
   const [recognitionLang, setRecognitionLang] = useState<RecognitionLang>("nl-NL");
   const [lastSpeechSwitchReason, setLastSpeechSwitchReason] = useState("initial");
   const [speechConfidence, setSpeechConfidence] = useState<number | null>(null);
-  const [speechDebugLog, setSpeechDebugLog] = useState<string[]>([]);
   const [providerInfo, setProviderInfo] = useState<ProviderInfo>({
     fallbackUsed: "unknown",
     learningContext: "unknown",
@@ -776,7 +680,6 @@ export default function InterpreterPage() {
   const [conversationLog, setConversationLog] = useState<ConversationLogEntry[]>([]);
   const [conversationFilter, setConversationFilter] = useState<ConversationFilter>("all");
   const [captureMode, setCaptureMode] = useState<CaptureMode>("live");
-  const [sessionMode, setSessionMode] = useState<SessionMode>("assistant");
   const [speechBufferStatus, setSpeechBufferStatus] = useState<SpeechBufferStatus>("idle");
   const [activeSpeaker, setActiveSpeaker] = useState<SpeakerId>("unknown");
   const [voiceOverrides, setVoiceOverrides] = useState<VoiceOverrides>({ en: "", id: "", nl: "" });
@@ -790,10 +693,9 @@ export default function InterpreterPage() {
   const [speechOutputProvider, setSpeechOutputProvider] =
     useState<SpeechOutputProvider>("pending");
   const [speechInputEngine, setSpeechInputEngine] =
-    useState<SpeechInputEngine>("browser");
+    useState<SpeechInputEngine>("local-whisper");
   const [assistantRecognitionLang, setAssistantRecognitionLang] =
-    useState<RecognitionLang>("nl-NL");
-  const [translatorEnabled, setTranslatorEnabled] = useState(false);
+    useState<RecognitionLang>("en-US");
   const [browserMicrophonePermission, setBrowserMicrophonePermission] =
     useState<BrowserMicrophonePermissionState>("unknown");
   const [isTranslatorRunning, setIsTranslatorRunning] = useState(false);
@@ -801,6 +703,10 @@ export default function InterpreterPage() {
   const [recognitionRunning, setRecognitionRunning] = useState(false);
   const [isLocalRecording, setIsLocalRecording] = useState(false);
   const [isLocalTranscribing, setIsLocalTranscribing] = useState(false);
+  const [learningSuggestions, setLearningSuggestions] = useState<SuggestedLearning[]>([]);
+  const [showLearningConfirm, setShowLearningConfirm] = useState(false);
+  const [ambientEnabled, setAmbientEnabled] = useState(false);
+  const ambientStorageKey = 'prestix-ambient-listening-enabled';
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionRunningRef = useRef(false);
@@ -839,11 +745,14 @@ export default function InterpreterPage() {
       },
     }),
   );
-  const audioPlaybackRef = useRef<HTMLAudioElement | null>(null);
-  const audioObjectUrlRef = useRef<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordedAudioChunksRef = useRef<Blob[]>([]);
+
+  // Hook integrations (Phase 1 decomposition)
+  const { speechDebugLog, addSpeechDebug, addSpeechDebugRef } = useSpeechDebug();
+  const { audioPlaybackRef, audioObjectUrlRef, stopAudioPlayback } = useAudioPlayback();
+  const sessionHook = useInterpreterSession();
 
   const clearRecognitionRestartTimer = useCallback(() => {
     if (restartTimerRef.current !== null) {
@@ -856,19 +765,6 @@ export default function InterpreterPage() {
     if (transcriptBufferTimerRef.current !== null) {
       clearTimeout(transcriptBufferTimerRef.current);
       transcriptBufferTimerRef.current = null;
-    }
-  }, []);
-
-  const stopAudioPlayback = useCallback(() => {
-    if (audioPlaybackRef.current !== null) {
-      audioPlaybackRef.current.pause();
-      audioPlaybackRef.current.src = "";
-      audioPlaybackRef.current = null;
-    }
-
-    if (audioObjectUrlRef.current !== null) {
-      URL.revokeObjectURL(audioObjectUrlRef.current);
-      audioObjectUrlRef.current = null;
     }
   }, []);
 
@@ -889,27 +785,6 @@ export default function InterpreterPage() {
 
     recordedAudioChunksRef.current = [];
   }, []);
-
-  const addSpeechDebug = useCallback(
-    (eventName: string, details = "") => {
-      const time = new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-      const trimmedDetails = details.replace(/\s+/g, " ").trim();
-      const clippedDetails =
-        trimmedDetails.length > 120 ? `${trimmedDetails.slice(0, 117)}...` : trimmedDetails;
-      const line = `${time} ${eventName} [${recognitionLangRef.current}/${status}]${
-        clippedDetails ? ` ${clippedDetails}` : ""
-      }`;
-
-      setSpeechDebugLog((previousLog) => [...previousLog, line].slice(-40));
-    },
-    [status],
-  );
-  const addSpeechDebugRef = useRef(addSpeechDebug);
-  addSpeechDebugRef.current = addSpeechDebug;
 
   const setRuntimeState = useCallback((next: RuntimeState, reason: string) => {
     const previous = runtimeStateRef.current;
@@ -973,15 +848,15 @@ export default function InterpreterPage() {
   const updateSessionMode = useCallback(
     (nextMode: SessionMode) => {
       sessionModeRef.current = nextMode;
-      setSessionMode(nextMode);
+      sessionHook.setSessionMode(nextMode);
       addSpeechDebug("session mode changed", sessionModeLabel(nextMode).toUpperCase());
     },
     [addSpeechDebug],
   );
 
   useEffect(() => {
-    updateSessionMode(translatorEnabled ? "interpreter" : "assistant");
-  }, [translatorEnabled, updateSessionMode]);
+    updateSessionMode(sessionHook.translatorEnabled ? "interpreter" : "assistant");
+  }, [sessionHook.translatorEnabled, updateSessionMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1141,7 +1016,7 @@ export default function InterpreterPage() {
         return null;
       }
 
-      const entrySessionMode: SessionMode = translatorEnabled ? "interpreter" : "assistant";
+      const entrySessionMode: SessionMode = sessionHook.translatorEnabled ? "interpreter" : "assistant";
       const resolvedSourceLang =
         detectedSourceLang ??
         detectSourceLanguage(trimmed, recognitionLangRef.current, {
@@ -1209,7 +1084,7 @@ export default function InterpreterPage() {
       speechInputEngine,
       setConversationLogSynced,
       setRuntimeState,
-      translatorEnabled,
+      sessionHook.translatorEnabled,
     ],
   );
 
@@ -1777,6 +1652,26 @@ export default function InterpreterPage() {
     flushSpeechBuffer("manual");
   }, [flushSpeechBuffer, input, submitTypedInput]);
 
+  const handleConfirmLearning = useCallback(async (suggestionId: string, accepted: boolean) => {
+    try {
+      const response = await fetch('/api/interpreter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: lastInput,
+          mode,
+          sessionMode: sessionHook.sessionMode,
+          confirmLearning: { id: suggestionId, accepted },
+        }),
+      });
+      await response.json();
+      setLearningSuggestions((prev) => prev.filter((s) => s.id !== suggestionId));
+      if (learningSuggestions.length <= 1) setShowLearningConfirm(false);
+    } catch {
+      // silently fail learning confirmation
+    }
+  }, [lastInput, mode, sessionHook.sessionMode, learningSuggestions.length]);
+
   const playElevenLabsSpeech = useCallback(
     async (
       text: string,
@@ -2001,7 +1896,9 @@ export default function InterpreterPage() {
     ],
   );
 
-  speakTextRef.current = speakText;
+  useEffect(() => {
+    speakTextRef.current = speakText;
+  }, [speakText]);
 
   const processTranslationQueue = useCallback(() => {
     if (isTranslatorRunningRef.current) {
@@ -2165,6 +2062,17 @@ export default function InterpreterPage() {
             addSpeechDebug("response success entry id", entryId);
             addSpeechDebug("response done", entryId);
             addSpeechDebug("response text", translatedText);
+            // Check for conversation learning suggestions from the API response
+            if (
+              data &&
+              typeof data === 'object' &&
+              'learningSuggestions' in data &&
+              Array.isArray(data.learningSuggestions) &&
+              data.learningSuggestions.length > 0
+            ) {
+              setLearningSuggestions(data.learningSuggestions as SuggestedLearning[]);
+              setShowLearningConfirm(true);
+            }
             speechOutputQueueRef.current.enqueue({
               text: translatedText,
               mode: entry.mode,
@@ -2296,11 +2204,14 @@ export default function InterpreterPage() {
 
     try {
       const storedSpeechInputEngine = window.localStorage.getItem(speechInputEngineStorageKey);
-      if (storedSpeechInputEngine === "browser" || storedSpeechInputEngine === "local-whisper") {
-        setSpeechInputEngine(storedSpeechInputEngine);
+      if (storedSpeechInputEngine === "local-whisper") {
+        setSpeechInputEngine("local-whisper");
+        return;
       }
+
+      setSpeechInputEngine("local-whisper");
     } catch {
-      setSpeechInputEngine("browser");
+      setSpeechInputEngine("local-whisper");
     }
   }, []);
 
@@ -2321,15 +2232,14 @@ export default function InterpreterPage() {
       const storedAssistantRecognitionLang = window.localStorage.getItem(
         assistantRecognitionLangStorageKey,
       );
-      if (
-        storedAssistantRecognitionLang === "id-ID" ||
-        storedAssistantRecognitionLang === "en-US" ||
-        storedAssistantRecognitionLang === "nl-NL"
-      ) {
+      if (storedAssistantRecognitionLang === "id-ID" || storedAssistantRecognitionLang === "en-US") {
         setAssistantRecognitionLang(storedAssistantRecognitionLang);
+        return;
       }
+
+      setAssistantRecognitionLang("en-US");
     } catch {
-      setAssistantRecognitionLang("nl-NL");
+      setAssistantRecognitionLang("en-US");
     }
   }, []);
 
@@ -2342,7 +2252,7 @@ export default function InterpreterPage() {
   }, [assistantRecognitionLang]);
 
   useEffect(() => {
-    if (sessionMode !== "assistant") {
+    if (sessionHook.sessionMode !== "assistant") {
       return;
     }
 
@@ -2365,7 +2275,7 @@ export default function InterpreterPage() {
     recognitionLangRef.current = assistantRecognitionLang;
     setRecognitionLang(assistantRecognitionLang);
     setLastSpeechSwitchReason(`assistant preferred ${recognitionLangLabel(assistantRecognitionLang)}`);
-  }, [assistantRecognitionLang, restartRecognitionWithLang, sessionMode, speechInputEngine]);
+  }, [assistantRecognitionLang, restartRecognitionWithLang, sessionHook.sessionMode, speechInputEngine]);
 
   useEffect(() => {
     if (typeof window === "undefined" || speechInputEngine !== "browser") {
@@ -2426,7 +2336,7 @@ export default function InterpreterPage() {
         setMicHint(
           recognitionRunning
             ? `Microphone enabled. Listening (${recognitionLangRef.current}).`
-            : sessionMode === "assistant"
+            : sessionHook.sessionMode === "assistant"
               ? `Assistant mic ready (${recognitionLangLabel(assistantRecognitionLang)}).`
               : "Microphone ready. Chrome permission granted — speech will auto-start.",
         );
@@ -2434,7 +2344,7 @@ export default function InterpreterPage() {
         setMicHint("Microphone permission denied.");
       } else {
         setMicHint(
-          sessionMode === "assistant"
+          sessionHook.sessionMode === "assistant"
             ? `Click once to allow microphone. Assistant mic is set to ${recognitionLangLabel(assistantRecognitionLang)}.`
             : "Click once to allow microphone. After that it stays armed.",
         );
@@ -2463,32 +2373,10 @@ export default function InterpreterPage() {
     isLocalTranscribing,
     recognitionRunning,
     safeStopRecognition,
-    sessionMode,
+    sessionHook.sessionMode,
     setRuntimeState,
     speechInputEngine,
   ]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    try {
-      setTranslatorEnabled(
-        getStoredTranslatorEnabled(window.localStorage.getItem(translatorEnabledStorageKey)),
-      );
-    } catch {
-      setTranslatorEnabled(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(translatorEnabledStorageKey, String(translatorEnabled));
-  }, [translatorEnabled]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -2636,8 +2524,34 @@ export default function InterpreterPage() {
     };
   }, [safeStopRecognition, stopAudioPlayback, stopLocalRecordingStream]);
 
+  // Restore ambient listening preference on mount
+  useEffect(() => {
+      if (typeof window === 'undefined') return;
+      try {
+          const stored = window.localStorage.getItem(ambientStorageKey);
+          if (stored === 'true') {
+              setAmbientEnabled(true);
+           }
+       } catch { /* ignore */ }
+   }, []);
+
+  // Sync ambient listener enabled state
+  useEffect(() => {
+      if (typeof window !== 'undefined') {
+          window.localStorage.setItem(ambientStorageKey, String(ambientEnabled));
+      }
+  }, [ambientEnabled]);
+
   const displayStatus: InterpreterStatus =
     status === "READY" && isListening ? "LISTENING" : status;
+
+  const animState = ((): 'idle' | 'listening' | 'speaking' | 'translating' | 'error' => {
+    if (runtimeState === 'error') return 'error';
+    if (runtimeState === 'speaking') return 'speaking';
+    if (runtimeState === 'listening') return 'listening';
+    if (runtimeState === 'translating') return 'translating';
+    return 'idle';
+  })();
   const visibleInput = liveTranscript || lastInput || "Speak or type...";
   const bufferStatusDetail =
     speechBufferStatus === "collecting"
@@ -2651,39 +2565,28 @@ export default function InterpreterPage() {
     conversationFilter === "all"
       ? conversationLog
       : conversationLog.filter((entry) => entry.speaker === conversationFilter);
+  const voiceSurfaceIntro = getVoiceSurfaceIntro();
+  const voicePresence = getVoicePresenceCopy(sessionHook.sessionMode);
+  const voiceDockCopy = getVoiceDockCopy({
+    mode: sessionHook.sessionMode,
+    speechInputEngine,
+    browserMicrophonePermission,
+    recognitionRunning,
+    isLocalRecording,
+    isLocalTranscribing,
+  });
 
-  return (
+   return (
     <main
       className="relative flex min-h-screen flex-col overflow-hidden bg-zinc-950 text-white selection:bg-white/20"
       onClick={armSpeechInput}
     >
+      <PrestixBabylonBackdrop state={animState} className="prestix-jarvis-backdrop" />
       <div className="relative z-30 border-b border-sky-500/35 bg-slate-950/95 px-3 py-2.5 text-center text-[13px] leading-snug text-slate-200 shadow-lg shadow-black/40 backdrop-blur-md">
-        <strong className="text-sky-200">Control room-dashboard:</strong>{" "}
-        <Link className="font-semibold text-sky-300 underline decoration-sky-500/40 underline-offset-2 hover:text-white" href="/">
-          open 12-panel HUD
-        </Link>
+        <strong className="text-sky-200">{voiceSurfaceIntro.badge}</strong>
         <span className="text-slate-500"> · </span>
-        <span className="text-slate-400">
-          Je bent op de <code className="rounded bg-white/10 px-1 py-0.5 text-[12px] text-slate-200">/voice</code>{" "}
-          legacy-room (geen grid-dashboard).
-        </span>
+        <span className="text-slate-300">{voiceSurfaceIntro.hint}</span>
       </div>
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 h-full w-full scale-105 object-cover opacity-85"
-        aria-hidden
-      >
-        <source src="/video/hero.webm" type="video/webm" />
-        <source src="/video/hero.mp4" type="video/mp4" />
-      </video>
-      <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.16),transparent_28%),linear-gradient(115deg,rgba(0,0,0,0.94),rgba(0,0,0,0.74)_48%,rgba(0,0,0,0.9))]"
-        aria-hidden
-      />
-
       <section className="relative z-10 flex flex-1 overflow-hidden px-4 py-4 md:px-8 lg:px-10">
         <div className="grid min-h-0 w-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2.2fr)_minmax(320px,0.8fr)] xl:grid-cols-[minmax(0,2.4fr)_minmax(360px,0.85fr)]">
           <div className="flex min-h-0 flex-col gap-4">
@@ -2692,6 +2595,17 @@ export default function InterpreterPage() {
                 <div>
                   <div className="text-[11px] uppercase tracking-[0.42em] text-white/45">
                     {PRODUCT_BRAND} · {PRODUCT_DISPLAY_NAME}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-cyan-200/80">
+                    <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1">
+                      {voicePresence.label}
+                    </span>
+                    <span className="text-white/35">{voicePresence.hint}</span>
+                    {ambientEnabled && (
+                        <span className="ml-2 rounded-full border border-amber-300/20 bg-amber-300/5 px-2 text-[9px] uppercase tracking-[0.15em] text-amber-100/70">
+                            ambient learning
+                        </span>
+                    )}
                   </div>
                   <div className="mt-1 max-w-xl text-[11px] font-normal normal-case tracking-normal text-white/50">
                     {PRODUCT_TAGLINE}
@@ -2719,22 +2633,50 @@ export default function InterpreterPage() {
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
                   <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/35">
-                    {translatorEnabled ? "latest output" : "latest reply"}
+                    {sessionHook.translatorEnabled ? "latest output" : "latest reply"}
                   </div>
                   <div className="min-h-10 whitespace-pre-wrap text-sm font-semibold leading-snug text-emerald-50 md:text-base">
                     {lastOutput ||
-                      getIdleOutputPlaceholder({
-                        sessionMode,
-                        speechOutputProvider,
-                      })}
+                      getIdleOutputPlaceholder(speechOutputProvider)}
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.13em] text-white/42">
+              {showLearningConfirm && learningSuggestions.length > 0 && (
+                <div className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-300/5 p-3">
+                  <div className="mb-2 text-[11px] uppercase tracking-[0.16em] text-emerald-200">
+                    Did Prestix get this right?
+                  </div>
+                  {learningSuggestions.slice(0, 3).map((suggestion) => (
+                    <div key={suggestion.id} className="mb-1.5 flex items-center justify-between gap-2 text-xs">
+                      <span className="text-white/70 truncate">
+                        {suggestion.sourceText}: {suggestion.suggestion}
+                      </span>
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmLearning(suggestion.id, true)}
+                          className="rounded-full border border-emerald-300/30 px-2 py-0.5 text-[10px] uppercase text-emerald-200"
+                        >
+                          yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmLearning(suggestion.id, false)}
+                          className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase text-white/40"
+                        >
+                          no
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-3 hidden flex-wrap gap-2 text-[10px] uppercase tracking-[0.13em] text-white/42">
                 {[
                   `runtime ${runtimeState}`,
-                  `session ${sessionModeLabel(sessionMode)}`,
+                  `session ${sessionModeLabel(sessionHook.sessionMode)}`,
                   `direction ${modeLabel(mode)}`,
                   `stt ${speechInputEngine}`,
                   `speech ${recognitionLang}`,
@@ -2743,7 +2685,7 @@ export default function InterpreterPage() {
                   `queue ${queueLength}`,
                   `recog ${recognitionRunning ? "yes" : "no"}`,
                   `local rec ${isLocalRecording ? "yes" : isLocalTranscribing ? "tx" : "no"}`,
-                  `${translatorEnabled ? "translator" : "assistant"} ${isTranslatorRunning ? "running" : "idle"}`,
+                  `${sessionHook.translatorEnabled ? "translator" : "assistant"} ${isTranslatorRunning ? "running" : "idle"}`,
                   `buffering ${speechBufferStatus}`,
                   `voice ${speechOutputProvider}`,
                 ].map((item) => (
@@ -2756,7 +2698,7 @@ export default function InterpreterPage() {
                 ))}
               </div>
 
-              <div className="mt-3 grid gap-3 xl:grid-cols-3">
+              <div className="mt-3 hidden gap-3 xl:grid-cols-3">
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <div className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/35">
                     speech grouping
@@ -2857,7 +2799,7 @@ export default function InterpreterPage() {
                           : "record quality mic"}
                     </button>
                   </div>
-                  {speechInputEngine === "browser" && sessionMode === "assistant" ? (
+                  {speechInputEngine === "browser" && sessionHook.sessionMode === "assistant" ? (
                     <>
                       <div className="mt-3 text-[10px] uppercase tracking-[0.24em] text-white/35">
                         I am speaking
@@ -2891,7 +2833,7 @@ export default function InterpreterPage() {
                     </>
                   ) : null}
                   <div className="mt-2 text-[10px] uppercase tracking-[0.14em] text-white/32">
-                    {speechInputEngine === "browser" && sessionMode === "assistant"
+                    {speechInputEngine === "browser" && sessionHook.sessionMode === "assistant"
                       ? `handsfree listens continuously; quality mic records one clip; speaking ${recognitionLangLabel(assistantRecognitionLang)}`
                       : "handsfree listens continuously; quality mic records one clip"}
                   </div>
@@ -2903,14 +2845,14 @@ export default function InterpreterPage() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setTranslatorEnabled((current) => !current)}
+                      onClick={() => sessionHook.setTranslatorEnabled((current) => !current)}
                       className={`rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
-                        translatorEnabled
+                        sessionHook.translatorEnabled
                           ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
                           : "border-amber-300/40 bg-amber-300/10 text-amber-100"
                       }`}
                     >
-                      {getTranslatorButtonLabel(translatorEnabled)}
+                      {getTranslatorButtonLabel(sessionHook.translatorEnabled)}
                     </button>
                   </div>
                   <div className="mt-2 text-[10px] uppercase tracking-[0.14em] text-white/32">
@@ -2919,7 +2861,7 @@ export default function InterpreterPage() {
                 </div>
               </div>
 
-              <details className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+              <details className="hidden mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <summary className="cursor-pointer list-none text-[10px] uppercase tracking-[0.24em] text-white/45">
                   voice routing and overrides
                 </summary>
@@ -3340,7 +3282,7 @@ export default function InterpreterPage() {
                     conversation log
                   </div>
                   <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-white/35">
-                    {conversationViewSubtitle(sessionMode)}
+                    {conversationViewSubtitle(sessionHook.sessionMode)}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -3465,77 +3407,7 @@ export default function InterpreterPage() {
             </div>
           </div>
 
-          <aside className="flex min-h-0 flex-col rounded-[1.75rem] border border-emerald-300/15 bg-black/60 p-4 font-mono text-[10px] text-emerald-50/65 shadow-2xl shadow-black/40 ring-1 ring-white/5 backdrop-blur-xl lg:sticky lg:top-4 lg:max-h-[calc(100vh-9rem)]">
-            <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.38em] text-emerald-200/80">
-                  flow log
-                </div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/35">
-                  last 40 technical events
-                </div>
-              </div>
-              <div className="rounded-full border border-emerald-300/20 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-emerald-200/70">
-                {displayStatus}
-              </div>
-            </div>
-
-            <div className="mb-4 grid grid-cols-2 gap-2 text-[10px] uppercase tracking-[0.13em] text-white/42">
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                runtime {runtimeState}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                stt {speechInputEngine}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                queue {queueLength}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                {translatorEnabled ? "translator" : "assistant"} {isTranslatorRunning ? "running" : "idle"}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                buffer {bufferLength}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                recog {recognitionRunning ? "yes" : "no"}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                local {isLocalRecording ? "recording" : isLocalTranscribing ? "transcribing" : "idle"}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                buffer state {speechBufferStatus}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                capture {captureMode}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                delay {getBufferWindowMs(captureMode)}ms
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                speaker {speakerLabel(activeSpeaker)}
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                provider {providerInfo.provider}
-              </span>
-            </div>
-
-            <div className="min-h-48 flex-1 space-y-1.5 overflow-y-auto pr-1">
-              {speechDebugLog.length > 0 ? (
-                speechDebugLog.slice(-40).map((entry, index) => (
-                  <div
-                    key={`${entry}-${index}`}
-                    className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 leading-relaxed text-white/58"
-                  >
-                    {entry}
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-white/40">
-                  waiting for technical events
-                </div>
-              )}
-            </div>
-          </aside>
+          <aside className="hidden" aria-hidden="true" />
         </div>
       </section>
 
@@ -3546,6 +3418,49 @@ export default function InterpreterPage() {
           submitTypedInput();
         }}
       >
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => sessionHook.setTranslatorEnabled((current) => !current)}
+            className={`rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.16em] transition ${
+              sessionHook.translatorEnabled
+                ? "border-emerald-300/50 bg-emerald-300/10 text-emerald-100"
+                : "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
+            }`}
+          >
+            {getTranslatorButtonLabel(sessionHook.translatorEnabled)}
+          </button>
+          <button
+              type="button"
+              onClick={() => setAmbientEnabled((current) => !current)}
+              className={`rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.16em] transition ${
+                  ambientEnabled
+                      ? 'border-amber-300/50 bg-amber-300/10 text-amber-100'
+                      : 'border-white/10 bg-white/[0.03] text-white/45 hover:text-white/75'
+              }`}
+          >
+              {ambientEnabled ? 'ambient on' : 'ambient off'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (speechInputEngine === "local-whisper") {
+                void toggleLocalWhisperRecording();
+                return;
+              }
+              armSpeechInput();
+            }}
+            className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-white/75 transition hover:border-cyan-300/30 hover:text-cyan-100"
+          >
+            {voiceDockCopy.micButtonLabel}
+          </button>
+          <button
+            type="submit"
+            className="rounded-full border border-white/10 bg-white px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-black transition hover:bg-cyan-100"
+          >
+            {voiceDockCopy.submitLabel}
+          </button>
+        </div>
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
@@ -3558,9 +3473,9 @@ export default function InterpreterPage() {
           }}
           onFocus={armSpeechInput}
           onClick={armSpeechInput}
-          placeholder="Type here or speak..."
+          placeholder={voiceDockCopy.placeholder}
           className="h-20 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-5 font-mono text-2xl text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.07] md:h-24 md:px-7 md:text-3xl"
-          aria-label="Interpreter input"
+          aria-label={voiceDockCopy.ariaLabel}
         />
       </form>
     </main>

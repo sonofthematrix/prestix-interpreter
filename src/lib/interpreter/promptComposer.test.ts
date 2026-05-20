@@ -50,26 +50,29 @@ describe("interpreter prompt composer", () => {
 });
 
 describe("assistant prompt composer with multi-turn history", () => {
-  it("returns the original three-message shape when no history is supplied", () => {
+  it("builds an english-facing assistant prompt for indonesian input", () => {
     const messages = composeAssistantPrompt({
-      input: "What time is it?",
+      input: "Saya mau beli air minum",
       learningEntries: "",
-      mode: "en-id",
+      mode: "id-en",
     });
 
     expect(messages.map((m) => m.role)).toEqual(["system", "user"]);
-    expect(messages[0]?.content).toContain("Prestix Assistant");
-    expect(messages[1]?.content).toBe("What time is it?");
+    expect(messages[0]?.content).toContain("Prestix");
+    expect(messages[0]?.content).toContain("Reply in natural spoken English only");
+    expect(messages[0]?.content).toContain("never stiff or corporate");
+    expect(messages[0]?.content).toContain("Do the obvious helpful thing first");
+    expect(messages[1]?.content).toBe("Saya mau beli air minum");
   });
 
   it("inserts prior turns between learning context and current input", () => {
     const messages = composeAssistantPrompt({
-      input: "And in Jakarta?",
+      input: "Hoe laat is het in Jakarta?",
       learningEntries: "Style memory:\n1. Keep it casual.",
-      mode: "en-id",
+      mode: "id-nl",
       history: [
-        { role: "user", content: "What time is it in London?" },
-        { role: "assistant", content: "Around 6pm." },
+        { role: "user", content: "Hoe laat is het in Londen?" },
+        { role: "assistant", content: "Rond zes uur." },
       ],
     });
 
@@ -81,9 +84,9 @@ describe("assistant prompt composer with multi-turn history", () => {
       "user",
     ]);
     expect(messages[1]?.content).toContain("Style memory");
-    expect(messages[2]?.content).toBe("What time is it in London?");
-    expect(messages[3]?.content).toBe("Around 6pm.");
-    expect(messages[4]?.content).toBe("And in Jakarta?");
+    expect(messages[2]?.content).toBe("Hoe laat is het in Londen?");
+    expect(messages[3]?.content).toBe("Rond zes uur.");
+    expect(messages[4]?.content).toBe("Hoe laat is het in Jakarta?");
   });
 
   it("normalizeAssistantHistory caps at the latest N turns", () => {

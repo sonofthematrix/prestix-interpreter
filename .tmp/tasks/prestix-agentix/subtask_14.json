@@ -1,0 +1,35 @@
+{
+  "id": "prestix-agentix-14",
+  "seq": "14",
+  "title": "Add AgentState, AgentObservation, PlanAdjustment, ProactiveSuggestion types + extend SessionMode for autonomous",
+  "status": "pending",
+  "depends_on": ["13"],
+  "parallel": false,
+  "suggested_agent": "CoderAgent",
+  "agent_id": null,
+  "started_at": null,
+  "completed_at": null,
+  "completion_summary": null,
+  "context_files": [
+    "src/lib/interpreter/types.ts (existing type patterns; add autonomous types alongside existing Agent* types)",
+    "src/lib/interpreter/typeGuards.ts (extend isSessionMode to include 'autonomous')"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "SessionMode type includes 'autonomous' alongside existing 'assistant', 'interpreter', 'agent'",
+    "isSessionMode() type guard recognizes 'autonomous'",
+    "AgentState union type exported: 'idle' | 'planning' | 'executing' | 'observing' | 'adjusting' | 'completed'",
+    "AgentObservation type exported: stepResult (ToolResult), assessment (string), needsAdjustment (boolean), adjustment? (string)",
+    "PlanAdjustment type exported: originalPlan (AgentPlan), adjustedPlan (AgentPlan), reason (string)",
+    "ProactiveSuggestion type exported: id, text, confidence (number), source ('context'|'history'|'learning'|'ambient')",
+    "AutonomousAgentResult type exported (extends AgentResult with observations, adjustments)",
+    "Existing types remain unchanged",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/types.ts (modified: add 5 autonomous types + extend SessionMode)",
+    "src/lib/interpreter/typeGuards.ts (modified: extend isSessionMode)"
+  ]
+}

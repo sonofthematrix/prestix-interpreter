@@ -1,0 +1,42 @@
+{
+  "id": "prestix-assistant-first-15",
+  "seq": "15",
+  "title": "Create new test files for enhanced learningStore, languageMarkers, conversationLearner, and ambientListener",
+  "status": "pending",
+  "depends_on": ["02", "03", "04", "06", "13"],
+  "parallel": false,
+  "suggested_agent": "TestEngineer",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "221-238",
+      "reason": "Existing test structure, validation requirements, and Vitest setup"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/languageMarkers.ts",
+    "src/lib/interpreter/conversationLearner.ts",
+    "src/lib/interpreter/ambientListener.ts",
+    "src/lib/interpreter/promptComposer.ts",
+    "src/lib/interpreter/types.ts",
+    "src/lib/interpreter/translatorToggle.test.ts",
+    "src/lib/interpreter/voiceDock.test.ts",
+    "src/lib/interpreter/promptComposer.test.ts"
+  ],
+  "acceptance_criteria": [
+    "learningStore.test.ts: tests detectSlang, suggestMemory, autoCaptureSuccessful, acceptAmbientEntry, listSuggestions, confirmSuggestion, rejectSuggestion",
+    "languageMarkers.test.ts: tests getDynamicMarkers, addDynamicMarker, hasDynamicMarker with both static and dynamic markers",
+    "conversationLearner.test.ts: tests learnFromTurn slang detection, confidence scoring, auto-capture and suggestion flows",
+    "ambientListener.test.ts: tests start/stop/pause/resume lifecycle, pattern detection callback, integration with learningStore",
+    "All new tests use vitest (describe/it/expect) matching existing test style",
+    "All 53 existing tests still pass (zero regressions)",
+    "Full test suite: npm exec vitest -- run src/lib/interpreter — all pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/learningStore.test.ts (new)",
+    "src/lib/interpreter/languageMarkers.test.ts (new)",
+    "src/lib/interpreter/conversationLearner.test.ts (new)",
+    "src/lib/interpreter/ambientListener.test.ts (new)"
+  ]
+}

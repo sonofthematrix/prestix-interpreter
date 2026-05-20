@@ -1,0 +1,38 @@
+{
+  "id": "prestix-assistant-first-04",
+  "seq": "04",
+  "title": "Create conversationLearner.ts — the learning pipeline from conversation turns",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Created ConversationLearner with learnFromTurn, detectUnknownWords, getAllKnownWords, getPendingSuggestions, confirmSuggestion, rejectSuggestion. Singleton exported. Integrates with LanguageMarkers dynamic API and LearningStore interface.",
+  "depends_on": ["01"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "157-183",
+      "reason": "Conversation learning enhancement requirements and pipeline design"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts",
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/languageMarkers.ts"
+  ],
+  "acceptance_criteria": [
+    "ConversationLearner class with learnFromTurn(input, output, mode) method",
+    "Detects unknown words (slang) not in any static marker list",
+    "Builds confidence-scored SuggestedLearning entries using output context",
+    "Feeds high-confidence (>0.7) suggestions into learningStore.autoCaptureSuccessful",
+    "Feeds low-confidence suggestions into learningStore.suggestMemory for user review",
+    "Exports singleton conversationLearner instance",
+    "TypeScript compiles without errors for conversationLearner.ts",
+    "No modification to learningStore.ts or languageMarkers.ts required (uses public API)"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/conversationLearner.ts (new)"
+  ]
+}

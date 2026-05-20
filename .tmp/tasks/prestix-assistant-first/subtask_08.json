@@ -1,0 +1,32 @@
+{
+  "id": "prestix-assistant-first-08",
+  "seq": "08",
+  "title": "Update translatorToggle labels for assistant-first identity",
+  "status": "pending",
+  "depends_on": ["01", "05"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "76-80,130-155",
+      "reason": "Current translatorToggle structure and assistant-first label requirements"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/translatorToggle.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "getTranslatorButtonLabel(true) returns 'force translate'",
+    "getTranslatorButtonLabel(false) returns 'prestix'",
+    "getStoredTranslatorEnabled() and shouldQueueTranslation() unchanged",
+    "JSDoc updated to reflect new semantics: 'force translate override' vs 'default prestix assistant'",
+    "translatorToggle.test.ts updated to match new expected labels",
+    "All other existing tests still pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/translatorToggle.ts (updated)",
+    "src/lib/interpreter/translatorToggle.test.ts (updated)"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "prestix-assistant-first-09",
+  "seq": "09",
+  "title": "Unify voiceDock labels to single Prestix assistant identity",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T10:33:00Z",
+  "completed_at": "2026-05-19T10:35:30Z",
+  "completion_summary": "Unified voiceDock labels to single Prestix identity. All 53 interpreter tests pass (0 regressions).",
+  "depends_on": ["01", "05"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "82-85,130-148",
+      "reason": "Current voiceDock structure and assistant-first unify requirements"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/voiceDock.ts",
+    "src/lib/interpreter/types.ts",
+    "src/hooks/interpreter/useInterpreterSession.ts"
+  ],
+  "acceptance_criteria": [
+    "VoiceDockMode type reduced to single value or mode parameter repurposed",
+    "getVoiceDockCopy() returns unified labels regardless of mode: headline 'Talk to Prestix', placeholder 'Speak or type...', submitLabel 'Send'",
+    "Default micButtonLabel is 'talk handsfree' (no more 'translate handsfree' split)",
+    "All mic state variants (permission, recording, transcribing) still work",
+    "voiceDock.test.ts updated to match new unified expectations",
+    "All other existing tests still pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/voiceDock.ts (updated)",
+    "src/lib/interpreter/voiceDock.test.ts (updated)"
+  ]
+}

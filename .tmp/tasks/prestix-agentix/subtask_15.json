@@ -1,0 +1,39 @@
+{
+  "id": "prestix-agentix-15",
+  "seq": "15",
+  "title": "Create AutonomousAgent: full plan → execute → observe → adjust loop",
+  "status": "completed",
+  "depends_on": ["14"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Implemented AutonomousAgent with plan→execute→observe→adjust loop using taskDecomposer and toolExecutor",
+  "context_files": [
+    "src/lib/interpreter/types.ts (AgentState, AgentObservation, ProactiveSuggestion types from subtask 14)",
+    "src/lib/interpreter/agentLoop.ts (existing AgentLoop pattern to extend/upgrade)"
+  ],
+  "reference_files": [
+    "src/lib/interpreter/types.ts",
+    "src/lib/interpreter/agentLoop.ts",
+    "src/lib/interpreter/taskDecomposer.ts",
+    "src/lib/interpreter/toolExecutor.ts",
+    "src/lib/interpreter/providerRouter.ts"
+  ],
+  "acceptance_criteria": [
+    "AutonomousAgent class with private state, plan, observations fields",
+    "run(input, mode): Promise<AutonomousAgentResult> — full autonomous loop entry point",
+    "plan(input): Promise<AgentPlan> — uses LLM to create execution plan",
+    "executeStep(step: AgentStep): Promise<ToolResult> — runs step via ToolExecutor or LLM",
+    "observe(step, result): Promise<AgentObservation> — LLM assesses result, decides if adjustment needed",
+    "adjust(observation): Promise<AgentPlan> — modifies plan based on observation",
+    "Main loop: plan → for each step: execute → observe → if needsAdjustment: adjust and continue",
+    "Tracks state transitions through all AgentState values",
+    "Handles max iterations (prevent infinite loops, default 10)",
+    "TypeScript compiles with no errors"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/autonomousAgent.ts (new)"
+  ]
+}

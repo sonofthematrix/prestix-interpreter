@@ -1,0 +1,31 @@
+{
+  "id": "prestix-assistant-first-05",
+  "seq": "05",
+  "title": "Simplify useInterpreterSession state — repurpose translatorEnabled as force-translate override",
+  "status": "pending",
+  "depends_on": ["01"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "38-43,130-155",
+      "reason": "Current session hook structure and assistant-first UX refactor requirements"
+    }
+  ],
+  "reference_files": [
+    "src/hooks/interpreter/useInterpreterSession.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "translatorEnabled variable kept with same name (no caller breakage)",
+    "JSDoc comment clarifies: 'force translate override — when true, every input is treated as pure translation'",
+    "sessionModeLabel updated: 'assistant' → 'prestix', 'interpreter' → 'force translate'",
+    "localStorage key ('prestix-interpreter-translator-enabled') kept for backward compatibility",
+    "All existing hook behavior preserved (translation queueing, session mode switching)",
+    "Existing tests that import useInterpreterSession still pass"
+  ],
+  "deliverables": [
+    "src/hooks/interpreter/useInterpreterSession.ts (refactored)"
+  ]
+}

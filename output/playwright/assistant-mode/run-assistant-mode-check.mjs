@@ -173,7 +173,7 @@ async function main() {
     await page.getByLabel("Interpreter input").click();
     await page.waitForTimeout(300);
 
-    await expectText(page, "translator off");
+    await expectText(page, "assistant mode");
     await expectText(page, "awaiting assistant reply...");
     await page.getByRole("button", { name: /^english$/i }).click();
     await page.waitForTimeout(700);

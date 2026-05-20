@@ -1,0 +1,31 @@
+{
+  "id": "prestix-assistant-first-10",
+  "seq": "10",
+  "title": "Unify voicePresence labels to single 'prestix core' identity",
+  "status": "pending",
+  "depends_on": ["01", "05"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "86-89,130-155",
+      "reason": "Current voicePresence structure and assistant-first unify requirements"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/voicePresence.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "getVoicePresenceCopy() returns unified label regardless of mode: 'prestix core'",
+    "Hint becomes: 'voice-first assistant online' (no 'live translation route' variant)",
+    "Function signature kept — accepts mode parameter for API compatibility but ignores it",
+    "voicePresence.test.ts updated to match new unified expectations",
+    "All other existing tests still pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/voicePresence.ts (updated)",
+    "src/lib/interpreter/voicePresence.test.ts (updated)"
+  ]
+}

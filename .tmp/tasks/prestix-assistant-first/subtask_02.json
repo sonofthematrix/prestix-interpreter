@@ -1,0 +1,37 @@
+{
+  "id": "prestix-assistant-first-02",
+  "seq": "02",
+  "title": "Enhance learningStore with auto-capture, slang detection, and suggestion pipeline",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-05-19T00:00:00Z",
+  "completed_at": "2026-05-19T00:00:00Z",
+  "completion_summary": "Enhanced learningStore: added detectSlang, suggestMemory, autoCaptureSuccessful, autoCapture, acceptAmbientEntry, listSuggestions, confirmSuggestion, rejectSuggestion. Updated store for ConversationMemory + suggestions persistence.",
+  "depends_on": ["01"],
+  "parallel": true,
+  "suggested_agent": "CoderAgent",
+  "context_files": [
+    {
+      "path": "/tmp/opencode/context/ses_prestix_assistant/bundle.md",
+      "lines": "64-75,157-183",
+      "reason": "Current learningStore structure and required enhancements for conversation learning"
+    }
+  ],
+  "reference_files": [
+    "src/lib/interpreter/learningStore.ts",
+    "src/lib/interpreter/types.ts"
+  ],
+  "acceptance_criteria": [
+    "detectSlang(input, mode) returns unknown words not in any language marker list",
+    "suggestMemory(input, output, mode) creates SuggestedLearning entries with confidence scores",
+    "autoCaptureSuccessful(input, output, mode) auto-stores high-confidence glossary/correction entries",
+    "acceptAmbientEntry(entry) accepts ambient-derived learning entries",
+    "listSuggestions() returns pending suggestions for user confirmation",
+    "confirmSuggestion(id) and rejectSuggestion(id) handle user feedback",
+    "Existing methods (listRelevant, addCorrection, addGlossary, addStyleRule) unchanged",
+    "All existing tests still pass"
+  ],
+  "deliverables": [
+    "src/lib/interpreter/learningStore.ts (enhanced)"
+  ]
+}
