@@ -1,13 +1,65 @@
 'use client';
 
 import type { Engine, Mesh, ParticleSystem, Scene } from '@babylonjs/core';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type AnimState = 'idle' | 'listening' | 'speaking' | 'translating' | 'error';
 
 interface Props {
     state?: AnimState;
     className?: string;
+}
+
+type RenderMode = 'pending' | 'babylon' | 'fallback';
+
+function fallbackAccent(state: AnimState): { glow: string; ring: string } {
+    switch (state) {
+        case 'listening':
+            return {
+                glow: 'rgba(34, 211, 238, 0.32)',
+                ring: 'rgba(125, 211, 252, 0.26)',
+            };
+        case 'speaking':
+            return {
+                glow: 'rgba(56, 189, 248, 0.28)',
+                ring: 'rgba(103, 232, 249, 0.24)',
+            };
+        case 'translating':
+            return {
+                glow: 'rgba(59, 130, 246, 0.24)',
+                ring: 'rgba(96, 165, 250, 0.22)',
+            };
+        case 'error':
+            return {
+                glow: 'rgba(248, 113, 113, 0.22)',
+                ring: 'rgba(239, 68, 68, 0.2)',
+            };
+        default:
+            return {
+                glow: 'rgba(14, 165, 233, 0.2)',
+                ring: 'rgba(56, 189, 248, 0.18)',
+            };
+    }
+}
+
+function detectWebglSupport(canvas: HTMLCanvasElement): boolean {
+    const names: Array<'webgl2' | 'webgl' | 'experimental-webgl'> = ['webgl2', 'webgl', 'experimental-webgl'];
+    for (const name of names) {
+        try {
+            const context = canvas.getContext(name, {
+                alpha: true,
+                antialias: true,
+                powerPreference: 'high-performance',
+            } as CanvasRenderingContext2DSettings);
+            if (context) {
+                return true;
+            }
+        } catch {
+            // Ignore and try the next context.
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -29,6 +81,7 @@ export function PrestixBabylonBackdrop({ state = 'idle', className }: Props) {
     const wrapRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const stateRef = useRef<AnimState>(state);
+    const [renderMode, setRenderMode] = useState<RenderMode>('pending');
     stateRef.current = state;
 
     useEffect(() => {
@@ -38,6 +91,50 @@ export function PrestixBabylonBackdrop({ state = 'idle', className }: Props) {
 
         let disposed = false;
         let teardown: (() => void) | null = null;
+
+        const activateFallback = (reason: string, error?: unknown) => {
+            if (!disposed) {
+                setRenderMode('fallback');
+            }
+
+            if (error) {
+                console.error(`[PrestixBabylonBackdrop] ${reason}:`, error);
+                return;
+            }
+
+            console.warn(`[PrestixBabylonBackdrop] ${reason}`);
+        };
+
+        const onContextCreationError = (event: Event) => {
+            const statusMessage =
+                typeof event === 'object' && event !== null && 'statusMessage' in event
+                    ? String((event as { statusMessage?: unknown }).statusMessage ?? '')
+                    : '';
+            activateFallback(
+                statusMessage
+                    ? `WebGL context creation failed (${statusMessage})`
+                    : 'WebGL context creation failed',
+            );
+        };
+
+        const onContextLost = (event: Event) => {
+            event.preventDefault();
+            teardown?.();
+            teardown = null;
+            activateFallback('WebGL context lost');
+        };
+
+        canvas.addEventListener('webglcontextcreationerror', onContextCreationError as EventListener);
+        canvas.addEventListener('webglcontextlost', onContextLost as EventListener);
+
+        if (!detectWebglSupport(canvas)) {
+            activateFallback('WebGL not supported');
+            return () => {
+                disposed = true;
+                canvas.removeEventListener('webglcontextcreationerror', onContextCreationError as EventListener);
+                canvas.removeEventListener('webglcontextlost', onContextLost as EventListener);
+            };
+        }
 
         import('@babylonjs/core').then((B) => {
             if (disposed) return;
@@ -49,8 +146,11 @@ export function PrestixBabylonBackdrop({ state = 'idle', className }: Props) {
                     antialias: true,
                     alpha: true,
                     premultipliedAlpha: false,
+                    disableWebGL2Support: true,
                     powerPreference: 'high-performance',
                 });
+
+                setRenderMode('babylon');
 
                 const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
                 engine.setHardwareScalingLevel(1 / Math.min(Math.max(dpr, 1), 2));
@@ -345,18 +445,68 @@ export function PrestixBabylonBackdrop({ state = 'idle', className }: Props) {
 
                 if (disposed) { teardown(); teardown = null; }
             } catch (err: unknown) {
-                console.error('[PrestixBabylonBackdrop] WebGL init failed:', err);
+                activateFallback('WebGL init failed', err);
             }
         }).catch((err: unknown) => {
-            console.error('[PrestixBabylonBackdrop] Babylon failed to load:', err);
+            activateFallback('Babylon failed to load', err);
         });
 
-        return () => { disposed = true; teardown?.(); };
+        return () => {
+            disposed = true;
+            canvas.removeEventListener('webglcontextcreationerror', onContextCreationError as EventListener);
+            canvas.removeEventListener('webglcontextlost', onContextLost as EventListener);
+            teardown?.();
+        };
     }, []);
+
+    const accent = fallbackAccent(state);
 
     return (
         <div ref={wrapRef} className={className} style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} aria-hidden>
-            <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', outline: 'none', minHeight: '100dvh' }} />
+            <div
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background:
+                        'radial-gradient(circle at 50% 36%, rgba(56,189,248,0.18), transparent 20%), linear-gradient(180deg, rgba(2,6,23,0.72), rgba(2,6,23,0.94))',
+                    opacity: renderMode === 'babylon' ? 0.3 : 1,
+                    transition: 'opacity 220ms ease',
+                }}
+            />
+            <div
+                style={{
+                    position: 'absolute',
+                    inset: '18% 12%',
+                    borderRadius: '9999px',
+                    background: `radial-gradient(circle, ${accent.glow} 0%, transparent 58%)`,
+                    filter: 'blur(32px)',
+                    opacity: renderMode === 'babylon' ? 0.18 : 0.88,
+                    transition: 'opacity 220ms ease',
+                }}
+            />
+            <div
+                style={{
+                    position: 'absolute',
+                    inset: '24% 20%',
+                    borderRadius: '9999px',
+                    border: `1px solid ${accent.ring}`,
+                    boxShadow: `0 0 80px ${accent.ring}`,
+                    opacity: renderMode === 'babylon' ? 0.14 : 0.72,
+                    transition: 'opacity 220ms ease',
+                }}
+            />
+            <canvas
+                ref={canvasRef}
+                style={{
+                    width: renderMode === 'fallback' ? 0 : '100%',
+                    height: renderMode === 'fallback' ? 0 : '100%',
+                    display: 'block',
+                    outline: 'none',
+                    minHeight: renderMode === 'fallback' ? 0 : '100dvh',
+                    opacity: renderMode === 'babylon' ? 1 : 0,
+                    transition: 'opacity 220ms ease',
+                }}
+            />
         </div>
     );
 }
