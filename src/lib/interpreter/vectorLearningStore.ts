@@ -125,16 +125,7 @@ function rowToStyle(row: LearningMemoryRow): StyleMemory {
 
 export class VectorLearningStore implements LearningStore {
     private pool: Pool | null = null;
-    private _fallback: any = null;
-
-    private get fallback(): any {
-        if (!this._fallback) {
-            // Lazy require to break circular dependency with learningStore.ts
-            const { JsonLearningStore } = require('./learningStore');
-            this._fallback = new JsonLearningStore();
-        }
-        return this._fallback;
-    }
+    private suggestions: SuggestedLearning[] = [];
 
     constructor() {}
 
@@ -158,8 +149,12 @@ export class VectorLearningStore implements LearningStore {
     private async query(sql: string, params?: unknown[]): Promise<LearningMemoryRow[]> {
         const pool = this.getPool();
         if (!pool) return [];
-        const result = await pool.query(sql, params);
-        return result.rows as LearningMemoryRow[];
+        try {
+            const result = await pool.query(sql, params);
+            return result.rows as LearningMemoryRow[];
+        } catch {
+            return [];
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -168,7 +163,7 @@ export class VectorLearningStore implements LearningStore {
 
     async listRelevant(input: string, mode: InterpreterMode): Promise<LearningContext> {
         const pool = this.getPool();
-        if (!pool) return this.fallback.listRelevant(input, mode);
+        if (!pool) return { context: '', matchesCount: 0, typesUsed: [] };
 
         const inputTokens = tokenize(input);
         const inputEmbedding = await generateEmbedding(input);
@@ -357,7 +352,17 @@ export class VectorLearningStore implements LearningStore {
         correction: Omit<CorrectionMemory, 'type' | 'createdAt'>,
     ): Promise<CorrectionMemory> {
         const pool = this.getPool();
-        if (!pool) return this.fallback.addCorrection(correction);
+        if (!pool) {
+            return {
+                type: 'correction',
+                sourceText: correction.sourceText,
+                wrongOutput: correction.wrongOutput,
+                correctedOutput: correction.correctedOutput,
+                mode: correction.mode,
+                note: correction.note,
+                createdAt: new Date().toISOString(),
+            };
+        }
 
         const id = generateId();
         const now = new Date().toISOString();
@@ -386,7 +391,15 @@ export class VectorLearningStore implements LearningStore {
         glossary: Omit<GlossaryMemory, 'type' | 'createdAt'>,
     ): Promise<GlossaryMemory> {
         const pool = this.getPool();
-        if (!pool) return this.fallback.addGlossary(glossary);
+        if (!pool) {
+            return {
+                type: 'glossary',
+                term: glossary.term,
+                meaning: glossary.meaning,
+                mode: glossary.mode,
+                createdAt: new Date().toISOString(),
+            };
+        }
 
         const id = generateId();
         const now = new Date().toISOString();
@@ -411,7 +424,9 @@ export class VectorLearningStore implements LearningStore {
 
     async addStyleRule(style: Omit<StyleMemory, 'type' | 'createdAt'>): Promise<StyleMemory> {
         const pool = this.getPool();
-        if (!pool) return this.fallback.addStyleRule(style);
+        if (!pool) {
+            return { type: 'style', rule: style.rule, mode: style.mode, createdAt: new Date().toISOString() };
+        }
 
         const id = generateId();
         const now = new Date().toISOString();
@@ -434,8 +449,16 @@ export class VectorLearningStore implements LearningStore {
         output: string,
         mode: InterpreterMode,
     ): Promise<SuggestedLearning[]> {
-        // Delegate to fallback for suggestion storage (simple enough for JSON)
-        return this.fallback.suggestMemory(input, output, mode);
+        const suggestion: SuggestedLearning = {
+            id: generateId(),
+            kind: 'slang',
+            sourceText: input.slice(0, 200),
+            suggestion: output.slice(0, 500),
+            mode,
+            createdAt: new Date().toISOString(),
+        };
+        this.suggestions = [suggestion, ...this.suggestions].slice(0, 200);
+        return this.suggestions;
     }
 
     async autoCapture(feedback: LearningFeedback): Promise<void> {
@@ -467,16 +490,23 @@ export class VectorLearningStore implements LearningStore {
     }
 
     async listSuggestions(): Promise<SuggestedLearning[]> {
-        return this.fallback.listSuggestions();
+        return this.suggestions;
     }
 
     async confirmSuggestion(id: string): Promise<void> {
-        // Complex — delegate to fallback for now
-        return this.fallback.confirmSuggestion(id);
+        const suggestion = this.suggestions.find((item) => item.id === id);
+        this.suggestions = this.suggestions.filter((item) => item.id !== id);
+        if (!suggestion) return;
+
+        await this.addGlossary({
+            term: suggestion.sourceText,
+            meaning: suggestion.suggestion,
+            mode: suggestion.mode,
+        });
     }
 
     async rejectSuggestion(id: string): Promise<void> {
-        return this.fallback.rejectSuggestion(id);
+        this.suggestions = this.suggestions.filter((item) => item.id !== id);
     }
 }
 
