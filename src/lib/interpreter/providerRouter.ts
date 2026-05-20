@@ -402,6 +402,112 @@ async function requestGemini({
   };
 }
 
+function lastUserMessage(messages: ChatMessage[]): string {
+  return [...messages]
+    .reverse()
+    .find((message) => message.role === "user")
+    ?.content.replace(/^⚡[^\n]*\n\n/u, "")
+    .trim() || "";
+}
+
+function systemText(messages: ChatMessage[]): string {
+  return messages
+    .filter((message) => message.role === "system")
+    .map((message) => message.content)
+    .join("\n")
+    .toLowerCase();
+}
+
+function targetLanguageFromMessages(messages: ChatMessage[]): "en" | "id" | "nl" {
+  const text = systemText(messages);
+  if (text.includes("english only") || text.includes("spoken english")) {
+    return "en";
+  }
+
+  if (text.includes("dutch") || text.includes("nederlands")) {
+    return "nl";
+  }
+
+  return "id";
+}
+
+function phrasebookTranslate(input: string, targetLanguage: "en" | "id" | "nl"): string | null {
+  const normalized = input.toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, " ").replace(/\s+/g, " ").trim();
+
+  const phrasebook: Record<string, Record<typeof targetLanguage, string>> = {
+    "mereka tidak mengerti": {
+      en: "They don't understand.",
+      id: "Mereka tidak mengerti.",
+      nl: "Ze begrijpen het niet.",
+    },
+    "terima kasih": {
+      en: "Thank you.",
+      id: "Terima kasih.",
+      nl: "Dank je wel.",
+    },
+    "apa kabar": {
+      en: "How are you?",
+      id: "Apa kabar?",
+      nl: "Hoe gaat het?",
+    },
+    "i want to book a room tonight": {
+      en: "I want to book a room tonight.",
+      id: "Saya mau pesan kamar untuk malam ini.",
+      nl: "Ik wil voor vanavond een kamer boeken.",
+    },
+    "ik wil een kamer boeken voor vanavond": {
+      en: "I want to book a room for tonight.",
+      id: "Saya mau pesan kamar untuk malam ini.",
+      nl: "Ik wil een kamer boeken voor vanavond.",
+    },
+  };
+
+  for (const [phrase, translations] of Object.entries(phrasebook)) {
+    if (normalized.includes(phrase)) {
+      return translations[targetLanguage];
+    }
+  }
+
+  return null;
+}
+
+async function requestBuiltinAssistant({
+  fallbackUsed = false,
+  messages,
+}: {
+  fallbackUsed?: boolean;
+  messages: ChatMessage[];
+}): Promise<TranslationResult> {
+  const input = lastUserMessage(messages);
+  const targetLanguage = targetLanguageFromMessages(messages);
+  const translated = phrasebookTranslate(input, targetLanguage);
+
+  if (translated) {
+    return {
+      translatedText: translated,
+      provider: "local",
+      model: "prestix-offline-assistant",
+      fallbackUsed,
+      failedStatus: null,
+    };
+  }
+
+  const readyMessage =
+    targetLanguage === "en"
+      ? "I’m ready. Tell me what you want translated or handled."
+      : targetLanguage === "nl"
+        ? "Ik ben klaar. Zeg wat je wilt vertalen of regelen."
+        : "Saya siap. Mau saya bantu terjemahkan atau jawab pertanyaannya?";
+
+  return {
+    translatedText: readyMessage,
+    provider: "local",
+    model: "prestix-offline-assistant",
+    fallbackUsed,
+    failedStatus: null,
+  };
+}
+
 function parseOptionalHeaders(rawHeaders: string | undefined): Record<string, string> | undefined {
   if (!rawHeaders?.trim()) {
     return undefined;
@@ -600,6 +706,23 @@ async function buildProviderResolution(): Promise<ProviderResolution> {
           signal,
         }),
     });
+  }
+
+  if (process.env.PRESTIX_OFFLINE_FALLBACK !== "false") {
+    const fallbackUsed = providers.length > 0;
+    providers.push({
+      provider: "local",
+      model: "prestix-offline-assistant",
+      fallbackUsed,
+      translate: (messages) =>
+        requestBuiltinAssistant({
+          fallbackUsed,
+          messages,
+        }),
+    });
+    fallbackChainTried.push("provider available: local offline assistant fallback");
+  } else {
+    fallbackChainTried.push("provider skipped: local offline assistant disabled");
   }
 
   return {

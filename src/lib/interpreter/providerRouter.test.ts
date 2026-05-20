@@ -169,4 +169,31 @@ describe("provider router", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/v1/models");
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain("/v1/chat/completions");
   });
+
+  it("falls back to the offline assistant when no external provider is configured", async () => {
+    restoreEnv();
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.DEEPSEEK_API_KEY;
+    delete process.env.TOKENIZIN_API_KEY;
+    delete process.env.TOKENIZIN_BASE_URL;
+    delete process.env.PRESTIX_SANDBOX_TEXT_PROVIDER;
+    delete process.env.PRESTIX_OFFLINE_FALLBACK;
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await requestTranslation(messages);
+
+    expect(result).toMatchObject({
+      fallbackUsed: false,
+      failedStatus: null,
+      model: "prestix-offline-assistant",
+      provider: "local",
+      translatedText: "They don't understand.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.fallbackChainTried).toContain("provider available: local offline assistant fallback");
+    expect(result.fallbackChainTried).toContain("provider success: local");
+  });
 });
