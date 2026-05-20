@@ -457,8 +457,9 @@ export class VectorLearningStore implements LearningStore {
             mode,
             createdAt: new Date().toISOString(),
         };
-        this.suggestions = [suggestion, ...this.suggestions].slice(0, 200);
-        return this.suggestions;
+        const suggestions = [suggestion];
+        this.suggestions = [...suggestions, ...this.suggestions].slice(0, 200);
+        return suggestions;
     }
 
     async autoCapture(feedback: LearningFeedback): Promise<void> {
@@ -495,14 +496,29 @@ export class VectorLearningStore implements LearningStore {
 
     async confirmSuggestion(id: string): Promise<void> {
         const suggestion = this.suggestions.find((item) => item.id === id);
-        this.suggestions = this.suggestions.filter((item) => item.id !== id);
         if (!suggestion) return;
 
-        await this.addGlossary({
-            term: suggestion.sourceText,
-            meaning: suggestion.suggestion,
-            mode: suggestion.mode,
-        });
+        if (suggestion.kind === 'glossary' || suggestion.kind === 'slang') {
+            await this.addGlossary({
+                term: suggestion.sourceText.slice(0, 200),
+                meaning: suggestion.suggestion.slice(0, 500),
+                mode: suggestion.mode,
+            });
+        } else if (suggestion.kind === 'correction') {
+            await this.addCorrection({
+                sourceText: suggestion.sourceText.slice(0, 200),
+                wrongOutput: suggestion.sourceText.slice(0, 200),
+                correctedOutput: suggestion.suggestion.slice(0, 500),
+                mode: suggestion.mode,
+            });
+        } else if (suggestion.kind === 'style') {
+            await this.addStyleRule({
+                rule: suggestion.suggestion.slice(0, 500),
+                mode: suggestion.mode,
+            });
+        }
+
+        this.suggestions = this.suggestions.filter((item) => item.id !== id);
     }
 
     async rejectSuggestion(id: string): Promise<void> {
